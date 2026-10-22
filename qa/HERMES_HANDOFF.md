@@ -1,31 +1,35 @@
 # AQ Server：给 Hermes 的交接
 
-用户要求：官网部署在本机 8.140.49.4；用户随后通过微信联系 Hermes。请使用 AQ Server 测试员角色，和 Codex 按 GitHub 缺陷 → 修复 → 发布 → 复测协作。
+用户授权：官网托管在 8.140.49.4，用户随后通过微信联系 Hermes。使用 AQ Server 测试员角色，按 GitHub 缺陷 → Codex 修复 → 验证发布 → Hermes 复测协作。
 
-## 入口
+## 当前可用入口
 
-- 官网：http://8.140.49.4/aqserver/
-- 安装包：http://8.140.49.4/aqserver/releases/AQServer-Setup-0.1.0.exe
-- 更新清单：http://8.140.49.4/aqserver/releases/stable.json
+- 外网 HTTPS 官网：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/
+- 安装包：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/AQServer-Setup-0.1.0.exe
+- 清单查看：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/stable.json
 - GitHub：https://github.com/1159112519/aq-server （私有仓库）
-- 当前程序版本：0.1.0。
-- 测试员技能：`aq-server-qa`，全局文件 `/root/.hermes/skills/aq-server-qa/SKILL.md`。
+- 程序版本：0.1.0。
+- 测试员技能：`aq-server-qa`，`/root/.hermes/skills/aq-server-qa/SKILL.md`。
 - 协作协议：`/root/aq-server/QA_WORKFLOW.md`。
 
-## 已部署与未通过的边界
+## 入口状态与有效期
 
-Nginx 和静态站点已部署；网站位于 `/var/www/aqserver-web/current/`。服务器通过 localhost + Host:8.140.49.4 可以获得 HTTP 200，安装包哈希匹配已签名版本清单。
+2026-10-22 已从外网禁用代理直连验证 HTTPS 首页、脚本、样式、字体、图片及完整安装包；安装包 9,289,732 字节，SHA256 与签名清单一致。
 
-**公网 TCP 80 暂未打通**：Windows 直连超时，经过本机代理曾返回 502；服务器对自身公网 IP 的连接也超时。需要核查阿里云安全组/云防火墙的入站 TCP 80。不要把“已部署”说成“公网已验收”。目前没有拿到阿里云控制台/开放 API 的访问能力，不能声称已修改云侧规则。请用户通过微信联系时告知这一实际阻塞；若用户在微信提供已有云管理入口，可以继续核查本实例。
+这是运行在本服务器的 Cloudflare Quick Tunnel 预览入口，服务 `aqserver-web-preview.service` 已启用开机运行，域名可能随入口进程重启改变，服务不承诺永久在线。最新地址看 `/root/aq-server/qa/status/public-preview.json`。如果服务重启，以当前服务 InvocationID 的 journal 中 trycloudflare.com 地址为准，不继续沿用旧的临时域名。正式长期发布仍需绑定自有域名或固定的命名隧道。
 
-Windows 安装包已经做本地编译、十组回归、原生托盘/主题/终端检查、隔离安装运行卸载；官网构建和站点包测试通过，但尚未完成浏览器多尺寸视觉验收。Linux 无法直接执行 WPF Windows 客户端，不要把网络请求或静态截图当作客户端真机操作。
+官网仍在 `/var/www/aqserver-web/current/`，通过仅监听 `127.0.0.1:18770` 的 Nginx 静态入口对外提供；没有把 Hermes、SSH 或私有测试队列放到入口里。
+
+原始 IP `http://8.140.49.4/aqserver/` 的公网 TCP 80/443 仍然超时，确切云端拦截规则尚未查明。网站可以通过上述预览域名访问，并不代表原始 IP 入口已经修好。当前 Windows 程序的正式更新地址和已签名 stable.json 内的 installerUrl 仍引用原始 IP，因此本次不能宣称桌面自动更新已恢复；不要把临时域名悄悄写进正式安装包或重签覆盖当前清单。
+
+## 测试与证据边界
+
+Windows 安装包此前完成本地编译、受控回归、托盘/主题/终端检查及隔离安装卸载；GitHub Windows 和官网 CI 通过。官网尚未完成手机、平板、桌面浏览器的视觉与鼠标交互验收。Linux 上的 HTTP 检查不能当作 WPF 客户端实际操作。
 
 ## 缺陷提交与复测
 
-按技能说明写报告 JSON，然后执行：
+按技能准备报告 JSON，运行 `python3 /root/aq-server/qa/report_bug.py /path/to/report.json`。
 
-`python3 /root/aq-server/qa/report_bug.py /path/to/report.json`
+队列 `qa/inbox/`、证据 `qa/evidence/`、Issue 映射 `qa/status/issue-map.json`、待复测 `qa/status/retest-requests.json`、结果 `qa/retests/<issue号>.json` 均在 `/root/aq-server/` 下。没有 GitHub 登录也可先提交队列。原始 IP 问题是 Issue #1；目前有 HTTPS 预览入口缓解，但不要把未修复的正式更新链路记为通过。
 
-队列 `/root/aq-server/qa/inbox/`；证据 `/root/aq-server/qa/evidence/`；Codex 同步到 GitHub 后写 `/root/aq-server/qa/status/issue-map.json`。修复发布后查看 `qa/status/retest-requests.json`，把复测结果写到 `qa/retests/<issue号>.json`。没有 GitHub 登录也可以先用队列，不需复制任何 GitHub token。
-
-不影响其他 Hermes 任务和训练进程；测试文件、结束进程等仅对自己的测试目录与进程执行。当前交接只要求接收信息并记住入口，不要求立即运行耗时测试。
+保留其他 Hermes 任务和训练进程。结束进程与文件操作仅使用自建测试进程和测试目录。当前交接只要求接收新网址并保存可检索记忆，不要求立即运行完整测试或向微信主动发送消息。

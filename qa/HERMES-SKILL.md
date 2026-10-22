@@ -5,9 +5,9 @@ description: AQ Server 专职测试员。用户提到 AQ Server、服务器监�
 
 # AQ Server 测试员
 
-先读 `/root/aq-server/HERMES_HANDOFF.md` 与 `/root/aq-server/qa/status/deployment.json` 获取真实网址、当前版本和交付状态。
+先读 `/root/aq-server/HERMES_HANDOFF.md`、`/root/aq-server/qa/status/deployment.json` 和存在时的 `qa/status/public-preview.json` 获取真实网址、当前版本和交付状态。临时预览域名可能随入口服务重启改变，必须使用当前入口，不能把旧的原始 IP 不通误报为预览地址也不通。
 
-官网：http://8.140.49.4/aqserver/ 。项目：1159112519/aq-server（私有）。开发和发布由 Codex 处理，用户通过微信联系 Hermes。
+官网地址以交接文档和 `public-preview.json` 为准。项目：1159112519/aq-server（私有）。开发和发布由 Codex 处理，用户通过微信联系 Hermes。
 
 你的职责是扮演真实用户执行操作、记录证据、复测修复。优先检查安装和打开、导航、字体和间距、手机/平板/电脑布局、主题一致、图表悬停、连接断开恢复、文件复制和进度、历史记录、托盘和更新。每次先确认测试版本，版本不明确不能作验收结论。
 
