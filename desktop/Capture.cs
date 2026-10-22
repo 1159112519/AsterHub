@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+public sealed class DeviceReading {
+ public Server Device;public Metrics Metrics;public DateTime TimeUtc;public int Interval;
+}
+public sealed class DeviceCapture : IDisposable {
+ sealed class State {public Server Device;public int Version;public bool Busy;public DateTime Due=DateTime.MinValue,Started;public DeviceReading Latest,Good;public int Failures;}
+ readonly object gate=new object();readonly HashSet<string> inflight=new HashSet<string>();readonly Dictionary<string,State> states=new Dictionary<string,State>();readonly Func<Server,Metrics> collect;readonly Action<DeviceReading> received;readonly ArchiveService archive;readonly System.Threading.Timer timer;readonly int parallelism;int interval=5,running;bool stopping;
+ public int DeviceCount{get{lock(gate)return states.Count;}}public int ConnectedCount{get{lock(gate)return states.Values.Count(x=>x.Latest!=null&&string.IsNullOrEmpty(x.Latest.Metrics.Error));}}public int FailedCount{get{lock(gate)return states.Values.Count(x=>x.Latest!=null&&!string.IsNullOrEmpty(x.Latest.Metrics.Error));}}public int RunningCount{get{lock(gate)return running;}}
+ public DeviceCapture(ArchiveService writer,Action<DeviceReading> callback,Func<Server,Metrics> provider=null,int concurrency=4){archive=writer;received=callback;collect=provider??Remote.Collect;parallelism=Math.Max(1,concurrency);timer=new System.Threading.Timer(Tick,null,250,250);}
+ public void Configure(IEnumerable<Server> devices,int seconds){lock(gate){if(stopping)return;int next=Math.Max(2,Math.Min(120,seconds));bool intervalChanged=next!=interval;interval=next;var desired=devices.Where(x=>x!=null).GroupBy(ArchiveStore.Key).Select(x=>x.First().Copy()).ToList();var keep=new HashSet<string>(desired.Select(ArchiveStore.Key));foreach(string key in states.Keys.Where(x=>!keep.Contains(x)).ToArray())states.Remove(key);foreach(var device in desired){string key=ArchiveStore.Key(device);State state;if(!states.TryGetValue(key,out state)){state=new State{Device=device};states[key]=state;}else{bool credentialsChanged=state.Device.KeyPath!=device.KeyPath||state.Device.IsLocal!=device.IsLocal;if(credentialsChanged){state.Version++;state.Latest=null;state.Good=null;state.Failures=0;state.Due=DateTime.MinValue;}else if(intervalChanged)state.Due=DateTime.UtcNow.AddSeconds(interval);state.Device=device;}}}Tick(null);}
+ public DeviceReading Latest(Server device){if(device==null)return null;lock(gate){State state;return states.TryGetValue(ArchiveStore.Key(device),out state)?state.Latest:null;}}
+ public DeviceReading LastSuccessful(Server device){if(device==null)return null;lock(gate){State state;return states.TryGetValue(ArchiveStore.Key(device),out state)?state.Good:null;}}
+ public void RequestRefresh(){lock(gate){if(stopping)return;foreach(var state in states.Values)if(!state.Busy)state.Due=DateTime.MinValue;}Tick(null);}
+ void Tick(object ignored){var jobs=new List<Tuple<string,State,Server,int,int>>();lock(gate){if(stopping)return;DateTime now=DateTime.UtcNow;foreach(var entry in states.Where(x=>!x.Value.Busy&&!inflight.Contains(x.Key)&&x.Value.Due<=now).OrderBy(x=>x.Value.Due).ToArray()){if(running>=parallelism)break;var state=entry.Value;state.Busy=true;state.Started=now;inflight.Add(entry.Key);running++;jobs.Add(Tuple.Create(entry.Key,state,state.Device.Copy(),state.Version,interval));}}
+ foreach(var job in jobs)Task.Run(()=>Collect(job));}
+ void Collect(Tuple<string,State,Server,int,int> job){Metrics metrics;try{metrics=collect(job.Item3)??new Metrics{Error="采集未返回数据"};}catch(Exception e){metrics=new Metrics{Error=e.GetBaseException().Message};}var reading=new DeviceReading{Device=job.Item3,Metrics=metrics,TimeUtc=DateTime.UtcNow,Interval=job.Item5};
+ try{lock(gate){State current;bool same=states.TryGetValue(job.Item1,out current)&&object.ReferenceEquals(current,job.Item2);bool valid=same&&current.Version==job.Item4;if(valid){current.Latest=reading;if(string.IsNullOrEmpty(metrics.Error)){current.Good=reading;current.Failures=0;}else current.Failures++;if(archive!=null)archive.Enqueue(reading.Device,reading.Metrics,reading.Interval,reading.TimeUtc);if(received!=null)try{received(reading);}catch{}}if(same){current.Busy=false;var due=current.Failures>0?DateTime.UtcNow.AddSeconds(Math.Min(60,interval*Math.Pow(2,Math.Min(4,current.Failures-1)))):current.Started.AddSeconds(interval);current.Due=current.Version==job.Item4?(due>DateTime.UtcNow?due:DateTime.UtcNow.AddMilliseconds(250)):DateTime.MinValue;}}}
+ finally{lock(gate){running--;inflight.Remove(job.Item1);Monitor.PulseAll(gate);}}
+ }
+ public bool Stop(int milliseconds=17000){lock(gate){stopping=true;}timer.Dispose();var until=DateTime.UtcNow.AddMilliseconds(milliseconds);lock(gate){while(running>0){int remaining=(int)(until-DateTime.UtcNow).TotalMilliseconds;if(remaining<=0)return false;Monitor.Wait(gate,remaining);}return true;}}
+ public void Dispose(){Stop();}
+}

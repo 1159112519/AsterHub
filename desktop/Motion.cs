@@ -1,0 +1,37 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
+public interface IFrameMotion {bool Frame(double now);}
+public static class MotionClock {
+ static readonly HashSet<IFrameMotion> active=new HashSet<IFrameMotion>();static readonly DispatcherTimer timer=new DispatcherTimer(DispatcherPriority.Render){Interval=TimeSpan.FromMilliseconds(16)};public static double Now{get{return Stopwatch.GetTimestamp()/(double)Stopwatch.Frequency;}}public static int ActiveCount{get{return active.Count;}}
+ static MotionClock(){timer.Tick+=(s,e)=>{double now=Now;foreach(var item in active.ToArray())if(!item.Frame(now))active.Remove(item);if(active.Count==0)timer.Stop();};}
+ public static void Add(IFrameMotion item){active.Add(item);if(!timer.IsEnabled)timer.Start();}public static void Remove(IFrameMotion item){active.Remove(item);if(active.Count==0)timer.Stop();}
+}
+public static class Motion {
+ public static bool Enabled{get{return SystemParameters.ClientAreaAnimation;}}
+ public static double Ease(double t){t=Math.Max(0,Math.Min(1,t));return (1-(1+7*t)*Math.Exp(-7*t))/(1-8*Math.Exp(-7));}
+ public static double Damped(double start,double target,double velocity,double t,double rate,out double nextVelocity){double d=start-target,a=velocity+rate*d,e=Math.Exp(-rate*t);nextVelocity=(velocity-rate*a*t)*e;return target+(d+a*t)*e;}
+ static DoubleAnimation Animation(double to,int ms){return new DoubleAnimation(to,TimeSpan.FromMilliseconds(ms)){EasingFunction=new CubicEase{EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop};}
+ public static void Enter(FrameworkElement element){if(element==null||!element.IsLoaded||!element.IsVisible||!Enabled)return;Complete(element);var move=element.RenderTransform as TranslateTransform;if(move==null){move=new TranslateTransform();element.RenderTransform=move;}element.Opacity=1;move.Y=0;element.BeginAnimation(UIElement.OpacityProperty,new DoubleAnimation(0.72,1,TimeSpan.FromMilliseconds(190)){EasingFunction=new CubicEase{EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop});move.BeginAnimation(TranslateTransform.YProperty,new DoubleAnimation(5,0,TimeSpan.FromMilliseconds(210)){EasingFunction=new CubicEase{EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop});}
+ public static void Complete(FrameworkElement element){element.BeginAnimation(UIElement.OpacityProperty,null);element.Opacity=1;var move=element.RenderTransform as TranslateTransform;if(move!=null){move.BeginAnimation(TranslateTransform.YProperty,null);move.Y=0;}}
+ public static void Feedback(Button button){var scale=new ScaleTransform(1,1);button.RenderTransform=scale;button.RenderTransformOrigin=new Point(0.5,0.5);Action<double> animate=value=>{if(!Enabled){scale.BeginAnimation(ScaleTransform.ScaleXProperty,null);scale.BeginAnimation(ScaleTransform.ScaleYProperty,null);scale.ScaleX=scale.ScaleY=1;return;}double oldX=scale.ScaleX,oldY=scale.ScaleY;scale.BeginAnimation(ScaleTransform.ScaleXProperty,null);scale.BeginAnimation(ScaleTransform.ScaleYProperty,null);scale.ScaleX=scale.ScaleY=value;var x=Animation(value,value<1?85:180);x.From=oldX;var y=Animation(value,value<1?85:180);y.From=oldY;scale.BeginAnimation(ScaleTransform.ScaleXProperty,x);scale.BeginAnimation(ScaleTransform.ScaleYProperty,y);};button.PreviewMouseLeftButtonDown+=(s,e)=>animate(0.975);button.PreviewMouseLeftButtonUp+=(s,e)=>animate(1);button.MouseLeave+=(s,e)=>animate(1);button.PreviewKeyDown+=(s,e)=>{if(e.Key==Key.Space)animate(0.975);};button.PreviewKeyUp+=(s,e)=>{if(e.Key==Key.Space)animate(1);};button.IsVisibleChanged+=(s,e)=>{if(!button.IsVisible){scale.BeginAnimation(ScaleTransform.ScaleXProperty,null);scale.BeginAnimation(ScaleTransform.ScaleYProperty,null);scale.ScaleX=scale.ScaleY=1;}};button.Unloaded+=(s,e)=>{scale.BeginAnimation(ScaleTransform.ScaleXProperty,null);scale.BeginAnimation(ScaleTransform.ScaleYProperty,null);scale.ScaleX=scale.ScaleY=1;};}
+}
+public class PixelMeter : FrameworkElement,IFrameMotion {
+ double target,display,trail,start,trailStart,velocity,trailVelocity,startVelocity,startTrailVelocity,started;bool moving;readonly VisualCollection visuals;readonly DrawingVisual track=new DrawingVisual(),ghost=new DrawingVisual(),fillVisual=new DrawingVisual();readonly RectangleGeometry ghostClip=new RectangleGeometry(),fillClip=new RectangleGeometry();Brush fill;public Brush Fill{get{return fill;}set{if(object.ReferenceEquals(fill,value))return;fill=value;InvalidateVisual();}}public int Blocks=24;public int GeometryRebuilds;public double DisplayValue{get{return display;}}public double TrailValue{get{return trail;}}public bool IsAnimating{get{return moving;}}
+ public double Value{get{return target;}set{value=double.IsNaN(value)?0:Math.Max(0,Math.Min(100,value));if(Math.Abs(value-target)<0.001)return;if(moving)Advance((MotionClock.Now-started)*1000);start=display;trailStart=trail;startVelocity=velocity;startTrailVelocity=trailVelocity;target=value;if(!IsLoaded||!IsVisible||!Motion.Enabled){Finish();return;}started=MotionClock.Now;moving=true;MotionClock.Add(this);}}
+ public PixelMeter(double value,Brush fill,double height){target=display=trail=Math.Max(0,Math.Min(100,value));Fill=fill;Height=height;SnapsToDevicePixels=true;visuals=new VisualCollection(this){track,ghost,fillVisual};ghost.Clip=ghostClip;ghost.Opacity=0.24;fillVisual.Clip=fillClip;Unloaded+=(s,e)=>Finish();IsVisibleChanged+=(s,e)=>{if(!IsVisible)Finish();};}
+ public bool Frame(double now){if(!IsVisible||!IsLoaded||!Motion.Enabled){Finish();return false;}Advance((now-started)*1000);return moving;}
+ public void Advance(double elapsed){double t=Math.Max(0,elapsed)/1000;display=Math.Max(0,Math.Min(100,Motion.Damped(start,target,startVelocity,t,17,out velocity)));trail=Math.Max(0,Math.Min(100,Motion.Damped(trailStart,target,startTrailVelocity,Math.Max(0,t-0.055),11,out trailVelocity)));if(elapsed>=690){display=trail=target;velocity=trailVelocity=0;moving=false;MotionClock.Remove(this);}UpdateClips();}
+ void Finish(){moving=false;MotionClock.Remove(this);display=trail=target;velocity=trailVelocity=0;UpdateClips();}
+ protected override int VisualChildrenCount{get{return visuals.Count;}}protected override Visual GetVisualChild(int index){return visuals[index];}
+ double ActiveWidth(double value){int count=Math.Max(1,Blocks);double gap=ActualWidth<100?2:3,unit=Math.Max(0,(ActualWidth-gap*(count-1))/count);int active=(int)Math.Ceiling(count*Math.Max(0,Math.Min(100,value))/100);return unit<=0||active==0?0:Math.Min(ActualWidth,active*(unit+gap)-gap);}
+ void UpdateClips(){var solid=new Rect(0,0,ActiveWidth(display),Math.Max(0,ActualHeight));var after=new Rect(0,0,ActiveWidth(Math.Max(display,trail)),Math.Max(0,ActualHeight));if(fillClip.Rect!=solid)fillClip.Rect=solid;if(ghostClip.Rect!=after)ghostClip.Rect=after;}
+ protected override void OnRender(DrawingContext dc){GeometryRebuilds++;int count=Math.Max(1,Blocks);double gap=ActualWidth<100?2:3,unit=Math.Max(0,(ActualWidth-gap*(count-1))/count);using(var background=track.RenderOpen())using(var solid=fillVisual.RenderOpen())using(var after=ghost.RenderOpen()){if(unit>0)for(int i=0;i<count;i++){var rect=new Rect(i*(unit+gap),0,unit,Math.Max(0,ActualHeight));background.DrawRectangle(Theme.Raised,null,rect);solid.DrawRectangle(Fill,null,rect);after.DrawRectangle(Fill,null,rect);}}UpdateClips();}
+}

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cs text eol=crlf
+*.dll -text
+*.exe -text
+*.ico -text
+*.webp -text
