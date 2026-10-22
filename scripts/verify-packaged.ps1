@@ -20,8 +20,11 @@ foreach($test in @('tray-tests','v124-native','update-tests','footer-layout-test
  if($p.ExitCode -ne 0){Get-ChildItem -LiteralPath $dir -Filter '*error.txt' | ForEach-Object {Get-Content -LiteralPath $_.FullName};exit 1}
 }
 $expected=(Get-FileHash (Join-Path $project 'desktop/AQServer.App.exe')).Hash
-$roots=@(Get-ChildItem $env:AQSERVER_RUNTIME_ROOT -Directory | Where-Object {(Get-FileHash (Join-Path $_.FullName 'AQServer.App.exe')).Hash -eq $expected})
-if($roots.Count -ne 1){throw 'packaged app does not match source build'}
+$payloadHash=(Get-FileHash (Join-Path $project 'artifacts/AQPayload-0.1.0.zip')).Hash.ToLowerInvariant().Substring(0,16)
+$runtime=Join-Path $env:AQSERVER_RUNTIME_ROOT ('v0.1.0-'+$payloadHash)
+if(!(Test-Path -LiteralPath $runtime)){throw 'Current packaged runtime not found'}
+$roots=@(Get-Item -LiteralPath $runtime)
+if((Get-FileHash (Join-Path $runtime 'AQServer.App.exe')).Hash-ne $expected){throw 'Packaged app does not match source build'}
 $manifest=Get-Content (Join-Path $roots[0].FullName 'payload-manifest.json') -Raw | ConvertFrom-Json
 foreach($file in $manifest){if((Get-FileHash (Join-Path $roots[0].FullName $file.File)).Hash -ne $file.SHA256){throw ('payload mismatch: '+$file.File)}}
 $results+='PACKAGED_APP_EQUALS_SOURCE_BUILD=True'

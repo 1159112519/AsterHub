@@ -24,7 +24,7 @@ $payload=Join-Path $out ('AQPayload-'+$version+'.zip')
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $payload -Force
 $framework=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319'
 $portable=Join-Path $out ('AQServer-v'+$version+'.exe')
-& (Join-Path $framework 'csc.exe') /nologo /target:winexe /platform:x64 /optimize+ /main:AQLauncher ('/out:'+$portable) ('/win32manifest:'+(Join-Path $source 'app.manifest')) ('/win32icon:'+(Join-Path $source 'AQServer.ico')) ('/resource:'+$payload+',AQPayload.zip') /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll (Join-Path $source 'Launcher.cs')
+& (Join-Path $framework 'csc.exe') /nologo /target:winexe /platform:x64 /optimize+ /main:AQLauncher ('/out:'+$portable) ('/win32manifest:'+(Join-Path $source 'app.manifest')) ('/win32icon:'+(Join-Path $source 'AQServer.ico')) ('/resource:'+$payload+',AQPayload.zip') /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll (Join-Path $source 'Launcher.cs') (Join-Path $source 'AssemblyInfo.cs')
 if($LASTEXITCODE-ne 0){throw 'Portable launcher build failed'}
 $installed=Join-Path $out ('installed-'+$version+'-'+[guid]::NewGuid().ToString('N'))
 Copy-Item -LiteralPath $stage -Destination $installed -Recurse
