@@ -1,0 +1,69 @@
+name: Verify AQ Server
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  website-and-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Check public version consistency
+        run: python3 qa/check_version.py
+      - name: Validate defect queue contract
+        run: python3 -m unittest discover -s qa -p 'test_*.py' -v
+      - name: Install locked website dependencies
+        working-directory: website
+        run: npm ci
+      - name: Typecheck and build production website
+        working-directory: website
+        run: npm run build
+      - name: Verify site package
+        working-directory: website
+        run: npm run test:sites
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website-candidate
+          path: website/dist
+          retention-days: 14
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build desktop and portable candidate
+        shell: powershell
+        run: ./scripts/build-release.ps1
+      - name: Run controlled regression checks
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $qa=Join-Path $pwd 'artifacts/ci-qa'
+          New-Item -ItemType Directory -Path $qa -Force|Out-Null
+          $env:AQSERVER_LAYOUT_PATH=Join-Path $qa 'layout.xml'
+          foreach($name in @('update-tests','workspace-tests','v12-tests')){
+            $folder=Join-Path $qa $name
+            $p=Start-Process -FilePath (Join-Path $pwd 'desktop/AQServer.App.exe') -ArgumentList @(('--'+$name),('"'+$folder+'"')) -WindowStyle Hidden -PassThru -Wait
+            if($p.ExitCode-ne 0){Get-ChildItem $folder -Filter '*error.txt'|ForEach-Object{Get-Content $_.FullName};throw ($name+' failed: '+$p.ExitCode)}
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-candidate-and-evidence
+          path: |
+            artifacts/AQServer-v*.exe
+            artifacts/AQServer-v*-portable.zip
+            artifacts/ci-qa
+          retention-days: 14

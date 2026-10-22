@@ -17,7 +17,7 @@ npm run test:sites
 
 签名私钥只保存在维护者私有位置。首次构建他人无法生成同一官方签名；若自行发行，应替换 desktop/UpdatePublicKey.cs 与更新地址，并使用自己的私钥。不要把生产私钥、SSH 私钥、用户设置或历史存档提交 Git。
 
-发布前必须升级 VERSION、AssemblyInfo、标题、Launcher 运行目录版本、官网版本及下载文件名，检查 CHANGELOG 和安装器版本一致。当前脚本按 0.1.0 准备，更新版本时也要同步验证脚本路径与 deployment/deploy.sh 的预检文件名。
+发布前执行 `python scripts/set-version.py 0.1.1` 同步公开版本位置，再执行 `python qa/check_version.py` 检查一致性。手动补充 CHANGELOG，检查安装器版本和下载链接；不要改写历史更新记录。
 
 验证：精确打包 EXE 的托盘、布局、设置、终端、启动、主题、签名更新；同一负载的隔离安装、运行、卸载；真实手机/平板/桌面浏览器验收官网。QA 安装器使用独立 AppId/mutex，不改正常版开机启动，不交付用户。
 

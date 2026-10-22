@@ -16,3 +16,12 @@ installer/redist/*.exe
 !desktop/deps/**/*.dll
 
 website/public/releases/*.exe
+
+qa/inbox/
+qa/processed/
+qa/evidence/
+qa/status/
+qa/retests/
+
+__pycache__/
+*.py[cod]
