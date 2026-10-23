@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Check, ChevronRight, Cpu, Download, Files, Gauge, Github, HardDrive, Layers3, Menu, Monitor, Server, ShieldCheck, Terminal, X } from 'lucide-react';
-const installer = './releases/AQServer-Setup-0.1.1.exe';
+const installer = './releases/AQServer-Setup-0.1.2.exe';
+const ubuntuInstaller = './releases/AQServer-0.1.2-ubuntu-all.deb';
 const repository = 'https://github.com/1159112519/aq-server';
 
 function ProductReveal() {
@@ -75,31 +76,32 @@ export default function App() {
     <header className="site-header">
       <a className="brand" href="#home" aria-label="AQ Server 首页"><img src="./favicon.ico" alt="" width="29" height="29" /><span>AQ<span className="brand-space">Server</span></span></a>
       <nav className="desktop-nav" aria-label="主导航"><a href="#experience">产品体验</a><a href="#updates">版本更新</a><a href={repository} target="_blank" rel="noreferrer" title="项目仓库，需授权访问">GitHub <ArrowUpRight size={13} /></a></nav>
-      <a className="header-download" href={installer} download><Download size={14} />下载 <span>v0.1.1</span></a>
+      <a className="header-download" href="#download"><Download size={14} />下载 <span>v0.1.2</span></a>
       <button className="mobile-menu-button" type="button" aria-label={mobileOpen ? '关闭导航' : '打开导航'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
       {mobileOpen && <nav id="mobile-navigation" className="mobile-nav" aria-label="移动导航"><a href="#experience" onClick={() => setMobileOpen(false)}>产品体验<ChevronRight size={16} /></a><a href="#updates" onClick={() => setMobileOpen(false)}>版本更新<ChevronRight size={16} /></a><a href={repository} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)}>项目仓库<ArrowUpRight size={16} /></a></nav>}
     </header>
     <main>
       <section className="hero" id="home">
-        <div className="hero-topline"><span className="hero-category"><span className="status-light" />A QUIETER WAY TO MONITOR</span><span className="platform-label"><Monitor size={13} /> BUILT FOR WINDOWS</span></div>
+        <div className="hero-topline"><span className="hero-category"><span className="status-light" />A QUIETER WAY TO MONITOR</span><span className="platform-label"><Monitor size={13} /> WINDOWS & UBUNTU</span></div>
         <div className="hero-content">
-          <div className="release-note"><span>0.1.1</span> 模块化更新与历史交互优化 <ArrowUpRight size={13} /></div>
+          <div className="release-note"><span>0.1.2</span> 模块化更新与历史交互优化 <ArrowUpRight size={13} /></div>
           <h1>Your server,<br /><em>in focus.</em></h1>
           <p className="hero-description">让复杂的运行状态，变得一目了然。<br />从本机到远程服务器，监控、终端与文件，<br className="desktop-break" />留在同一个安静的工作空间。</p>
-          <div className="hero-actions"><a className="download-button" href={installer} download><Download size={18} /><span>下载 Windows 版</span><ArrowUpRight size={18} /></a><a className="explore-link" href="#experience">探索产品<ArrowDown size={15} /></a></div>
-          <p className="compatibility">Windows 10 / 11 · x64 <span>免费使用</span></p>
+          <div className="hero-actions"><a className="download-button" href={installer} download><Download size={18} /><span>下载 Windows 版</span><ArrowUpRight size={18} /></a><a className="download-button ubuntu-button" href={ubuntuInstaller} download><Terminal size={18} /><span>下载 Ubuntu 版</span><ArrowUpRight size={18} /></a></div>
+          <p className="compatibility">Windows 10 / 11 · x64 <span>Ubuntu 22.04 · .deb</span></p>
         </div>
         <ProductReveal />
         <div className="hero-bottom"><span><Server size={14} /> LOCAL & REMOTE<span className="bottom-divider" />CPU / GPU / MEMORY</span><a href="#experience">SCROLL TO EXPLORE<ArrowDown size={13} /></a></div>
       </section>
+      <section className="downloads section-shell" id="download"><div className="downloads-heading"><span className="section-kicker">GET AQ SERVER</span><h2>选择你的工作环境。</h2><p>v0.1.2 早期预览 · 两个平台，清晰的安装方式。</p></div><div className="download-grid"><article className="platform-card"><Monitor size={26} strokeWidth={1.4} /><h3>Windows</h3><p>Windows 10 / 11 · x64</p><a className="platform-download" href={installer} download>下载 EXE 安装包<Download size={16} /></a><div className="platform-detail">模块化目录安装，保留你的连接配置与历史档案。终端需要 WebView2，首次安装可能需要下载运行时。</div></article><article className="platform-card"><Terminal size={26} strokeWidth={1.4} /><h3>Ubuntu</h3><p>Ubuntu 22.04 amd64 · Debian 安装包</p><a className="platform-download" href={ubuntuInstaller} download>下载 DEB 安装包<Download size={16} /></a><code>sudo apt install ./AQServer-0.1.2-ubuntu-all.deb</code><div className="platform-detail">安装后从应用菜单打开，或运行 <strong>aq-server --desktop</strong>。首次安装由 apt 获取 GTK/WebKit 和 Python 运行库。无桌面服务器可运行本地服务；工作台需要本机访问密钥。</div></article></div><div className="download-footnote"><span>Ubuntu 24.04 和其他架构尚待验证。Ubuntu 初版暂未提供原生托盘或自动升级。</span><a href="./releases/SHA256SUMS.txt">查看 SHA-256<ArrowUpRight size={13} /></a></div></section>
       <section className="experience section-shell" id="experience">
         <div className="section-heading"><span className="section-kicker">01 / THE EXPERIENCE</span><h2>信息完整，<br /><span>工作空间保持轻盈。</span></h2><p>需要时展开，忙碌时安静常驻。<br />让监控融入工作，而不是占满你的注意力。</p></div>
         <div className="feature-grid">{features.map(({ icon: Icon, title, description, detail }) => <article className="feature" key={title}><Icon size={23} strokeWidth={1.5} /><h3>{title}</h3><p>{description}</p><div>{detail}</div></article>)}</div>
         <div className="principle-strip"><span><Layers3 size={16} />多主题，保持一致的界面语言</span><span><Files size={16} />上传下载采用复制，保留原文件</span><span><Cpu size={16} />根据设备能力显示资源</span></div>
       </section>
-      <section className="updates section-shell" id="updates"><div className="section-heading"><span className="section-kicker">02 / RELEASE NOTES</span><h2>持续打磨，<br /><span>把细节做好。</span></h2><p>这是早期版本。持续完善体验，<br />逐步走向稳定发布。</p></div><article className="release-card"><div className="release-card-heading"><h3>v0.1.1</h3><span>公开预览</span></div><ul><li><Check size={15} />本机与多服务器资源监控、终端和文件工作台</li><li><Check size={15} />历史切点更流畅，资源与进程快照保存在本机</li><li><Check size={15} />与主题一致的托盘菜单和迷你监控</li><li><Check size={15} />偏好设置支持应用，分栏与列宽可调整</li><li><Check size={15} />模块化目录安装包、检查更新与安装前校验</li></ul><div className="release-card-footer"><a href={installer} download>下载安装包<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article></section>
-      <section className="install-note section-shell"><ShieldCheck size={23} strokeWidth={1.5} /><div><h3>升级，保留你的配置与历史。</h3><p>客户端校验发布签名和安装包；下载后，由你确认安装。更新会关闭终端会话，请先保存工作。</p><p className="small-note">早期版本尚未使用 Windows 发布者代码签名证书，安装时可能显示未知发布者。</p></div></section>
+      <section className="updates section-shell" id="updates"><div className="section-heading"><span className="section-kicker">02 / RELEASE NOTES</span><h2>持续打磨，<br /><span>把细节做好。</span></h2><p>这是早期版本。持续完善体验，<br />逐步走向稳定发布。</p></div><article className="release-card"><div className="release-card-heading"><h3>v0.1.2</h3><span>公开预览</span></div><ul><li><Check size={15} />新增可安装的 Ubuntu 版，支持原生窗口与本地服务</li><li><Check size={15} />本机与 SSH 设备持续监控、真实终端和复制传输</li><li><Check size={15} />历史切点更流畅，资源与进程快照保存在本机</li><li><Check size={15} />与主题一致的托盘菜单和迷你监控</li><li><Check size={15} />偏好设置支持应用，分栏与列宽可调整</li><li><Check size={15} />模块化目录安装包、检查更新与安装前校验</li></ul><div className="release-card-footer"><a href={installer} download>下载安装包<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article></section>
+      <section className="install-note section-shell"><ShieldCheck size={23} strokeWidth={1.5} /><div><h3>升级，保留你的配置与历史。</h3><p>Windows 客户端校验发布签名和安装包。Ubuntu 通过 apt 安装或升级，用户档案单独保存。更新前请保存工作并关闭终端会话。</p><p className="small-note">早期版本尚未使用 Windows 发布者代码签名证书，安装时可能显示未知发布者。</p></div></section>
     </main>
-    <footer className="site-footer section-shell"><a className="footer-brand" href="#home">AQ Server<span>Your server, in focus.</span></a><div><span>v0.1.1 · Windows x64</span><a href={repository} target="_blank" rel="noreferrer"><Github size={15} />项目仓库（需授权）<ArrowUpRight size={12} /></a></div></footer>
+    <footer className="site-footer section-shell"><a className="footer-brand" href="#home">AQ Server<span>Your server, in focus.</span></a><div><span>v0.1.2 · Windows & Ubuntu</span><a href={repository} target="_blank" rel="noreferrer"><Github size={15} />项目仓库（需授权）<ArrowUpRight size={12} /></a></div></footer>
   </>;
 }

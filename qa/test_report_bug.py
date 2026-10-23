@@ -20,4 +20,11 @@ class QueueTests(unittest.TestCase):
    data=self.report();data[key]=[] if key=='steps' else ''
    with tempfile.TemporaryDirectory() as directory:
     with self.assertRaises(ValueError):submit(data,directory)
+ def test_ubuntu_report_uses_same_validated_queue(self):
+  data=self.report();data['platform']='ubuntu';data['version']='0.1.2'
+  with tempfile.TemporaryDirectory() as directory:
+   result=submit(data,directory)
+   self.assertEqual(result['status'],'queued')
+   stored=json.loads(pathlib.Path(result['path']).read_text(encoding='utf-8'))
+   self.assertEqual(stored['platform'],'ubuntu')
 if __name__=='__main__':unittest.main()

@@ -32,3 +32,5 @@ desktop/bin/
 desktop/obj/
 **/bin/
 **/obj/
+
+website/public/releases/*.deb

@@ -66,3 +66,22 @@ jobs:
             artifacts/AQServer-v*-portable.zip
             artifacts/ci-qa
           retention-days: 14
+
+  ubuntu:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ubuntu runtime modules
+        run: sudo apt-get update && sudo apt-get install -y python3-aiohttp python3-paramiko
+      - name: Verify Linux collection, archives, security, files and PTY
+        run: PYTHONPATH=linux python3 -m unittest discover -s linux/tests -v
+      - name: Build Ubuntu Debian package
+        run: python3 linux/build-deb.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-candidate
+          path: |
+            artifacts/*.deb
+            artifacts/ubuntu-*.json
+          retention-days: 14

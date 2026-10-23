@@ -1,6 +1,6 @@
 # AQ Server
 
-Windows 本机与 SSH 服务器资源监控工作台。当前版本 **0.1.1**，属于早期测试版本。
+Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。当前版本 **0.1.2**，属于早期测试版本。
 
 - 多核 CPU、多 GPU、内存监控，支持没有 GPU 的设备。
 - 已连接设备持续采集，历史保存在本机；切换设备不影响采集。
@@ -10,6 +10,7 @@ Windows 本机与 SSH 服务器资源监控工作台。当前版本 **0.1.1**，
 
 ## 目录
 
+- `linux/`：Ubuntu .deb、原生 GTK/WebKit 入口、本机服务与 Linux/SSH 采集。安装和能力边界见 `linux/README.md`。
 - `desktop/`：五个独立项目的 WPF / C# 5 / .NET Framework 解决方案；核心、存储、Windows 服务、界面和启动入口分离。
 - `website/`：React 18、TypeScript、Vite、Tailwind、Lucide；字体 Inter / Playfair Display。
 - `installer/`：Inno Setup 安装定义和运行时依赖下载脚本。
@@ -37,4 +38,4 @@ Hermes 测试员通过服务器缺陷队列提交，Codex 同步 GitHub Issues�
 
 ## 发布状态
 
-v0.1.0 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目源代码当前仅供仓库授权人员访问；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+v0.1.2 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目源代码当前仅供仓库授权人员访问；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。

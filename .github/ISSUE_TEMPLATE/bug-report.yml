@@ -14,14 +14,14 @@ body:
     id: platform
     attributes:
       label: 测试对象
-      options: [Windows 客户端, 官网]
+      options: [Windows 客户端, Ubuntu 客户端, 官网]
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: 执行环境
-      description: Windows/浏览器版本、分辨率、缩放、主题，以及是否真实执行。
+      description: Windows/Ubuntu/浏览器版本、分辨率、缩放、主题，以及是否真实执行。
     validations:
       required: true
   - type: textarea

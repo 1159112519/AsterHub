@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate and queue a reproducible AQ Server defect without GitHub credentials."""
 import argparse,datetime,hashlib,json,os,pathlib,tempfile
-PLATFORMS={'website','windows'}
+PLATFORMS={'website','windows','ubuntu'}
 SEVERITIES={'critical','high','normal','low'}
 def validate(data,root):
  if not isinstance(data,dict):raise ValueError('Report must be a JSON object')
@@ -9,7 +9,7 @@ def validate(data,root):
   if not isinstance(data.get(field),str) or not data[field].strip():raise ValueError('Missing '+field)
   if len(data[field])>12000:raise ValueError('Field too long: '+field)
  if len(data['title'])>180:raise ValueError('Title must be <= 180 characters')
- if data.get('platform') not in PLATFORMS:raise ValueError('Platform must be website or windows')
+ if data.get('platform') not in PLATFORMS:raise ValueError('Platform must be website, windows or ubuntu')
  if data.get('severity','normal') not in SEVERITIES:raise ValueError('Unknown severity')
  steps=data.get('steps')
  if not isinstance(steps,list) or not steps or any(not isinstance(v,str) or not v.strip() for v in steps):raise ValueError('Provide reproducible steps')

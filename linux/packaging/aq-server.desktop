@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AQ Server
+Name[zh_CN]=AQ Server 资源工作台
+Comment=Local and SSH server monitoring workspace
+Exec=aq-server --desktop
+Icon=aq-server
+Terminal=false
+Categories=System;Monitor;
+StartupWMClass=AQ Server

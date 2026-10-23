@@ -1,0 +1,13 @@
+[Unit]
+Description=AQ Server local resource workbench
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/aq-server --serve
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+[Install]
+WantedBy=default.target

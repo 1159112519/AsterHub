@@ -38,3 +38,10 @@
 - qa/evidence/：原始脱敏证据，仅走私有协作，不能放到公开网站。
 
 请求执行失败、认证失效、GitHub/模型限流或缺少 Windows/浏览器执行环境时，记录实际阻塞并等待，不绕过限制、不伪造验收。
+
+
+## Ubuntu 实际使用闭环
+
+新增 platform:ubuntu。Ubuntu 安装包通过独立账号和本地服务运行，Hermes 使用同一个已安装的 GTK/WebKit 原生窗口。报告需给出版本、实际动作、截图及观察；服务健康检查、计划文件、代理回复“已收到”均不算交互验收。
+
+Linux 运行时回归命令：`PYTHONPATH=linux python3 -m unittest discover -s linux/tests -v`。`linux/tests/native_driver.py` 是原生窗口动作/截图驱动，和 HTTP 端点测试分开保留证据。只有版本与实际包散列一致、包含可核验执行证据的复测，才能用于关闭对应缺陷。Ubuntu 与 Windows 的原生窗口、文件拖出行为、托盘及升级能力分别声明。

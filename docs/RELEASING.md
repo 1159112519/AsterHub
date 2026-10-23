@@ -1,6 +1,6 @@
 # 构建与发布
 
-本轮将 Windows 程序拆成独立组件，保留 .NET Framework 4.7.2/WPF，以既有功能兼容为优先。Ubuntu 客户端是后续迁移工作，当前版本不声称已支持 Linux 运行。
+本轮将 Windows 程序拆成独立组件，保留 .NET Framework 4.7.2/WPF，以既有功能兼容为优先。Ubuntu 0.1.2 提供独立 Debian 安装包和 GTK/WebKit 工作台，实际验证环境及发布流程见下方。
 
 1. 用 `python scripts/set-version.py X.Y.Z` 统一版本，维护 CHANGELOG，运行 `python qa/check_version.py`。
 2. 运行 `desktop/build.ps1`。源码在 desktop/AQServer.sln，完整运行目录在 desktop/bin/Release。
@@ -13,8 +13,15 @@
 
 更新使用一致版本的整包安装器，不允许单独覆盖随机版本 DLL。正式 AppId 沿用原值；旧平铺布局仅清理明确的程序资产。用户配置和历史路径不变。
 
-默认公开版本从 0.1.0 开始；本次兼容性重构为 0.1.1。后续新平台或功能批次可使用 0.2.0，正式 1.0.0 需核心流程和兼容性稳定后再决定。
+默认公开版本从 0.1.0 开始；Windows 兼容性重构为 0.1.1；0.1.2 加入 Ubuntu 早期预览。后续成熟功能批次可使用 0.2.0，正式 1.0.0 需核心流程和兼容性稳定后再决定。
 
 完整分发物为安装 EXE、目录 ZIP、签名清单及散列、官网候选包和源码。根启动 EXE 依赖同包子目录。Windows Authenticode 与更新清单签名是不同机制；当前安装器没有 Authenticode 代码签名证书。
 
 GitHub CI 执行编译和受控测试；本机 GUI、隔离安装、真实硬件采集和真实 SSH 环境按相应证据分别记录。CI 不自动部署到服务器。
+
+
+## Ubuntu release
+
+Use `scripts/set-version.py` to increase the shared version; it updates Linux version/runtime/docs and Windows/website anchors atomically. On Ubuntu run the Linux regressions, then `python3 linux/build-deb.py`. Install with `sudo apt install ./artifacts/AQServer-VERSION-ubuntu-all.deb`, operate the native GTK/WebKit window, verify archive persistence and package removal/reinstall without deleting user data, and collect Hermes actions/screenshots before claiming acceptance.
+
+`build-deb.py` emits the .deb and an `ubuntu-VERSION.json` containing version, length, SHA256 and tested system declaration. After these checks, `scripts/sign-ubuntu-release.ps1` signs the verified package metadata using the controlled local key. Publish the .deb, signed ubuntu.json, public key and combined SHA256SUMS alongside the tested Windows installer/stable.json. Temporary tunnel URLs never enter signed manifests. Linux automatic updates are not implemented in 0.1.2; upgrades use a downloaded Debian package through apt.

@@ -1,0 +1,4 @@
+AQ Server Ubuntu uses the system Python runtime and packages aiohttp (Apache-2.0), Paramiko (LGPL-2.1) and GTK/WebKit (system distribution licenses). Their source/security updates are provided by Ubuntu's package manager; they are not vendored into this package.
+xterm.js and addon-fit: MIT, licenses in /usr/share/aq-server/web/vendor/.
+Lucide: ISC, license in /usr/share/aq-server/web/vendor/LICENSE-lucide.txt.
+Fonts are system fonts with their distribution licenses.

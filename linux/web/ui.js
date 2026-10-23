@@ -1,0 +1,16 @@
+export const $=(selector,root=document)=>root.querySelector(selector);
+export const $$=(selector,root=document)=>[...root.querySelectorAll(selector)];
+export const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const bytes=n=>{if(n==null)return '—';if(n<1024)return `${n} B`;let i=Math.min(3,Math.floor(Math.log(Math.max(1,n))/Math.log(1024)));return `${(n/1024**i).toFixed(i===1?0:1)} ${['B','KiB','MiB','GiB'][i]}`;};
+export const percent=n=>n==null?'—':`${Number(n).toFixed(1)}%`;
+export const numeric=(n,d=0)=>n==null?'—':Number(n).toFixed(d);
+export const timestamp=n=>new Date(n*1000).toLocaleString('zh-CN',{hour12:false});
+export function icons(root=document){window.lucide?.createIcons({root,attrs:{'stroke-width':1.65}});}
+export async function api(path,body){const r=await fetch(path,{credentials:'same-origin',headers:body?{'Content-Type':'application/json','X-AQ-Request':'1'}:{},method:body?'POST':'GET',body:body?JSON.stringify(body):undefined});let data;try{data=await r.json();}catch{data={error:r.status===409?'目标已存在，原文件未改动':`操作未完成 (${r.status})`};}if(!r.ok){const error=new Error(data.error||'操作未完成');error.detail=data;throw error;}return data;}
+let toastTimer;
+export function toast(message){const node=$('#toast');node.textContent=message;node.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>node.hidden=true,4500);}
+export function modal(title,body,footer=''){const node=$('#modal');if(node.open)node.close();$('#modal-content').innerHTML=`<div class="modal-header"><h2>${esc(title)}</h2><button class="icon-button modal-close" aria-label="关闭"><i data-lucide="x"></i></button></div><div class="modal-body">${body}</div><div class="modal-footer">${footer||'<button class="button modal-close">关闭</button>'}</div>`;$$('.modal-close',node).forEach(b=>b.onclick=()=>node.close());icons(node);node.showModal();return node;}
+export async function confirmAction(title,message,actionLabel='确定'){return new Promise(resolve=>{const node=modal(title,`<p class="release-copy">${esc(message)}</p>`,'<button class="button modal-close">取消</button><button class="button primary" id="confirm-action">'+esc(actionLabel)+'</button>');node.addEventListener('close',()=>resolve(false),{once:true});$('#confirm-action').onclick=()=>{resolve(true);node.close();};});}
+const movements=new WeakMap();
+export function animateNumber(node,value,digits=1){if(!node)return;if(value==null){if(node.firstChild?.nodeType===3)node.firstChild.nodeValue='—';else node.textContent='—';return;}const previous=movements.get(node)||{value:Number(value),frame:0};if(previous.target===value)return;cancelAnimationFrame(previous.frame);const begin=performance.now(),start=previous.value;const state={value:start,target:value,frame:0};movements.set(node,state);const text=node.firstChild?.nodeType===3?node.firstChild:node.insertBefore(document.createTextNode(''),node.firstChild);const tick=now=>{const t=matchMedia('(prefers-reduced-motion: reduce)').matches?1:Math.min(1,(now-begin)/480);state.value=start+(value-start)*(1-(1-t)**3);text.nodeValue=state.value.toFixed(digits);if(t<1)state.frame=requestAnimationFrame(tick);};state.frame=requestAnimationFrame(tick);}
+export function errorHandler(fn){return async(...args)=>{try{return await fn(...args);}catch(e){toast(e.message);}};}

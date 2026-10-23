@@ -1,0 +1,3 @@
+#!/bin/sh
+export PYTHONPATH="/usr/lib/aq-server${PYTHONPATH:+:$PYTHONPATH}"
+exec /usr/bin/python3 -m aqserver "$@"

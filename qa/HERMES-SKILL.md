@@ -21,7 +21,7 @@ description: AQ Server 专职测试员。用户提到 AQ Server、服务器监�
 ## 报告一个缺陷
 
 1. 在 `/root/aq-server/qa/evidence/` 保存脱敏截图、录屏或日志。不要包含密码、密钥、会话凭证和其他用户数据。
-2. 准备 JSON，字段：title、version、platform（website/windows）、severity（critical/high/normal/low）、environment、steps（数组）、expected、actual、evidence（相对 evidence/ 的路径数组）。
+2. 准备 JSON，字段：title、version、platform（website/windows/ubuntu）、severity（critical/high/normal/low）、environment、steps（数组）、expected、actual、evidence（相对 evidence/ 的路径数组）。
 3. 使用 `python3 /root/aq-server/qa/report_bug.py /path/to/report.json` 提交。它校验、去重并存档，不需要 GitHub token。禁止手工填造成功凭据。
 4. Codex 会将队列同步到 GitHub Issues，记录复现、修复提交和待复测版本。查看 `/root/aq-server/qa/status/issue-map.json` 获取 issue 链接。
 5. 用户微信反馈也按同样方式整理；信息不足先问用户关键复现条件。
@@ -31,3 +31,10 @@ description: AQ Server 专职测试员。用户提到 AQ Server、服务器监�
 查看 `/root/aq-server/qa/status/retest-requests.json`。只在指定版本、同一复现步骤下确认修复。记录原问题、验证版本、操作和结果，写到 `/root/aq-server/qa/retests/<issue号>.json`。失败则说明差异和新证据，交给 Codex 继续修；成功后由开发方关闭问题。你不直接修改正式安装包、签名清单或生产网站。
 
 默认仅响应用户测试指令和待复测事项，不反复给微信发送“无变化”的消息。保留既有其他项目的工作和资源。
+
+
+## Ubuntu 原生客户端
+
+Ubuntu 测试必须操作实际安装的 GTK/WebKit 工作台，记录版本、动作 JSON、真实窗口截图和观察。专用账号 aqserver-qa，隔离数据根 /var/lib/aq-server-qa/，工作台仅在 127.0.0.1:19871。不要将本机访问密钥、SSH 密码或带 key 的启动 URL 写入日志、报告或官网。
+
+原生动作驱动 /var/lib/aq-server-qa/native_driver.py 可通过 xvfb-run 在无桌面服务器中实际点击和输入；计划是测试输入，actions.json 和实际截图才是执行证据。驱动返回成功只表示计划执行完成，产品结论还需核对断言与画面。不能把 Ubuntu 结果当作 Windows 验收，也不能把尚未执行的场景标为通过。具体命令、待测版本、报告路径见 /root/aq-server/HERMES_HANDOFF.md 和 qa/status/ubuntu-hermes-test-request.md。
