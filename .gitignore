@@ -10,6 +10,8 @@ artifacts/
 **/id_ed25519*
 **/settings.xml
 **/History/
+!desktop/src/AQServer.Desktop/History/
+!desktop/src/AQServer.Desktop/History/**
 desktop/*.exe
 desktop/*.dll
 installer/redist/*.exe
@@ -25,3 +27,8 @@ qa/retests/
 
 __pycache__/
 *.py[cod]
+
+desktop/bin/
+desktop/obj/
+**/bin/
+**/obj/

@@ -1,12 +1,16 @@
-﻿param([Parameter(Mandatory=$true)][string]$SigningKey,[string]$BaseUrl='http://8.140.49.4/aqserver')
+param([Parameter(Mandatory=$true)][string]$SigningKey,[string]$BaseUrl='http://8.140.49.4/aqserver',[string]$ReleaseDirectory)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot
 $version=([IO.File]::ReadAllText((Join-Path $root 'VERSION'))).Trim()
 $name='AQServer-Setup-'+$version+'.exe'
 $installer=Join-Path $root ('artifacts/'+$name)
-$releaseDir=Join-Path $root 'website/public/releases'
+$releaseDir=if($ReleaseDirectory){[IO.Path]::GetFullPath($ReleaseDirectory)}else{Join-Path $root 'website/public/releases'}
+$changelog=[IO.File]::ReadAllText((Join-Path $root 'CHANGELOG.md'))
+$entry=[regex]::Match($changelog,'(?ms)^## '+[regex]::Escape($version)+'[^\r\n]*\r?\n(.*?)(?=^## |\z)')
+if(!$entry.Success){throw 'Current version has no changelog entry'}
+$notes=$entry.Groups[1].Value.Trim()
 New-Item -ItemType Directory -Force -Path $releaseDir|Out-Null
-$release=[ordered]@{appId='AQServer';version=$version;publishedUtc=[DateTime]::UtcNow.ToString('o');notes="托盘菜单与主窗口主题统一。`n新增完整目录安装器与关于、检查更新。`n偏好设置可应用，面板宽度可调整与记忆。`n底部布局固定，保留非线性数字与曲线动画。";installerUrl=$BaseUrl.TrimEnd('/')+'/releases/'+$name;installerSha256=(Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant();installerBytes=(Get-Item -LiteralPath $installer).Length}
+$release=[ordered]@{appId='AQServer';version=$version;publishedUtc=[DateTime]::UtcNow.ToString('o');notes=$notes;installerUrl=$BaseUrl.TrimEnd('/')+'/releases/'+$name;installerSha256=(Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant();installerBytes=(Get-Item -LiteralPath $installer).Length}
 $payload=[Text.Encoding]::UTF8.GetBytes(($release|ConvertTo-Json -Compress))
 $rsa=New-Object Security.Cryptography.RSACryptoServiceProvider
 $rsa.PersistKeyInCsp=$false

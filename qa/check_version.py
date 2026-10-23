@@ -4,9 +4,8 @@ root=Path(__file__).resolve().parents[1]
 v=(root/'VERSION').read_text(encoding='utf-8').strip()
 if not re.fullmatch(r'\d+\.\d+\.\d+',v):raise SystemExit('VERSION must be X.Y.Z')
 checks={
- 'desktop/AssemblyInfo.cs':['AssemblyVersion("'+v+'.0")','AssemblyFileVersion("'+v+'.0")'],
- 'desktop/Main.cs':['AQ Server v'+v],
- 'desktop/Launcher.cs':['v'+v+'-'],
+ 'desktop/Properties/AssemblyInfo.cs':['AssemblyVersion("'+v+'.0")','AssemblyFileVersion("'+v+'.0")'],
+ 'desktop/src/AQServer.Desktop/Monitoring/MonitorWindow.cs':['AQ Server v'+v],
  'website/src/App.tsx':['AQServer-Setup-'+v+'.exe','v'+v],
 }
 for file,needles in checks.items():

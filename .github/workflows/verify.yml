@@ -53,9 +53,9 @@ jobs:
           $qa=Join-Path $pwd 'artifacts/ci-qa'
           New-Item -ItemType Directory -Path $qa -Force|Out-Null
           $env:AQSERVER_LAYOUT_PATH=Join-Path $qa 'layout.xml'
-          foreach($name in @('update-tests','workspace-tests','v12-tests')){
+          foreach($name in @('module-tests','update-tests','workspace-tests','v12-tests','history-process-tests')){
             $folder=Join-Path $qa $name
-            $p=Start-Process -FilePath (Join-Path $pwd 'desktop/AQServer.App.exe') -ArgumentList @(('--'+$name),('"'+$folder+'"')) -WindowStyle Hidden -PassThru -Wait
+            $p=Start-Process -FilePath (Join-Path $pwd 'desktop/bin/Release/AQServer.exe') -ArgumentList @(('--'+$name),('"'+$folder+'"')) -WindowStyle Hidden -PassThru -Wait
             if($p.ExitCode-ne 0){Get-ChildItem $folder -Filter '*error.txt'|ForEach-Object{Get-Content $_.FullName};throw ($name+' failed: '+$p.ExitCode)}
           }
       - uses: actions/upload-artifact@v4
@@ -63,7 +63,6 @@ jobs:
         with:
           name: windows-candidate-and-evidence
           path: |
-            artifacts/AQServer-v*.exe
             artifacts/AQServer-v*-portable.zip
             artifacts/ci-qa
           retention-days: 14

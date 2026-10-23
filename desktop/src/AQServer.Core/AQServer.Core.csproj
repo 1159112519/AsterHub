@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{F965DE13-ADE5-5D65-BFBC-E5C4BF935C5F}</ProjectGuid><OutputType>Library</OutputType>
+    <RootNamespace>AQServer.Core</RootNamespace><AssemblyName>AQServer.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion><PlatformTarget>x64</PlatformTarget><LangVersion>5</LangVersion>
+    <OutputPath>..\..\bin\projects\AQServer.Core\</OutputPath><Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AppPaths.cs" />
+    <Compile Include="HardwareInfo.cs" />
+    <Compile Include="MetricMath.cs" />
+    <Compile Include="Models.cs" />
+    <Compile Include="ResourceSample.cs" />
+    <Compile Include="TerminalPreferences.cs" />
+    <Compile Include="..\..\Properties\AssemblyInfo.cs"><Link>Properties\AssemblyInfo.cs</Link></Compile>
+    <Compile Include="..\..\Properties\AssemblyAccess.cs"><Link>Properties\AssemblyAccess.cs</Link></Compile>
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

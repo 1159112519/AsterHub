@@ -1,5 +1,5 @@
 ﻿#ifndef AppVersion
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 #endif
 [Setup]
 #ifdef QAInstall
@@ -27,7 +27,7 @@ ArchitecturesAllowed=x64compatible
 MinVersion=10.0.17763
 SetupMutex=Local\AQServerSetup
 OutputDir={#ReleaseDir}
-SetupIconFile={#RepoRoot}\desktop\AQServer.ico
+SetupIconFile={#RepoRoot}\desktop\assets\AQServer.ico
 UninstallDisplayIcon={app}\AQServer.exe
 WizardStyle=modern
 DisableProgramGroupPage=yes
@@ -52,11 +52,33 @@ Source: "{#RepoRoot}\installer\redist\MicrosoftEdgeWebview2Setup.exe"; Flags: do
 Name: "{autoprograms}\AQ Server"; Filename: "{app}\AQServer.exe"
 Name: "{autodesktop}\AQ Server"; Filename: "{app}\AQServer.exe"; Tasks: desktopicon
 #endif
+[InstallDelete]
+; Remove only program-owned files from the previous flat layout. User data is outside {app}.
+Type: files; Name: "{app}\AQServer.App.exe"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\Renci.SshNet.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\BouncyCastle.Cryptography.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\Microsoft.Web.WebView2.Core.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\Microsoft.Web.WebView2.Wpf.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\WebView2Loader.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\System.Buffers.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\System.Memory.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\System.Runtime.CompilerServices.Unsafe.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\System.Numerics.Vectors.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\System.Formats.Asn1.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\System.Threading.Tasks.Extensions.dll"; Check: LegacyFlatLayout
+Type: files; Name: "{app}\Microsoft.Bcl.AsyncInterfaces.dll"; Check: LegacyFlatLayout
+Type: filesandordirs; Name: "{app}\TerminalAssets"; Check: LegacyFlatLayout
+Type: filesandordirs; Name: "{app}\UiAssets"; Check: LegacyFlatLayout
 [Run]
 Filename: "{app}\AQServer.exe"; Description: "启动 AQ Server"; Flags: nowait postinstall skipifsilent
 [Code]
 const RunKey = 'Software\Microsoft\Windows\CurrentVersion\Run';
 const EdgeKey = 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
+var LegacyLayoutAtStart: Boolean;
+function LegacyFlatLayout: Boolean;
+begin
+  Result := LegacyLayoutAtStart;
+end;
 function ValidRuntime(RootKey: Integer): Boolean;
 var Version: String;
 begin
@@ -65,6 +87,7 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var ExitCode: Integer;
 begin
+  LegacyLayoutAtStart := FileExists(ExpandConstant('{app}\AQServer.exe')) and DirExists(ExpandConstant('{app}\TerminalAssets'));
   Result := '';
 #ifndef QAInstall
   if not (ValidRuntime(HKCU32) or ValidRuntime(HKCU64) or ValidRuntime(HKLM32) or ValidRuntime(HKLM64)) then begin

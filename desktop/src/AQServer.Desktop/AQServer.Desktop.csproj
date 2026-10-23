@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{63312F49-003F-58CC-800A-14D01CBA3885}</ProjectGuid><OutputType>Library</OutputType>
+    <RootNamespace>AQServer.Desktop</RootNamespace><AssemblyName>AQServer.Desktop</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion><PlatformTarget>x64</PlatformTarget><LangVersion>5</LangVersion>
+    <OutputPath>..\..\bin\projects\AQServer.Desktop\</OutputPath><Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="Microsoft.Web.WebView2.Core"><HintPath>..\..\deps\webview2\sdk\lib\net462\Microsoft.Web.WebView2.Core.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Microsoft.Web.WebView2.Wpf"><HintPath>..\..\deps\webview2\sdk\lib\net462\Microsoft.Web.WebView2.Wpf.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="BouncyCastle.Cryptography"><HintPath>..\..\deps\sshnet\BouncyCastle.Cryptography.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces"><HintPath>..\..\deps\sshnet\Microsoft.Bcl.AsyncInterfaces.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Renci.SshNet"><HintPath>..\..\deps\sshnet\Renci.SshNet.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System.Buffers"><HintPath>..\..\deps\sshnet\System.Buffers.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System.Formats.Asn1"><HintPath>..\..\deps\sshnet\System.Formats.Asn1.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System.Memory"><HintPath>..\..\deps\sshnet\System.Memory.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System.Numerics.Vectors"><HintPath>..\..\deps\sshnet\System.Numerics.Vectors.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe"><HintPath>..\..\deps\sshnet\System.Runtime.CompilerServices.Unsafe.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="System.Threading.Tasks.Extensions"><HintPath>..\..\deps\sshnet\System.Threading.Tasks.Extensions.dll</HintPath><Private>False</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AQServer.Core\AQServer.Core.csproj"><Project>{F965DE13-ADE5-5D65-BFBC-E5C4BF935C5F}</Project><Name>AQServer.Core</Name><Private>False</Private></ProjectReference>
+    <ProjectReference Include="..\AQServer.Storage\AQServer.Storage.csproj"><Project>{34682B90-3B23-583F-AE84-9AEA1363D964}</Project><Name>AQServer.Storage</Name><Private>False</Private></ProjectReference>
+    <ProjectReference Include="..\AQServer.Platform.Windows\AQServer.Platform.Windows.csproj"><Project>{5DD235C6-E344-5213-9A00-6BEC60AB5226}</Project><Name>AQServer.Platform.Windows</Name><Private>False</Private></ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Appearance\Icons.cs" />
+    <Compile Include="Appearance\Shell.cs" />
+    <Compile Include="Appearance\Theme.cs" />
+    <Compile Include="Appearance\TrayColors.cs" />
+    <Compile Include="Appearance\TrayFlyout.cs" />
+    <Compile Include="Appearance\Workspace.cs" />
+    <Compile Include="Application\About.cs" />
+    <Compile Include="Application\AppUpdates.cs" />
+    <Compile Include="Application\UpdatePublicKey.cs" />
+    <Compile Include="Diagnostics\ArchiveTests.cs" />
+    <Compile Include="Diagnostics\CaptureTests.cs" />
+    <Compile Include="Diagnostics\CompactTests.cs" />
+    <Compile Include="Diagnostics\DesignReview.cs" />
+    <Compile Include="Diagnostics\FooterLayoutTests.cs" />
+    <Compile Include="Diagnostics\HistoryProcessTests.cs" />
+    <Compile Include="Diagnostics\HistoryInteractionTests.cs" />
+    <Compile Include="Diagnostics\InteractionTests.cs" />
+    <Compile Include="Diagnostics\MotionTests.cs" />
+    <Compile Include="Diagnostics\Snapshot.cs" />
+    <Compile Include="Diagnostics\StartupTests.cs" />
+    <Compile Include="Diagnostics\TerminalInspector.cs" />
+    <Compile Include="Diagnostics\TerminalTests.cs" />
+    <Compile Include="Diagnostics\Tests.cs" />
+    <Compile Include="Diagnostics\ThemeTests.cs" />
+    <Compile Include="Diagnostics\TrayTests.cs" />
+    <Compile Include="Diagnostics\UiReview.cs" />
+    <Compile Include="Diagnostics\UpdateTests.cs" />
+    <Compile Include="Diagnostics\V11Tests.cs" />
+    <Compile Include="Diagnostics\V122Tests.cs" />
+    <Compile Include="Diagnostics\V124Tests.cs" />
+    <Compile Include="Diagnostics\V12Tests.cs" />
+    <Compile Include="Diagnostics\WorkbenchTests.cs" />
+    <Compile Include="Files\FileBrowser.cs" />
+    <Compile Include="Files\FileNameCell.cs" />
+    <Compile Include="Files\TransferDrawer.cs" />
+    <Compile Include="History\ArchiveLayout.cs" />
+    <Compile Include="History\ArchiveUI.cs" />
+    <Compile Include="History\ArchiveSnapshotView.cs" />
+    <Compile Include="History\ArchiveProcessTable.cs" />
+    <Compile Include="Interaction\Interaction.cs" />
+    <Compile Include="Interaction\Motion.cs" />
+    <Compile Include="Interaction\NumericMotion.cs" />
+    <Compile Include="Interaction\PaneSizing.cs" />
+    <Compile Include="Monitoring\Charts.cs" />
+    <Compile Include="Monitoring\Compact.cs" />
+    <Compile Include="Monitoring\GpuCard.cs" />
+    <Compile Include="Monitoring\HardwareView.cs" />
+    <Compile Include="Monitoring\MiniCharts.cs" />
+    <Compile Include="Monitoring\MonitorWindow.cs" />
+    <Compile Include="Monitoring\ProcessDialogs.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Settings\SettingsWindow.cs" />
+    <Compile Include="Settings\TerminalSettings.cs" />
+    <Compile Include="Terminal\TerminalWorkspace.cs" />
+    <Compile Include="Diagnostics\InstallationTests.cs" />
+    <Compile Include="Files\Transfers.cs" />
+    <Compile Include="..\..\Properties\AssemblyInfo.cs"><Link>Properties\AssemblyInfo.cs</Link></Compile>
+    <Compile Include="..\..\Properties\AssemblyAccess.cs"><Link>Properties\AssemblyAccess.cs</Link></Compile>
+  </ItemGroup>
+<ItemGroup><EmbeddedResource Include="..\..\assets\AQServer.ico"><LogicalName>AQServer.ico</LogicalName></EmbeddedResource></ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQServer.Core", "src\AQServer.Core\AQServer.Core.csproj", "{F965DE13-ADE5-5D65-BFBC-E5C4BF935C5F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQServer.Storage", "src\AQServer.Storage\AQServer.Storage.csproj", "{34682B90-3B23-583F-AE84-9AEA1363D964}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQServer.Platform.Windows", "src\AQServer.Platform.Windows\AQServer.Platform.Windows.csproj", "{5DD235C6-E344-5213-9A00-6BEC60AB5226}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQServer.Desktop", "src\AQServer.Desktop\AQServer.Desktop.csproj", "{63312F49-003F-58CC-800A-14D01CBA3885}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AQServer.Bootstrap", "src\AQServer.Bootstrap\AQServer.Bootstrap.csproj", "{5B61A286-915B-5F8B-80A2-923D66F690AE}"
+EndProject
+Global
+ GlobalSection(SolutionConfigurationPlatforms) = preSolution
+  Release|x64 = Release|x64
+ EndGlobalSection
+ GlobalSection(ProjectConfigurationPlatforms) = postSolution
+  {F965DE13-ADE5-5D65-BFBC-E5C4BF935C5F}.Release|x64.ActiveCfg = Release|x64
+  {F965DE13-ADE5-5D65-BFBC-E5C4BF935C5F}.Release|x64.Build.0 = Release|x64
+  {34682B90-3B23-583F-AE84-9AEA1363D964}.Release|x64.ActiveCfg = Release|x64
+  {34682B90-3B23-583F-AE84-9AEA1363D964}.Release|x64.Build.0 = Release|x64
+  {5DD235C6-E344-5213-9A00-6BEC60AB5226}.Release|x64.ActiveCfg = Release|x64
+  {5DD235C6-E344-5213-9A00-6BEC60AB5226}.Release|x64.Build.0 = Release|x64
+  {63312F49-003F-58CC-800A-14D01CBA3885}.Release|x64.ActiveCfg = Release|x64
+  {63312F49-003F-58CC-800A-14D01CBA3885}.Release|x64.Build.0 = Release|x64
+  {5B61A286-915B-5F8B-80A2-923D66F690AE}.Release|x64.ActiveCfg = Release|x64
+  {5B61A286-915B-5F8B-80A2-923D66F690AE}.Release|x64.Build.0 = Release|x64
+ EndGlobalSection
+EndGlobal

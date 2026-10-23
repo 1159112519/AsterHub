@@ -12,7 +12,7 @@ public static class TerminalTests {
  Check(cursor.Contains("true"),kind+" cursor must follow actual prompt before typing: "+cursor);
  view.DiagnosticInput("echo __AQ_CURSOR_CHECK__");await Task.Delay(600);
  string after=await view.DiagnosticWeb.ExecuteScriptAsync(js);File.WriteAllText(Path.Combine(folder,"prompt-"+kind+"-typed.json"),after);
- string verify=await view.DiagnosticWeb.ExecuteScriptAsync("(()=>{const b=term.buffer.active,end=b.baseY+b.cursorY,p=window.__aqPromptCheck;let line='';for(let y=p.start;y<=end;y++)line+=b.getLine(y).translateToString(y==end);return JSON.stringify({ok:line.startsWith(p.prefix+'echo __AQ_CURSOR_CHECK__'),line,cursorX:b.cursorX});})()");
+ string verify="";for(int attempt=0;attempt<60;attempt++){verify=await view.DiagnosticWeb.ExecuteScriptAsync("(()=>{const b=term.buffer.active,end=b.baseY+b.cursorY,p=window.__aqPromptCheck;let line='';for(let y=p.start;y<=end;y++)line+=b.getLine(y).translateToString(y==end);return JSON.stringify({ok:line.startsWith(p.prefix+'echo __AQ_CURSOR_CHECK__'),line,cursorX:b.cursorX});})()");if(verify.Contains("true"))break;await Task.Delay(150);}
  Check(verify.Contains("true"),kind+" command must follow actual prompt: "+verify);view.DiagnosticInput("\x15");await Task.Delay(200);File.AppendAllText(Path.Combine(folder,"prompt-results.txt"),kind+"_INPUT_AFTER_PROMPT=PASS\n");
  }
  static async Task ReviewChecks(TerminalView remote,string folder){

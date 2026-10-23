@@ -1,24 +1,20 @@
-# 发布 v0.1.0
+# 构建与发布
 
-保留 WPF/.NET Framework 实现。现有应用负载体积与性能没有证据要求更换语言，避免在发布准备阶段引入兼容性重写。
+本轮将 Windows 程序拆成独立组件，保留 .NET Framework 4.7.2/WPF，以既有功能兼容为优先。Ubuntu 客户端是后续迁移工作，当前版本不声称已支持 Linux 运行。
 
-公开版本从 0.1.0 开始：它表达已有可用功能但仍处于早期阶段，内部 v12.x 仅是迭代序号。后续小修复 0.1.1，新功能 0.2.0；核心流程和兼容性稳定后再考虑 1.0.0。
+1. 用 `python scripts/set-version.py X.Y.Z` 统一版本，维护 CHANGELOG，运行 `python qa/check_version.py`。
+2. 运行 `desktop/build.ps1`。源码在 desktop/AQServer.sln，完整运行目录在 desktop/bin/Release。
+3. 运行 `scripts/build-release.ps1 -InnoCompiler C:\Tools\InnoSetup\ISCC.exe`，得到正式安装器、隔离 QA 安装器、目录 ZIP。QA 安装器不能交付用户。
+4. 运行 `scripts/verify-packaged.ps1`；运行 `scripts/verify-installer.ps1 -BaselineInstaller <上一版 QA 安装器>`，验证旧目录覆盖升级、重装、终端、卸载及数据保留。
+5. 验证通过后，运行 `scripts/sign-release.ps1 -SigningKey <受控私钥路径> -ReleaseDirectory <候选发布目录>`。签名私钥不可提交、公开或写入日志。
+6. 带上 `-ReleaseManifest <候选目录/stable.json>` 再执行验证，确认签名版本、安装包长度及 SHA256 与程序一致。
+7. 将候选签名清单、SHA256SUMS.txt、正式安装器一起放入网站构建的 releases 目录，完成网站构建与网页检查。
+8. 只有明确发布时才把已验证的候选部署到服务器并切换正式清单。外网下载和散列验证通过后才能称为公开发布。
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-release.ps1 -InnoCompiler C:\Tools\InnoSetup\ISCC.exe
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/sign-release.ps1 -SigningKey C:\Private\release-signing-key.xml
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-packaged.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-installer.ps1
-cd website
-npm ci
-npm run build
-npm run test:sites
-```
+更新使用一致版本的整包安装器，不允许单独覆盖随机版本 DLL。正式 AppId 沿用原值；旧平铺布局仅清理明确的程序资产。用户配置和历史路径不变。
 
-签名私钥只保存在维护者私有位置。首次构建他人无法生成同一官方签名；若自行发行，应替换 desktop/UpdatePublicKey.cs 与更新地址，并使用自己的私钥。不要把生产私钥、SSH 私钥、用户设置或历史存档提交 Git。
+默认公开版本从 0.1.0 开始；本次兼容性重构为 0.1.1。后续新平台或功能批次可使用 0.2.0，正式 1.0.0 需核心流程和兼容性稳定后再决定。
 
-发布前执行 `python scripts/set-version.py 0.1.1` 同步公开版本位置，再执行 `python qa/check_version.py` 检查一致性。手动补充 CHANGELOG，检查安装器版本和下载链接；不要改写历史更新记录。
+完整分发物为安装 EXE、目录 ZIP、签名清单及散列、官网候选包和源码。根启动 EXE 依赖同包子目录。Windows Authenticode 与更新清单签名是不同机制；当前安装器没有 Authenticode 代码签名证书。
 
-验证：精确打包 EXE 的托盘、布局、设置、终端、启动、主题、签名更新；同一负载的隔离安装、运行、卸载；真实手机/平板/桌面浏览器验收官网。QA 安装器使用独立 AppId/mutex，不改正常版开机启动，不交付用户。
-
-最终产物：完整目录安装器、单 EXE 免安装版、目录 ZIP、署名清单和 SHA256、官网部署包、干净源码。Windows Authenticode 与更新清单签名是不同机制；当前安装器没有代码签名证书。
+GitHub CI 执行编译和受控测试；本机 GUI、隔离安装、真实硬件采集和真实 SSH 环境按相应证据分别记录。CI 不自动部署到服务器。

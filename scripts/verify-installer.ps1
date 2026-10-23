@@ -1,45 +1,79 @@
-﻿$ErrorActionPreference='Stop'
+﻿param([string]$BaselineInstaller,[string]$ReleaseManifest)
+$ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot
-$qa=Join-Path $root ('artifacts/qa/installer-'+[guid]::NewGuid().ToString('N'))
-$destination=Join-Path $qa 'program'
+$version=([IO.File]::ReadAllText((Join-Path $root 'VERSION'))).Trim()
+$qa=Join-Path $root ('artifacts/qa/installer-'+$version+'-'+[guid]::NewGuid().ToString('N'))
+$destination=Join-Path $qa 'program with spaces'
 New-Item -ItemType Directory -Force -Path $qa | Out-Null
-$installer=Join-Path $root 'artifacts/AQServer-Setup-QA-0.1.0.exe'
-$results=@('Installer flow uses the same payload and install/uninstall code; QA AppId and mutex are isolated, startup registration is excluded.')
-$p=Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOICONS',('/DIR="'+$destination+'"'),('/LOG="'+(Join-Path $qa 'install.log')+'"')) -WindowStyle Hidden -PassThru -Wait
-if($p.ExitCode -ne 0){throw ('Installer exit '+$p.ExitCode)}
-$results+='INSTALL_EXIT=0'
-$installed=Join-Path $destination 'AQServer.exe'
-if((Get-FileHash -LiteralPath $installed).Hash -ne (Get-FileHash -LiteralPath (Join-Path $root 'desktop/AQServer.App.exe')).Hash){throw 'Installed EXE differs from release'}
-$results+='INSTALLED_EXE_EQUALS_BUILT_APP=True'
-$manifest=Get-Content (Join-Path $destination 'payload-manifest.json') -Raw | ConvertFrom-Json
-foreach($file in $manifest){if((Get-FileHash -LiteralPath (Join-Path $destination $file.File)).Hash -ne $file.SHA256){throw ('Installed payload mismatch '+$file.File)}}
-foreach($folder in @('TerminalAssets','UiAssets','Licenses')){if(!(Test-Path -LiteralPath (Join-Path $destination $folder))){throw ('Missing program directory '+$folder)}}
-$results+=('INSTALLED_PAYLOAD_HASHES_VERIFIED='+$manifest.Count)
-$env:AQSERVER_RELEASE_MANIFEST=Join-Path $root 'website/public/releases/stable.json'
-$env:AQSERVER_RELEASE_INSTALLER=Join-Path $root 'artifacts/AQServer-Setup-0.1.0.exe'
-$env:AQSERVER_RUNTIME_ROOT=Join-Path $qa 'runtime'
-$p=Start-Process -FilePath $installed -ArgumentList @('--update-tests',('"'+(Join-Path $qa 'app-check')+'"')) -WindowStyle Hidden -PassThru -Wait
-if($p.ExitCode -ne 0){throw 'Installed app update checks failed'}
-$results+='INSTALLED_APP_CHECKS=PASS'
-$p=Start-Process -FilePath $installed -ArgumentList @('--tray-tests',('"'+(Join-Path $qa 'tray-check')+'"')) -WindowStyle Hidden -PassThru -Wait
-if($p.ExitCode-ne 0){throw 'Installed tray test failed'}
-$results+='INSTALLED_TRAY_CHECKS=PASS'
-$p=Start-Process -FilePath $installed -ArgumentList @('--startup-smoke',('"'+(Join-Path $qa 'startup-check')+'"')) -WindowStyle Hidden -PassThru -Wait
-if($p.ExitCode-ne 0){throw 'Installed startup smoke failed'}
-$results+='INSTALLED_STARTUP_CHECKS=PASS'
+$installer=Join-Path $root ('artifacts/AQServer-Setup-QA-'+$version+'.exe')
+$results=@()
+function Install([string]$path,[string]$log){
+ $p=Start-Process -FilePath $path -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOICONS',('/DIR="'+$destination+'"'),('/LOG="'+(Join-Path $qa $log)+'"')) -WindowStyle Hidden -PassThru -Wait
+ if($p.ExitCode-ne 0){throw ('Installer exit '+$p.ExitCode)}
+}
+function CheckPayload {
+ $manifest=Get-Content -LiteralPath (Join-Path $destination 'payload-manifest.json') -Raw | ConvertFrom-Json
+ foreach($file in $manifest){$path=Join-Path $destination $file.File;if(!(Test-Path -LiteralPath $path)-or(Get-FileHash -LiteralPath $path).Hash-ne$file.SHA256){throw ('Installed payload mismatch '+$file.File)}}
+ foreach($folder in @('app/modules','runtime/managed','runtime/win-x64','resources/terminal','resources/ui','licenses','docs')){if(!(Test-Path -LiteralPath (Join-Path $destination $folder))){throw ('Missing directory '+$folder)}}
+}
+# A real previous isolated installer exercises flat-layout migration, without touching the real AppId.
+if($BaselineInstaller){Install $BaselineInstaller 'baseline-install.log';if(!(Test-Path -LiteralPath (Join-Path $destination 'TerminalAssets'))){throw 'Baseline is not the legacy flat layout'};$legacyRootDlls=@(Get-ChildItem -LiteralPath $destination -Filter '*.dll' -File | Select-Object -ExpandProperty Name);$results+='BASELINE_INSTALL=PASS'}
+if($BaselineInstaller){
+ foreach($flag in @('config-tests','v5-persistence-write')){
+  $folder=Join-Path $qa $(if($flag-eq'config-tests'){'legacy-settings'}else{'legacy-history'})
+  $p=Start-Process -FilePath (Join-Path $destination 'AQServer.exe') -ArgumentList @(('--'+$flag),('"'+$folder+'"')) -WindowStyle Hidden -PassThru -Wait
+  if($p.ExitCode-ne 0){throw ('Baseline data generation failed '+$flag)}
+ }
+}
+
 $data=Join-Path $qa 'user-data'
-New-Item -ItemType Directory -Path $data | Out-Null
-[IO.File]::WriteAllText((Join-Path $data 'sentinel.txt'),'preserve outside install directory')
+New-Item -ItemType Directory -Path $data -Force|Out-Null
+[IO.File]::WriteAllText((Join-Path $data 'sentinel.txt'),'settings/history must remain outside the program directory')
+if(Test-Path -LiteralPath $destination){[IO.File]::WriteAllText((Join-Path $destination 'user-note.keep'),'unrecognized user files must survive upgrade')}
+Install $installer 'install.log'
+CheckPayload
+$results+='INSTALL_AND_PAYLOAD_HASHES=PASS'
+if($BaselineInstaller){
+ foreach($legacy in (@('TerminalAssets','UiAssets','AQServer.App.exe')+$legacyRootDlls)){if(Test-Path -LiteralPath (Join-Path $destination $legacy)){throw ('Legacy program asset remains '+$legacy)}}
+ if(!(Test-Path -LiteralPath (Join-Path $destination 'user-note.keep'))){throw 'Upgrade removed an unrecognized file'}
+ $results+='LEGACY_LAYOUT_UPGRADE=PASS'
+}
+if($BaselineInstaller){
+ $folder=Join-Path $qa 'legacy-history'
+ $p=Start-Process -FilePath (Join-Path $destination 'AQServer.exe') -ArgumentList @('--v5-persistence-read',('"'+$folder+'"')) -WindowStyle Hidden -PassThru -Wait
+ if($p.ExitCode-ne 0){throw 'History generated by 0.1.0 cannot be read after upgrade'}
+ $checker=Join-Path $PSScriptRoot 'verify-legacy-settings.ps1'
+ $settings=Join-Path $qa 'legacy-settings/servers.xml'
+ $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$checker+'"'),'-InstallRoot',('"'+$destination+'"'),'-SettingsFile',('"'+$settings+'"'))
+ $p=Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput (Join-Path $qa 'legacy-settings-check.txt') -RedirectStandardError (Join-Path $qa 'legacy-settings-error.txt')
+ if($p.ExitCode-ne 0){Get-Content -LiteralPath (Join-Path $qa 'legacy-settings-error.txt');throw 'Legacy settings check failed'}
+ $results+='REAL_LEGACY_SETTINGS_AND_HISTORY=PASS'
+}
+$env:AQSERVER_RUNTIME_ROOT=Join-Path $qa 'runtime'
+$env:AQSERVER_WEBVIEW_DATA=Join-Path $qa 'webview-profile'
+$env:AQSERVER_LAYOUT_PATH=Join-Path $qa 'layout.xml'
+$env:AQSERVER_RELEASE_MANIFEST=$ReleaseManifest
+$env:AQSERVER_RELEASE_INSTALLER=if($ReleaseManifest){Join-Path $root ('artifacts/AQServer-Setup-'+$version+'.exe')}else{$null}
+foreach($test in @('module-tests','update-tests','tray-tests','startup-smoke','terminal-tests')){
+ $output=Join-Path $qa $test
+ New-Item -ItemType Directory -Path $output -Force|Out-Null
+ $p=Start-Process -FilePath (Join-Path $destination 'AQServer.exe') -WorkingDirectory $qa -ArgumentList @(('--'+$test),('"'+$output+'"')) -WindowStyle Hidden -PassThru
+ if(!$p.WaitForExit(120000)){Stop-Process -Id $p.Id -Force;throw ('Installed test timeout '+$test)}
+ $p.Refresh();if($p.ExitCode-ne 0){Get-ChildItem -LiteralPath $output -Filter '*error.txt'|ForEach-Object{Get-Content -LiteralPath $_.FullName};throw ('Installed test failed '+$test)}
+ $results+=('INSTALLED_'+$test+'=PASS')
+}
+# Reinstalling the same version must also preserve an existing installation.
+Install $installer 'repair-install.log'
+CheckPayload
+$results+='REINSTALL=PASS'
 $p=Start-Process -FilePath (Join-Path $destination 'unins000.exe') -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/LOG="'+(Join-Path $qa 'uninstall.log')+'"')) -WindowStyle Hidden -PassThru -Wait
-if($p.ExitCode -ne 0){throw ('Uninstaller exit '+$p.ExitCode)}
-# Inno's uninstaller helper may complete cleanup shortly after its parent exits.
+if($p.ExitCode-ne 0){throw ('Uninstaller exit '+$p.ExitCode)}
 $deadline=[DateTime]::UtcNow.AddSeconds(10)
-while((Test-Path -LiteralPath $installed) -and [DateTime]::UtcNow -lt $deadline){Start-Sleep -Milliseconds 200}
-if(Test-Path -LiteralPath $installed){throw 'Installed app not removed'}
-if(!(Test-Path -LiteralPath (Join-Path $data 'sentinel.txt'))){throw 'External data was deleted'}
-$results+='UNINSTALL_EXIT=0'
-$results+='PROGRAM_REMOVED=True'
-$results+='EXTERNAL_DATA_PRESERVED=True'
-$results | Set-Content -LiteralPath (Join-Path $qa 'installer-results.txt') -Encoding UTF8
+while((Test-Path -LiteralPath (Join-Path $destination 'AQServer.exe'))-and[DateTime]::UtcNow-lt$deadline){Start-Sleep -Milliseconds 200}
+if(Test-Path -LiteralPath (Join-Path $destination 'AQServer.exe')){throw 'Program was not removed'}
+if(!(Test-Path -LiteralPath (Join-Path $data 'sentinel.txt'))){throw 'External data was removed'}
+if($BaselineInstaller-and!(Test-Path -LiteralPath (Join-Path $destination 'user-note.keep'))){throw 'Uninstall removed an unrecognized file'}
+$results+='UNINSTALL_AND_DATA_PRESERVATION=PASS'
+$results|Set-Content -LiteralPath (Join-Path $qa 'installer-results.txt') -Encoding UTF8
 $results
 Write-Output ('INSTALLER_QA='+$qa)
