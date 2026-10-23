@@ -4,6 +4,8 @@ root=Path(__file__).resolve().parents[1]
 v=(root/'VERSION').read_text(encoding='utf-8').strip()
 if not re.fullmatch(r'\d+\.\d+\.\d+',v):raise SystemExit('VERSION must be X.Y.Z')
 checks={
+ 'installer/AQServer.iss':['#define AppVersion '+chr(34)+v+chr(34)],
+ 'deployment/deploy.sh':['AQServer-Setup-'+v+'.exe'],
  'linux/aqserver/storage.py':["VERSION = '"+v+"'"],
  'linux/README.md':['AQServer-'+v+'-ubuntu-all.deb'],
  'desktop/Properties/AssemblyInfo.cs':['AssemblyVersion("'+v+'.0")','AssemblyFileVersion("'+v+'.0")'],
