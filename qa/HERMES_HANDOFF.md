@@ -11,7 +11,7 @@
 - Windows：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/AQServer-Setup-0.1.2.exe
 - Windows SHA256：`314e7299c378d2a660883fb19e5da848181850ba9d8f34d2f8dedc827d9ffc53`，9314467 字节。
 - 公开签名清单：`releases/ubuntu.json`、`releases/stable.json`；校验表：`releases/SHA256SUMS.txt`。
-- GitHub：1159112519/aq-server（私有仓库）。问题 #2 是深色下拉框，#3 是拒绝上传的队列缺失。原始IP公网入口问题仍是 #1。
+- GitHub：1159112519/aq-server（私有仓库）。问题 #2 是拒绝上传的队列缺失，#3 是深色下拉框；以私有 status/issue-map.json 与 status/ubuntu-issue-queue-map.json 的 ID 映射为准。原始IP公网入口问题仍是 #1。
 
 本次已由 Codex 在外网禁用代理完整下载两个安装包，校验15项网站资源和签名清单对应的散列/大小。网址是临时 Cloudflare Quick Tunnel 预览，重启可能改变；以 `qa/status/public-preview.json` 及当前 `aqserver-web-preview.service` InvocationID 日志为准。不要称为永久域名。
 
