@@ -34,3 +34,15 @@ desktop/obj/
 **/obj/
 
 website/public/releases/*.deb
+
+# Credentials, signing material and debug symbols are never distribution assets.
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+*.pdb
+id_rsa
+id_ed25519

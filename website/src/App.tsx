@@ -7,7 +7,7 @@ const windowsDate = releaseVersions.windowsDate.replace(/-/g, '.');
 const ubuntuDate = releaseVersions.ubuntuDate.replace(/-/g, '.');
 const installer = `./releases/AQServer-Setup-${windowsVersion}.exe`;
 const ubuntuInstaller = `./releases/AQServer-${ubuntuVersion}-ubuntu-all.deb`;
-const repository = 'https://github.com/1159112519/aq-server-releases/releases';
+const repository = 'https://github.com/1159112519/aq-server/releases';
 
 function ProductReveal() {
   const art = useRef<HTMLDivElement>(null);

@@ -8,6 +8,13 @@ Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 当前�
 - 内嵌终端、双栏文件浏览、复制传输及传输进度。
 - 多主题、迷你置顶窗口、托盘、开机启动及签名更新清单；Windows 支持一键更新并重启。
 
+## 下载
+
+- [Windows 安装包与免安装版](https://github.com/1159112519/aq-server/releases)
+- [Ubuntu Debian 安装包](https://github.com/1159112519/aq-server/releases/tag/ubuntu-v0.1.3)
+
+请在Release的Assets中选择对应平台的正式安装包。GitHub自动生成的Source code压缩包是源码，不是可直接安装的软件。
+
 ## 目录
 
 - `linux/`：Ubuntu .deb、原生 GTK/WebKit 入口、本机服务与 Linux/SSH 采集。安装和能力边界见 `linux/README.md`。
@@ -34,8 +41,8 @@ npm run dev
 
 ## 更新日志与问题反馈
 
-各版本新增功能、优化、修复与升级注意事项发布在 `1159112519/aq-server-releases` 的 Releases；完整记录见 [CHANGELOG.md](CHANGELOG.md)。Windows 与 Ubuntu 分别维护版本。反馈问题时请提供平台、版本和复现步骤，并遮盖私人信息。此源码仓库保持私有，公开发行仓库不包含应用源码。
+各版本新增功能、优化、修复与升级注意事项发布在 [GitHub Releases](https://github.com/1159112519/aq-server/releases)；完整记录见 [CHANGELOG.md](CHANGELOG.md)。Windows 与 Ubuntu 分别维护版本。反馈问题时请提供平台、版本和复现步骤，并遮盖私人信息。本仓库公开提供项目代码、版本说明及正式发行包。
 
 ## 发布状态
 
-Windows v0.2.0 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目源代码当前仅供仓库授权人员访问；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+Windows v0.2.0 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。

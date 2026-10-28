@@ -1,36 +1,36 @@
-# Windows 0.2.0 / Ubuntu 0.1.3 release validation
+# Windows 0.2.0 发布说明
 
-Release code: `3292ae2d912bd14fa80ab5c9c7be6e1fd69f886c` (plus a documentation handoff commit). Platforms release independently. Ubuntu remains a preview and need not track future Windows changes.
+本文件记录已发布版本的用户可见变化。Windows 与 Ubuntu 独立发版；同一版本号的不同平台分别列出。当前版本均为早期预览版。
 
-## Delivered behavior
+## 0.2.0 — 2026-10-28 · Windows
 
-Grouped workspace/navigation, coherent typography/forms/icons/themes, simpler history controls and segmented CPU/memory views. Real local/SSH network and mounted-volume collection supplies five adaptive persistent resource groups, detail views and additive archive snapshots. Nonlinear chart/number/page motion and cached hover details remain. Windows supports a configurable update source, cancellation/deadlines and tray outside-click dismissal.
+### 新增功能
 
-Windows confirms once before downloading and verifying, then exits normally, installs silently in its current directory, and restarts. Old UPDATE callers without a PID remain compatible. The installed0.1.x client cannot acquire the new client-side flow until upgraded. Ubuntu upgrades with apt.
+- 底部常驻资源栏增加网络上下行和存储容量，与 CPU、GPU、内存一起显示。
+- 新增本机及 SSH 服务器的网络接口、分区容量详情；新历史记录保存网络和存储快照。
+- 新增“更新并重启”：一次确认后下载、校验、退出、安装并重新打开程序，保留连接配置和历史。
+- 更新源支持独立设置，并支持取消检查、超时提示及安装日志。
 
-## Package identity
+### 体验优化
 
-- Windows0.2.0: SHA256 `87471115566381cccba2d80ecfdb6b0661130ea54ce59e8089fbb699f955e5aa`; 9398636 bytes.
-- Ubuntu0.1.3: SHA256 `873b5202344097ea95e3e641b2792645714d914791d79d59fe2876df31201b9d`; 222790 bytes.
-- Both match their own signed metadata. Release metadata signatures are separate from Windows publisher/Authenticode signing; no Authenticode certificate is claimed.
+- 重新设计暖灰工作台，统一导航、字体、图标、按钮、菜单、终端和文件面板的主题。
+- 五个底栏资源分别成组，宽窗口单排、窄窗口按 3+2 排列；数字位数变化时保持图表位置。
+- 合并历史时间范围与存档操作；加大日期输入和表单字号；CPU、内存采用分段导航。
+- 更新程序图标，分别提供适配浅色与深色任务栏的托盘图标；保留数字、曲线、进度条与页面切换动画。
 
-## Executed verification
+### 问题修复
 
-- Shared QA: ten Python tests, including three independent-platform version tests; six tests execute the actual chart class for leave-frame ordering, stationary hover, navigation cleanup,300-second mapping and hidden canvases.
-- Windows: fifteen packaged suites passed for the UI/network/storage candidate. Later updater changes reran module/update checks against the final signed installer and exercised the installed application. Sixty-eight view/font inventories and multi-theme footer geometry passed. Real legacy settings/archive migration, reinstall, uninstall and retention passed under an isolated AppId.
-- Automatic update: a native caller closed, the installer waited, silent installation completed, then a new native window opened. A screenshot and JSON checked visible/loaded state, version and exact installation path. Both PID-based and legacy mutex-based protocols passed. External antivirus/disk failure modes are not universally certified.
-- Ubuntu: fifteen runtime tests; actual upgrade/reinstall/remove/install;61 native GTK/WebKit actions and eleven screenshots covering local/SSH network/storage, wide/narrow footer, hover across refresh, settings, history and terminal. Config/key preservation used complete hashes; the approximately3.4GB SQLite check used size,mtime_ns and bounded first/last sampled hash, not a complete database byte hash.
-- Website: TypeScript/React/Vite build and four Sites tests pass. Real GTK/WebKit checks at1440/834/390 widths verify overflow, separate versions and correct downloads, mobile navigation, release-note spacing and spotlight motion; six screenshots. These are not physical iOS/Safari or all-browser acceptance.
-- Public HTTPS: fifteen resources and full Windows/Ubuntu downloads verified without proxy; signed manifest bytes, SHA256 and lengths match. Private QA/config routes are not served.
+- 修复托盘右键菜单点击其他窗口后不消失。
+- 修复部分图表布局、GPU 进程表头及数值对齐问题。
+- 修复 SSH 分区名称含空格时解析不完整的问题。
+- 自动更新兼容旧更新参数，等待原进程正常退出后再替换文件，修复静默安装后未自动打开程序的问题。
 
-## Private evidence
+### 升级与已知限制
 
-Local ignored artifacts/qa contains installed validation `installer-0.2.0-953996503c5340f392643a0be7034a87` and signed-package tests `packaged-0.2.0-90dd4844dfd7493c8e612e46e3f09edc`. Developer native evidence is `/var/lib/aq-server-qa/evidence/codex-0.1.3/`; website evidence is `/var/lib/aq-server-qa/evidence/website-0.2.0/`.
+- 从旧版升级后才能获得新的“更新并重启”交互；更新会结束当前终端会话。
+- 更新保留签名、文件长度与 SHA256 校验。部分网络下默认更新入口仍不可达，可设置可访问的更新源；临时预览地址可能变化。
+- 安装器尚无 Windows 发布者代码签名；发布清单签名与 Windows 代码签名是两种机制。
+- Ubuntu 当前保持 0.1.3，不要求随 Windows 同步升级。
 
-Hermes independently executed the installed Ubuntu0.1.3 native core suite:61 actions and11 screenshots. Parent audit matched the actual action files, all screenshot files and final package hash. Report: `qa/status/ubuntu-hermes-0.1.3.json`; audit: `qa/status/hermes-audit-0.1.3.json`. Result is core-suite-pass-supplemental-incomplete. Two focused attempts failed a telemetry-refresh precondition or an overly strict moving-window tooltip assertion; the third attempt is unknown/interrupted. Theme screenshot timing and narrow viewport observations remain unconfirmed. No confirmed new defect was established. These limits are retained in the raw report; this is not all-platform acceptance. Hermes memory contains the current preview URL; independent platform versions are authoritative in the handoff/report, not verified in its compact memory.
 
-## Access and compatibility
-
-Verified temporary preview: https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/. Quick Tunnel may change hostname. Original IP ingress and the default canonical update endpoint remain a separate known blocker; preview access does not repair them. A reachable user-configured mirror transports the same signed package. Temporary addresses are not embedded in binaries or signed canonical URLs.
-
-Ubuntu24.04/other architectures, physical Linux tray/desktop drag-out/HiDPI and every platform/browser combination remain separate validation. The isolated Windows AppId protects the user's installed application and data.
+安装包SHA256：`87471115566381cccba2d80ecfdb6b0661130ea54ce59e8089fbb699f955e5aa`。
