@@ -83,7 +83,7 @@ public sealed class AboutWindow : Window
         var site = Theme.Nav("访问官网", () => Process.Start(new ProcessStartInfo(UpdateSources.WebsiteFor(UpdateSources.CurrentEndpoint)) { UseShellExecute = true }));
         site.HorizontalAlignment = HorizontalAlignment.Left; footer.Children.Add(site);
         check = Theme.Button("检查更新", Check); check.MinWidth = 110; Grid.SetColumn(check, 1); footer.Children.Add(check);
-        download = Theme.Button("下载更新", Download); download.MinWidth = 110; download.Margin = new Thickness(10, 0, 0, 0);
+        download = Theme.Button("更新并重启", Download); download.MinWidth = 110; download.Margin = new Thickness(10, 0, 0, 0);
         download.Visibility = Visibility.Collapsed; download.BorderBrush = Theme.Accent;
         Grid.SetColumn(download, 2); footer.Children.Add(download); Grid.SetRow(footer, 5); root.Children.Add(footer);
         Closed += (s, e) => { closed = true; lifetime.Cancel(); };
@@ -115,7 +115,7 @@ public sealed class AboutWindow : Window
             release = info; installer = null; notes.Text = info.notes ?? "";
             if (info.ParsedVersion > AppUpdates.CurrentVersion) {
                 status.Text = "发现新版本 " + info.version;
-                download.Content = "下载更新"; download.Visibility = Visibility.Visible;
+                download.Content = "更新并重启"; download.Visibility = Visibility.Visible;
             } else {
                 status.Text = "当前已是最新版本（" + AppUpdates.DisplayVersion + "）";
                 download.Visibility = Visibility.Collapsed;
@@ -131,6 +131,8 @@ public sealed class AboutWindow : Window
     async void Download()
     {
         if (busy || release == null) return;
+        if (MessageBox.Show(this, "更新至 AQ Server " + release.version + " 并重启？\n\n下载和校验后将自动关闭程序、安装并重新打开。终端会话会结束，连接配置和本地历史会保留。",
+            "更新并重启", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         if (installer != null) { Install(); return; }
         operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         var currentOperation = operation;
@@ -143,7 +145,7 @@ public sealed class AboutWindow : Window
                 }
             }), currentOperation.Token);
             if (closed) return;
-            status.Text = "下载完成，校验通过。"; download.Content = "安装并退出";
+            status.Text = "校验通过，正在准备安装并重启…"; Install();
         } catch (Exception error) { if (!closed) status.Text = AppUpdates.FriendlyError(error); }
         finally {
             currentOperation.Dispose(); operation = null;
@@ -153,13 +155,15 @@ public sealed class AboutWindow : Window
 
     void Install()
     {
-        if (MessageBox.Show(this, "安装 AQ Server " + release.version + "？\n\n安装时将退出当前程序，终端会话将关闭。服务器配置和本地历史会保留。",
-            "安装更新", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         try {
-            AppUpdates.VerifyInstaller(installer, release);
-            Process.Start(new ProcessStartInfo(installer, "/UPDATE=1") { UseShellExecute = true });
-            Close(); if (installExit != null) installExit();
-        } catch (Exception error) { status.Text = AppUpdates.FriendlyError(error); }
+            using (var process = UpdateInstallation.Start(installer, release)) {
+                status.Text = "正在保存并安装更新…";
+                Close(); if (installExit != null) installExit();
+            }
+        } catch (Exception error) {
+            status.Text = "安装未启动，当前程序仍在运行。" + AppUpdates.FriendlyError(error);
+            download.Content = "重试更新";
+        }
     }
 
     void ChangeSource()

@@ -48,6 +48,7 @@
     <Compile Include="Application\About.cs" />
     <Compile Include="Application\AppUpdates.cs" />
     <Compile Include="Application\UpdateSources.cs" />
+    <Compile Include="Application\UpdateInstallation.cs" />
     <Compile Include="Application\UpdatePublicKey.cs" />
     <Compile Include="Diagnostics\ArchiveTests.cs" />
     <Compile Include="Diagnostics\CaptureTests.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Diagnostics\TrayTests.cs" />
     <Compile Include="Diagnostics\UiReview.cs" />
     <Compile Include="Diagnostics\UpdateTests.cs" />
+    <Compile Include="Diagnostics\UpdateInstallationTests.cs" />
     <Compile Include="Diagnostics\UpdateSourceTests.cs" />
     <Compile Include="Diagnostics\V11Tests.cs" />
     <Compile Include="Diagnostics\V122Tests.cs" />

@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Text;using System.Security.Cryptography;using System.Web.Script.Serialization;
+﻿using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Text;using System.Security.Cryptography;using System.Web.Script.Serialization;
 public static class UpdateTests {
  static List<string> log=new List<string>();static void Check(bool ok,string name){if(!ok)throw new Exception(name);log.Add("PASS "+name);}
  public sealed class Endpoint : IDisposable {
@@ -23,6 +23,7 @@ public static class UpdateTests {
   }
   string manifest=Environment.GetEnvironmentVariable("AQSERVER_RELEASE_MANIFEST");if(!string.IsNullOrEmpty(manifest)){var release=AppUpdates.VerifyManifest(File.ReadAllBytes(manifest),UpdatePublicKey.Xml);Check(release.ParsedVersion==AppUpdates.CurrentVersion,"published manifest matches embedded public key and application version");string installer=Environment.GetEnvironmentVariable("AQSERVER_RELEASE_INSTALLER");if(!string.IsNullOrEmpty(installer)){AppUpdates.VerifyInstaller(installer,release);Check(true,"published installer matches signed release");}}
   log.AddRange(UpdateSourceTests.Run(folder));
+  log.AddRange(UpdateInstallationTests.CheckArguments(folder));
   File.WriteAllLines(Path.Combine(folder,"update-results.txt"),log);return 0;
  }catch(Exception ex){File.WriteAllLines(Path.Combine(folder,"update-results.txt"),log);File.WriteAllText(Path.Combine(folder,"update-error.txt"),ex.ToString());return 1;}}
 }

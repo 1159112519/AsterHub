@@ -29,3 +29,9 @@ Windows and Ubuntu are independently released. `VERSION` is Windows, `linux/VERS
 Windows 0.2.0 / Ubuntu 0.1.3 add five persistent resource groups and real network/volume snapshots. The canonical update origin is unchanged; user-configured sources retain signature/hash/size verification. Temporary HTTPS preview access does not resolve canonical IP ingress.
 
 The website shows each platform's own version, date, download and release notes. The Ubuntu preview is retained and is not required to track future Windows releases. The Ubuntu signing script validates linux/VERSION, never Windows VERSION.
+
+## Windows automatic update handoff
+
+The About window offers 更新并重启 for a newer signed release. After one confirmation, it downloads and verifies the package, revalidates before launching, then uses the normal application Exit path. The Inno update branch waits up to 60 seconds for that caller PID before file replacement, runs a silent progress installation in the existing directory, and launches the updated application. A failed download/validation/start leaves the client running. Installer/runtime/file errors remain visible; install logs are saved beside the downloaded package in Updates/Logs. It never uses process-name termination or closes unrelated applications explicitly. Ubuntu is unchanged and upgrades through apt.
+
+The isolated installer lifecycle also runs an actual native caller holding the QA mutex, automatic shutdown, silent reinstall and a native restart screenshot/version/path proof. QA-only restart proof arguments are excluded from the production installer. This proves the pipeline under the isolated AppId, not future CDN availability or every external antivirus/filesystem condition.

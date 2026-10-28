@@ -62,6 +62,28 @@ foreach($test in @('module-tests','update-tests','tray-tests','startup-smoke','t
  $p.Refresh();if($p.ExitCode-ne 0){Get-ChildItem -LiteralPath $output -Filter '*error.txt'|ForEach-Object{Get-Content -LiteralPath $_.FullName};throw ('Installed test failed '+$test)}
  $results+=('INSTALLED_'+$test+'=PASS')
 }
+# Exercise the same native quit -> silent install -> native relaunch path under the isolated AppId.
+foreach($updateMode in @('automatic-update','legacy-automatic-update')){
+$updateProof=Join-Path $qa $updateMode
+New-Item -ItemType Directory -Path $updateProof -Force|Out-Null
+$probeFlag=if($updateMode-eq'legacy-automatic-update'){'--legacy-update-handoff-smoke'}else{'--update-handoff-smoke'}
+$updateArgs=@($probeFlag,('"'+$updateProof+'"'),('"'+$installer+'"'))
+$p=Start-Process -FilePath (Join-Path $destination 'AQServer.exe') -WorkingDirectory $qa -ArgumentList $updateArgs -WindowStyle Hidden -PassThru
+if(!$p.WaitForExit(45000)){throw 'Automatic updater caller did not close normally'}
+$p.Refresh();if($p.ExitCode-ne 0){throw 'Automatic updater caller failed; inspect isolated handoff-error.txt'}
+$proof=Join-Path $updateProof 'restart-result.json'
+$deadline=[DateTime]::UtcNow.AddSeconds(60)
+while(!(Test-Path -LiteralPath $proof)-and[DateTime]::UtcNow-lt$deadline){Start-Sleep -Milliseconds 300}
+if(!(Test-Path -LiteralPath $proof)){throw ('Automatic update did not relaunch; inspect '+$updateProof)}
+$restart=Get-Content -LiteralPath $proof -Raw -Encoding UTF8|ConvertFrom-Json
+if($restart.version-ne$version-or!$restart.visible-or!$restart.loaded-or$restart.launcher-ne(Join-Path $destination 'AQServer.exe')){throw 'Automatic update restarted an incorrect/invisible application'}
+# The restart probe briefly renders the real window, then exits. Wait for only this authored QA executable before removal.
+$deadline=[DateTime]::UtcNow.AddSeconds(12)
+do {$owned=@(Get-Process -Name AQServer -ErrorAction SilentlyContinue|Where-Object {$_.Path-eq(Join-Path $destination 'AQServer.exe')});if($owned.Count){Start-Sleep -Milliseconds 200}}while($owned.Count-and[DateTime]::UtcNow-lt$deadline)
+if($owned.Count){throw 'Restart probe did not finish'}
+CheckPayload
+$results+=($updateMode.ToUpperInvariant()+'_QUIT_SILENT_INSTALL_NATIVE_RESTART=PASS')
+}
 # Reinstalling the same version must also preserve an existing installation.
 Install $installer 'repair-install.log'
 CheckPayload

@@ -70,11 +70,71 @@ Type: files; Name: "{app}\Microsoft.Bcl.AsyncInterfaces.dll"; Check: LegacyFlatL
 Type: filesandordirs; Name: "{app}\TerminalAssets"; Check: LegacyFlatLayout
 Type: filesandordirs; Name: "{app}\UiAssets"; Check: LegacyFlatLayout
 [Run]
-Filename: "{app}\AQServer.exe"; Description: "启动 AQ Server"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\AQServer.exe"; Description: "启动 AQ Server"; Flags: nowait postinstall skipifsilent; Check: IsRegularInstall
+Filename: "{app}\AQServer.exe"; Parameters: "{code:UpdateRestartArguments}"; Flags: nowait; Check: IsUpdateInstall
 [Code]
 const RunKey = 'Software\Microsoft\Windows\CurrentVersion\Run';
 const EdgeKey = 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
 var LegacyLayoutAtStart: Boolean;
+function AQOpenProcess(DesiredAccess: Cardinal; InheritHandle: Boolean; ProcessId: Cardinal): THandle;
+  external 'OpenProcess@kernel32.dll stdcall';
+function AQWaitForSingleObject(Handle: THandle; Milliseconds: Cardinal): Cardinal;
+  external 'WaitForSingleObject@kernel32.dll stdcall';
+function AQCloseHandle(Handle: THandle): Boolean;
+  external 'CloseHandle@kernel32.dll stdcall';
+function IsUpdateInstall: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;
+function IsRegularInstall: Boolean;
+begin
+  Result := not IsUpdateInstall;
+end;
+function UpdateRestartArguments(Param: String): String;
+var Proof: String;
+begin
+  Result := '';
+#ifdef QAInstall
+  Proof := ExpandConstant('{param:AQRESTARTPROOF|}');
+  if Proof <> '' then Result := '--update-restart-smoke "' + Proof + '"';
+#endif
+end;
+function InitializeSetup: Boolean;
+var ParentPid, Attempt: Integer; Handle: THandle; WaitResult: Cardinal;
+begin
+  Result := True;
+  if not IsUpdateInstall then Exit;
+  ParentPid := StrToIntDef(ExpandConstant('{param:AQPID|0}'), 0);
+  if ParentPid <= 0 then begin
+    { Previous clients supplied UPDATE=1 without AQPID. Wait for their own app mutex. }
+    for Attempt := 1 to 300 do begin
+#ifdef QAInstall
+      if not CheckForMutexes('Local\AQServerMonitor-Installer-QA') then begin
+#else
+      if not CheckForMutexes('Local\AQServerMonitor') then begin
+#endif
+        Log('AQ_UPDATE_LEGACY_CALLER_EXITED');
+        Exit;
+      end;
+      Sleep(200);
+    end;
+    MsgBox('当前程序尚未正常退出，已取消更新。请保存工作后重试。', mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+  Handle := AQOpenProcess($00100000, False, ParentPid);
+  if Handle <> 0 then begin
+    Log('AQ_UPDATE_WAITING_FOR_PARENT');
+    WaitResult := AQWaitForSingleObject(Handle, 60000);
+    AQCloseHandle(Handle);
+    if WaitResult <> 0 then begin
+      MsgBox('当前程序尚未正常退出，已取消更新。请保存工作后重试。', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  end;
+  Log('AQ_UPDATE_PARENT_EXITED');
+end;
 function LegacyFlatLayout: Boolean;
 begin
   Result := LegacyLayoutAtStart;
