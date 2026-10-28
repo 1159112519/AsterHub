@@ -49,3 +49,8 @@ Linux 运行时回归命令：`PYTHONPATH=linux python3 -m unittest discover -s 
 ## 平台版本与维护范围
 
 Windows 0.2.0 / Ubuntu 0.1.3 从本次起独立发布。递增版本工具默认只处理 Windows；Ubuntu 后续按需维护，不要求跟随 Windows 改动。核对两个包时分别读取 stable.json 与 ubuntu.json，不要求版本号相等。官网应同时展示各平台版本、日期、下载和更新记录。定时跟进仅在对应自动化启用且本机执行环境可用时运行。
+
+
+## 面向用户的版本发布记录
+
+每个已发布版本都要同步 `1159112519/aq-server-releases` 的 GitHub Releases：按平台记录新增功能、体验优化、问题修复、升级与已知限制，正文由 CHANGELOG 生成并核对。公开说明不包含内部测试人员/智能体名称、私有目录、内部队列和取证细节。源码仓库 `1159112519/aq-server` 保持私有，公开发行库只保留发布文档；未经验证的混淆/许可证不得宣称完成，不额外上传源码、PDB、source map或QA安装器。具体要求见 RELEASING.md。

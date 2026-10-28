@@ -35,3 +35,21 @@ The website shows each platform's own version, date, download and release notes.
 The About window offers 更新并重启 for a newer signed release. After one confirmation, it downloads and verifies the package, revalidates before launching, then uses the normal application Exit path. The Inno update branch waits up to 60 seconds for that caller PID before file replacement, runs a silent progress installation in the existing directory, and launches the updated application. A failed download/validation/start leaves the client running. Installer/runtime/file errors remain visible; install logs are saved beside the downloaded package in Updates/Logs. It never uses process-name termination or closes unrelated applications explicitly. Ubuntu is unchanged and upgrades through apt.
 
 The isolated installer lifecycle also runs an actual native caller holding the QA mutex, automatic shutdown, silent reinstall and a native restart screenshot/version/path proof. QA-only restart proof arguments are excluded from the production installer. This proves the pipeline under the isolated AppId, not future CDN availability or every external antivirus/filesystem condition.
+
+
+## GitHub Releases 与公开发行
+
+源码仓库 `1159112519/aq-server` 保持私有；公开版本说明放在独立的 `1159112519/aq-server-releases`。公开仓库只保存发行文档，不镜像源码、私有提交历史、构建产物中的PDB、凭据或内部测试记录。公众下载 GitHub 自动生成的 Source code 包只能取得公开发行文档。
+
+每次发版必须先更新 CHANGELOG.md，对每个平台分别写明“新增功能、体验优化、问题修复、升级与已知限制”，没有对应变化的类别可省略。不写内部人员/智能体名称、任务编号、私有目录或内部验收过程；不得把本机配置修复写成所有已发布客户端都已修复。
+
+生成公开说明：
+
+```sh
+python scripts/generate-release-notes.py 0.2.0 --platform windows --output artifacts/release-notes/windows-0.2.0.md
+python scripts/generate-release-notes.py 0.1.3 --platform ubuntu --output artifacts/release-notes/ubuntu-0.1.3.md
+```
+
+在公开发行仓库提交更新后的发布文档后，基于该仓库的文档提交创建对应Release。Windows标签为vX.Y.Z，Ubuntu独立标签为ubuntu-vX.Y.Z；历史0.1.2的共同发布记录使用v0.1.2。不要拿私有源码提交作为公开仓库的target_commitish，也不要上传源码ZIP。只允许上传已批准分发且完成校验的正式安装包；QA安装器、调试符号、源码映射和内部证据不得上传。当前版本仍标为预览版。
+
+发布后通过GitHub读取Release正文、平台、标签和附件，核对生成文件一致，并确认源码仓库仍为私有。现有版本的说明更正不改写二进制或签名；已发布包仍以各自签名清单为准。

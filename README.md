@@ -32,9 +32,9 @@ npm run dev
 
 构建输出为 `desktop/bin/Release/AQServer.exe` 及其组件目录。安装器和目录 ZIP 都交付完整文件夹，不再生成单 EXE 自解压版。架构见 `docs/ARCHITECTURE.md`，完整发布见 `docs/RELEASING.md`。私钥、密码、SSH 密钥、运行配置与历史档案不属于源代码。
 
-## 测试协作
+## 更新日志与问题反馈
 
-Hermes 测试员通过服务器缺陷队列提交，Codex 同步 GitHub Issues、修复、验证和发布，最后由 Hermes 复测。见 `docs/QA-WORKFLOW.md`。GitHub Actions 检查网站和 Windows 受控回归；它不等同于客户端真机交互验收。
+各版本新增功能、优化、修复与升级注意事项发布在 `1159112519/aq-server-releases` 的 Releases；完整记录见 [CHANGELOG.md](CHANGELOG.md)。Windows 与 Ubuntu 分别维护版本。反馈问题时请提供平台、版本和复现步骤，并遮盖私人信息。此源码仓库保持私有，公开发行仓库不包含应用源码。
 
 ## 发布状态
 
