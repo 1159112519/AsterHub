@@ -16,6 +16,7 @@
 
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PeripheralMetrics.cs" />
     <Compile Include="AppPaths.cs" />
     <Compile Include="HardwareInfo.cs" />
     <Compile Include="MetricMath.cs" />

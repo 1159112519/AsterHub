@@ -2,7 +2,7 @@
 
 Ubuntu 22.04 amd64 is the target for live verification. Ubuntu 24.04 and other architectures require separate validation. Python >=3.10; system packages provide aiohttp, Paramiko, GTK/WebKit and Chinese fonts.
 
-Install: sudo apt install ./AQServer-0.1.2-ubuntu-all.deb
+Install: sudo apt install ./AQServer-0.1.3-ubuntu-all.deb
 Open from the applications menu, or run: aq-server --desktop
 Keep collection across logins: systemctl --user enable --now aq-server
 Run without a desktop: aq-server --serve

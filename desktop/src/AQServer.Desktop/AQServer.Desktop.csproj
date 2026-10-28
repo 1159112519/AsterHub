@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
@@ -43,15 +43,18 @@
     <Compile Include="Appearance\Theme.cs" />
     <Compile Include="Appearance\TrayColors.cs" />
     <Compile Include="Appearance\TrayFlyout.cs" />
+    <Compile Include="Appearance\TrayIcon.cs" />
     <Compile Include="Appearance\Workspace.cs" />
     <Compile Include="Application\About.cs" />
     <Compile Include="Application\AppUpdates.cs" />
+    <Compile Include="Application\UpdateSources.cs" />
     <Compile Include="Application\UpdatePublicKey.cs" />
     <Compile Include="Diagnostics\ArchiveTests.cs" />
     <Compile Include="Diagnostics\CaptureTests.cs" />
     <Compile Include="Diagnostics\CompactTests.cs" />
     <Compile Include="Diagnostics\DesignReview.cs" />
     <Compile Include="Diagnostics\FooterLayoutTests.cs" />
+    <Compile Include="Diagnostics\PeripheralTests.cs" />
     <Compile Include="Diagnostics\HistoryProcessTests.cs" />
     <Compile Include="Diagnostics\HistoryInteractionTests.cs" />
     <Compile Include="Diagnostics\InteractionTests.cs" />
@@ -65,6 +68,7 @@
     <Compile Include="Diagnostics\TrayTests.cs" />
     <Compile Include="Diagnostics\UiReview.cs" />
     <Compile Include="Diagnostics\UpdateTests.cs" />
+    <Compile Include="Diagnostics\UpdateSourceTests.cs" />
     <Compile Include="Diagnostics\V11Tests.cs" />
     <Compile Include="Diagnostics\V122Tests.cs" />
     <Compile Include="Diagnostics\V124Tests.cs" />
@@ -75,6 +79,7 @@
     <Compile Include="Files\TransferDrawer.cs" />
     <Compile Include="History\ArchiveLayout.cs" />
     <Compile Include="History\ArchiveUI.cs" />
+    <Compile Include="History\ArchiveToolbar.cs" />
     <Compile Include="History\ArchiveSnapshotView.cs" />
     <Compile Include="History\ArchiveProcessTable.cs" />
     <Compile Include="Interaction\Interaction.cs" />
@@ -86,10 +91,15 @@
     <Compile Include="Monitoring\GpuCard.cs" />
     <Compile Include="Monitoring\HardwareView.cs" />
     <Compile Include="Monitoring\MiniCharts.cs" />
+    <Compile Include="Monitoring\PeripheralChart.cs" />
+    <Compile Include="Monitoring\PeripheralViews.cs" />
     <Compile Include="Monitoring\MonitorWindow.cs" />
+    <Compile Include="Monitoring\ResourceFooter.cs" />
+    <Compile Include="Monitoring\ResourceViews.cs" />
     <Compile Include="Monitoring\ProcessDialogs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Settings\SettingsWindow.cs" />
+    <Compile Include="Settings\SettingsNavigation.cs" />
     <Compile Include="Settings\TerminalSettings.cs" />
     <Compile Include="Terminal\TerminalWorkspace.cs" />
     <Compile Include="Diagnostics\InstallationTests.cs" />
@@ -97,6 +107,6 @@
     <Compile Include="..\..\Properties\AssemblyInfo.cs"><Link>Properties\AssemblyInfo.cs</Link></Compile>
     <Compile Include="..\..\Properties\AssemblyAccess.cs"><Link>Properties\AssemblyAccess.cs</Link></Compile>
   </ItemGroup>
-<ItemGroup><EmbeddedResource Include="..\..\assets\AQServer.ico"><LogicalName>AQServer.ico</LogicalName></EmbeddedResource></ItemGroup>
+<ItemGroup><EmbeddedResource Include="..\..\assets\AQServer.ico"><LogicalName>AQServer.ico</LogicalName></EmbeddedResource><EmbeddedResource Include="..\..\assets\AQTrayLight.ico"><LogicalName>AQTrayLight.ico</LogicalName></EmbeddedResource><EmbeddedResource Include="..\..\assets\AQTrayDark.ico"><LogicalName>AQTrayDark.ico</LogicalName></EmbeddedResource></ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

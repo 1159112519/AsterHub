@@ -1,8 +1,8 @@
 # AQ Server
 
-Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。当前版本 **0.1.2**，属于早期测试版本。
+Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 当前版本 **0.2.0**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
 
-- 多核 CPU、多 GPU、内存监控，支持没有 GPU 的设备。
+- 多核 CPU、多 GPU、内存、网络上下行和分区容量监控，支持没有 GPU 的设备。
 - 已连接设备持续采集，历史保存在本机；切换设备不影响采集。
 - GPU 历史进程快照、用户名、进程结束确认。
 - 内嵌终端、双栏文件浏览、复制传输及传输进度。
@@ -38,4 +38,4 @@ Hermes 测试员通过服务器缺陷队列提交，Codex 同步 GitHub Issues�
 
 ## 发布状态
 
-v0.1.2 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目源代码当前仅供仓库授权人员访问；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+Windows v0.2.0 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目源代码当前仅供仓库授权人员访问；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。

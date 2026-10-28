@@ -1,6 +1,57 @@
-﻿// Lucide icon geometry, ISC license; see UiAssets/LUCIDE-LICENSE.txt.
+// Lucide icon geometry, ISC license; see UiAssets/LUCIDE-LICENSE.txt.
 using System;using System.Windows;using System.Windows.Media;
-public sealed class IconView:FrameworkElement{public string Symbol;public Brush Stroke;public IconView(string symbol,double size=20,Brush color=null){Symbol=symbol;Width=Height=size;Stroke=color??Theme.Muted;VerticalAlignment=VerticalAlignment.Center;}protected override void OnRender(DrawingContext dc){var pen=new Pen(Stroke,1.65){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};dc.PushTransform(new ScaleTransform(ActualWidth/24,ActualHeight/24));switch(Symbol){case "LayoutDashboard":
+public sealed class IconView:FrameworkElement{public string Symbol;public Brush Stroke;public IconView(string symbol,double size=20,Brush color=null){Symbol=symbol;Width=Height=size;Stroke=color??Theme.Muted;VerticalAlignment=VerticalAlignment.Center;}protected override void OnRender(DrawingContext dc){var pen=new Pen(Stroke,1.65){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round,LineJoin=PenLineJoin.Round};dc.PushTransform(new ScaleTransform(ActualWidth/24,ActualHeight/24));switch(Symbol){
+// Network / HardDrive: lucide-react 0.468.0, ISC.
+case "Network":
+dc.DrawRoundedRectangle(null,pen,new Rect(16,16,6,6),1,1);dc.DrawRoundedRectangle(null,pen,new Rect(2,16,6,6),1,1);dc.DrawRoundedRectangle(null,pen,new Rect(9,2,6,6),1,1);
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M12 12V8"));break;
+case "HardDrive":
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01"));break;
+
+// Cpu · lucide-react@0.468.0/dist/esm/icons/cpu.js
+case "Cpu":
+dc.DrawRoundedRectangle(null,pen,new Rect(4,4,16,16),2,2);
+dc.DrawRoundedRectangle(null,pen,new Rect(9,9,6,6),1,1);
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M15 2v2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M15 20v2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M2 15h2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M2 9h2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M20 15h2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M20 9h2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M9 2v2"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M9 20v2"));
+break;
+
+// Gpu · https://github.com/lucide-icons/lucide/blob/0.509.0/icons/gpu.svg
+case "Gpu":
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M2 21V3"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M2 5h18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2.26"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M7 17v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-3"));
+dc.DrawEllipse(null,pen,new Point(16,11),2,2);
+dc.DrawEllipse(null,pen,new Point(8,11),2,2);
+break;
+
+// MemoryStick · lucide-react@0.468.0/dist/esm/icons/memory-stick.js
+case "MemoryStick":
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M6 19v-3"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M10 19v-3"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M14 19v-3"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M18 19v-3"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M8 11V9"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M16 11V9"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M12 11V9"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M2 15h20"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"));
+break;
+
+// History · lucide-react@0.468.0/dist/esm/icons/history.js
+case "History":
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M3 3v5h5"));
+dc.DrawGeometry(null,pen,Geometry.Parse(@"M12 7v5l4 2"));
+break;
+
+case "LayoutDashboard":
 dc.DrawRoundedRectangle(null,pen,new Rect(3,3,7,9),1,1);dc.DrawRoundedRectangle(null,pen,new Rect(14,3,7,5),1,1);dc.DrawRoundedRectangle(null,pen,new Rect(14,12,7,9),1,1);dc.DrawRoundedRectangle(null,pen,new Rect(3,16,7,5),1,1);break;
 case "Info":dc.DrawEllipse(null,pen,new Point(12,12),10,10);dc.DrawGeometry(null,pen,Geometry.Parse("M12 16V12 M12 8H12.01"));break;
 case "Power":dc.DrawGeometry(null,pen,Geometry.Parse("M12 2V12 M18.4 6.6A9 9 0 1 1 5.63 6.64"));break;

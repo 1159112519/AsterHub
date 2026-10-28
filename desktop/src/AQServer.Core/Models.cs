@@ -6,4 +6,4 @@ public class Settings {public TerminalPreferences Terminal{get;set;}public strin
 public class Gpu {public string Index,Name,Util,Used,Total,Temp,Fan,Power,Cap,Uuid,PowerMax,CapSource;}
 public class GpuProcess {public string Gpu,Pid,Type,Name,Memory,User="—",SharedMemory,MemorySource;}
 public class CpuCore {public int Index;public double Util;}
-public class Metrics {public HardwareInfo Hardware;public List<CpuCore> CpuCores=new List<CpuCore>();public List<Gpu> Gpus=new List<Gpu>();public List<GpuProcess> Processes=new List<GpuProcess>();public string Cpu="—",Cores="—",Mem="—",Disk="—",Raw="",Error="";}
+public class Metrics {public NetworkMetrics Network;public List<StorageVolume> Volumes=new List<StorageVolume>();public string PrimaryStoragePath;public HardwareInfo Hardware;public List<CpuCore> CpuCores=new List<CpuCore>();public List<Gpu> Gpus=new List<Gpu>();public List<GpuProcess> Processes=new List<GpuProcess>();public string Cpu="—",Cores="—",Mem="—",Disk="—",Raw="",Error="";}

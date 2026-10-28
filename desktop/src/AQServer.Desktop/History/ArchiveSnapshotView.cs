@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -23,7 +23,7 @@ internal sealed class ArchiveSnapshotView {
   readonly TextBlock[] texts=new TextBlock[5];
   public GpuRow(bool header){
    double[] widths={58,-1,74,172,64};for(int i=0;i<widths.Length;i++)Element.ColumnDefinitions.Add(new ColumnDefinition{Width=widths[i]<0?new GridLength(1,GridUnitType.Star):new GridLength(widths[i])});
-   for(int i=0;i<texts.Length;i++){var t=Theme.Text("",header?11:12,header?Theme.Muted:Theme.Ink,i!=1);t.Margin=new Thickness(0,6,10,6);texts[i]=t;Grid.SetColumn(t,i);Element.Children.Add(t);}
+   for(int i=0;i<texts.Length;i++){var t=Theme.Text("",14,header?Theme.Muted:Theme.Ink,false);t.Margin=new Thickness(0,8,10,8);t.TextAlignment=i==1?TextAlignment.Left:TextAlignment.Center;texts[i]=t;Grid.SetColumn(t,i);Element.Children.Add(t);}
    if(header)Set(new[]{"GPU","型号","利用率","显存 MiB","温度"});
   }
   void Set(string[] values){for(int i=0;i<texts.Length;i++){if(texts[i].Text!=values[i]){texts[i].Text=values[i];texts[i].ToolTip=values[i];}}}
@@ -38,7 +38,7 @@ internal sealed class ArchiveSnapshotView {
   server=device;renderProcesses=renderer;var content=new StackPanel();
   title=Theme.Text("",17,Theme.Ink,false,true);title.TextWrapping=TextWrapping.Wrap;content.Children.Add(title);
   error=Theme.Text("",13,Theme.Red);error.TextWrapping=TextWrapping.Wrap;error.Margin=new Thickness(0,16,0,0);error.Visibility=Visibility.Collapsed;content.Children.Add(error);
-  values=Theme.Text("",13,Theme.Muted);values.TextWrapping=TextWrapping.Wrap;values.Margin=new Thickness(0,14,0,16);readings.Children.Add(values);
+  values=Theme.Text("",14,Theme.Muted);values.TextWrapping=TextWrapping.Wrap;values.Margin=new Thickness(0,14,0,16);readings.Children.Add(values);
   noGpu=Theme.Text("当时未检测到 NVIDIA GPU",13,Theme.Muted);readings.Children.Add(noGpu);
   gpuRows.Children.Add(new GpuRow(true).Element);readings.Children.Add(gpuRows);
   coreToggle=Theme.Button("展开逐核快照",()=>{coresExpanded=!coresExpanded;UpdateCores();});coreToggle.HorizontalAlignment=HorizontalAlignment.Left;coreToggle.Margin=new Thickness(0,16,0,0);readings.Children.Add(coreToggle);readings.Children.Add(cores);content.Children.Add(readings);
@@ -53,7 +53,7 @@ internal sealed class ArchiveSnapshotView {
    metrics=record.Metrics();title.Text="历史快照 · "+ArchivePanel.LocalTime(record.T);
    bool failed=!string.IsNullOrEmpty(record.Error);error.Visibility=failed?Visibility.Visible:Visibility.Collapsed;error.Text=failed?"当时采集失败："+record.Error:"";readings.Visibility=failed?Visibility.Collapsed:Visibility.Visible;Processes.Visibility=failed?Visibility.Collapsed:Visibility.Visible;
    if(!failed){
-    string label="CPU "+metrics.Cpu+" · "+metrics.CpuCores.Count+" 个逻辑处理器 · 内存 "+ResourceSample.MemoryLabel(metrics.Mem);if(values.Text!=label)values.Text=label;
+    string label="CPU "+metrics.Cpu+" · "+metrics.CpuCores.Count+" 个逻辑处理器 · 内存 "+ResourceSample.MemoryLabel(metrics.Mem);if(metrics.Network!=null)label+="\n网络 ↓ "+PeripheralMetrics.Bytes(metrics.Network.DownloadBytesPerSecond,true)+"   ↑ "+PeripheralMetrics.Bytes(metrics.Network.UploadBytesPerSecond,true);var volume=PeripheralMetrics.PrimaryVolume(metrics);if(volume!=null)label+=" · 存储 "+PeripheralMetrics.Capacity(volume.UsedBytes,volume.TotalBytes)+" ("+volume.UsedPercent.ToString("0.0")+"%)";if(values.Text!=label)values.Text=label;
     noGpu.Visibility=metrics.Gpus.Count==0?Visibility.Visible:Visibility.Collapsed;gpuRows.Visibility=metrics.Gpus.Count==0?Visibility.Collapsed:Visibility.Visible;
     while(gpus.Count>metrics.Gpus.Count){gpuRows.Children.RemoveAt(gpuRows.Children.Count-1);gpus.RemoveAt(gpus.Count-1);}
     for(int i=0;i<metrics.Gpus.Count;i++){if(i>=gpus.Count){var row=new GpuRow(false);gpus.Add(row);gpuRows.Children.Add(row.Element);}gpus[i].Update(metrics.Gpus[i]);}

@@ -2,7 +2,7 @@
 set -euo pipefail
 [[ "$EUID" -eq 0 ]] || { echo "Run with sudo: sudo bash deploy.sh" >&2; exit 1; }
 src="$(cd -- "$(dirname -- "$0")" && pwd)/site"
-[[ -f "$src/index.html" && -f "$src/releases/stable.json" && -f "$src/releases/AQServer-Setup-0.1.2.exe" ]] || { echo 'Missing built website/release' >&2; exit 1; }
+[[ -f "$src/index.html" && -f "$src/releases/stable.json" && -f "$src/releases/AQServer-Setup-0.2.0.exe" ]] || { echo 'Missing built website/release' >&2; exit 1; }
 root='/var/www/aqserver-web'
 stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 version="$root/versions/$stamp"

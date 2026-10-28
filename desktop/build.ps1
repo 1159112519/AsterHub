@@ -16,7 +16,7 @@ foreach($module in $modules){
  $target=if($isBootstrap){if($Console){'exe'}else{'winexe'}}else{'library'}
  $arguments=@('/nologo',('/target:'+$target),'/optimize+','/platform:x64',('/out:'+$destination))
  if($isBootstrap){$arguments+=@('/main:AQBootstrap',('/win32manifest:'+(Join-Path $PSScriptRoot 'assets/app.manifest')),('/win32icon:'+(Join-Path $PSScriptRoot 'assets/AQServer.ico')))}
- if($module-eq'AQServer.Desktop'){$arguments+=('/resource:'+(Join-Path $PSScriptRoot 'assets/AQServer.ico')+',AQServer.ico')}
+ if($module-eq'AQServer.Desktop'){foreach($icon in @('AQServer.ico','AQTrayLight.ico','AQTrayDark.ico')){$arguments+=('/resource:'+(Join-Path $PSScriptRoot ('assets/'+$icon))+','+$icon)}}
  foreach($reference in $definition.SelectNodes("//*[local-name()='Reference']")){
   $name=[string]$reference.Include
   if($reference.HintPath){$path=[IO.Path]::GetFullPath((Join-Path $folder ([string]$reference.HintPath)))}

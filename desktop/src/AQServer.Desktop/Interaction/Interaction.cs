@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -7,8 +7,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 public sealed class HoverReading {
- public DateTime TargetUtc,SampleUtc;public double Value=double.NaN;public string Metric,Error;public bool Gap;
- public string Text {get{if(Gap)return TargetUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")+" · 本机时间\n该位置无有效采样"+(!string.IsNullOrEmpty(Error)?"\n采集失败："+Error:"")+"\n最近记录 "+SampleUtc.ToLocalTime().ToString("HH:mm:ss.fff");return SampleUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss.fff")+" · 实际采样\n"+Metric+"  "+(double.IsNaN(Value)?"未提供":Value.ToString("0.0",CultureInfo.InvariantCulture)+"%")+"\n本机时间 · 最近真实采样点";}}
+ public DateTime TargetUtc,SampleUtc;public double Value=double.NaN;public string Metric,Error,Detail;public bool Gap;
+ public string Text {get{if(!Gap&&!string.IsNullOrEmpty(Detail))return SampleUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss.fff")+"\n"+Detail;if(Gap)return TargetUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")+" · 本机时间\n该位置无有效采样"+(!string.IsNullOrEmpty(Error)?"\n采集失败："+Error:"")+"\n最近记录 "+SampleUtc.ToLocalTime().ToString("HH:mm:ss.fff");return SampleUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss.fff")+" · 实际采样\n"+Metric+"  "+(double.IsNaN(Value)?"未提供":Value.ToString("0.0",CultureInfo.InvariantCulture)+"%")+"\n本机时间 · 最近真实采样点";}}
 }
 public static class ChartHover {
  public static int Nearest<T>(IList<T> data,long target,Func<T,long> tick){if(data==null||data.Count==0)return -1;int lo=0,hi=data.Count-1;while(lo<hi){int mid=lo+(hi-lo)/2;if(tick(data[mid])<target)lo=mid+1;else hi=mid;}if(lo>0&&Math.Abs(tick(data[lo-1])-target)<=Math.Abs(tick(data[lo])-target))return lo-1;return lo;}

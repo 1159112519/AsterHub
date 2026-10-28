@@ -2,7 +2,7 @@
 
 本轮将 Windows 程序拆成独立组件，保留 .NET Framework 4.7.2/WPF，以既有功能兼容为优先。Ubuntu 0.1.2 提供独立 Debian 安装包和 GTK/WebKit 工作台，实际验证环境及发布流程见下方。
 
-1. 用 `python scripts/set-version.py X.Y.Z` 统一版本，维护 CHANGELOG，运行 `python qa/check_version.py`。
+1. 用 `python scripts/set-version.py X.Y.Z --platform windows` 更新 Windows 版本（默认平台为 Windows），维护 CHANGELOG，运行 `python qa/check_version.py`。
 2. 运行 `desktop/build.ps1`。源码在 desktop/AQServer.sln，完整运行目录在 desktop/bin/Release。
 3. 运行 `scripts/build-release.ps1 -InnoCompiler C:\Tools\InnoSetup\ISCC.exe`，得到正式安装器、隔离 QA 安装器、目录 ZIP。QA 安装器不能交付用户。
 4. 运行 `scripts/verify-packaged.ps1`；运行 `scripts/verify-installer.ps1 -BaselineInstaller <上一版 QA 安装器>`，验证旧目录覆盖升级、重装、终端、卸载及数据保留。
@@ -22,6 +22,10 @@ GitHub CI 执行编译和受控测试；本机 GUI、隔离安装、真实硬件
 
 ## Ubuntu release
 
-Use `scripts/set-version.py` to increase the shared version; it updates Linux version/runtime/docs and Windows/website anchors atomically. On Ubuntu run the Linux regressions, then `python3 linux/build-deb.py`. Install with `sudo apt install ./artifacts/AQServer-VERSION-ubuntu-all.deb`, operate the native GTK/WebKit window, verify archive persistence and package removal/reinstall without deleting user data, and collect Hermes actions/screenshots before claiming acceptance.
+Windows and Ubuntu are independently released. `VERSION` is Windows, `linux/VERSION` is Ubuntu; the website reads `website/src/release-versions.json`. Use `python scripts/set-version.py X.Y.Z --platform ubuntu` only for an intentional Ubuntu release, or `--platform all` when both platforms are independently verified at the same new version. The default only bumps Windows. On Ubuntu run the Linux regressions, then `python3 linux/build-deb.py`. Install with `sudo apt install ./artifacts/AQServer-VERSION-ubuntu-all.deb`, operate the native GTK/WebKit window, verify archive persistence and package removal/reinstall without deleting user data, and collect Hermes actions/screenshots before claiming acceptance.
 
-`build-deb.py` emits the .deb and an `ubuntu-VERSION.json` containing version, length, SHA256 and tested system declaration. After these checks, `scripts/sign-ubuntu-release.ps1` signs the verified package metadata using the controlled local key. Publish the .deb, signed ubuntu.json, public key and combined SHA256SUMS alongside the tested Windows installer/stable.json. Temporary tunnel URLs never enter signed manifests. Linux automatic updates are not implemented in 0.1.2; upgrades use a downloaded Debian package through apt.
+`build-deb.py` emits the .deb and an `ubuntu-VERSION.json` containing version, length, SHA256 and tested system declaration. After these checks, `scripts/sign-ubuntu-release.ps1` signs the verified package metadata using the controlled local key. Publish the .deb, signed ubuntu.json, public key and combined SHA256SUMS alongside the tested Windows installer/stable.json. Temporary tunnel URLs never enter signed manifests. Linux automatic updates are not implemented in 0.1.3; upgrades use a downloaded Debian package through apt.
+
+Windows 0.2.0 / Ubuntu 0.1.3 add five persistent resource groups and real network/volume snapshots. The canonical update origin is unchanged; user-configured sources retain signature/hash/size verification. Temporary HTTPS preview access does not resolve canonical IP ingress.
+
+The website shows each platform's own version, date, download and release notes. The Ubuntu preview is retained and is not required to track future Windows releases. The Ubuntu signing script validates linux/VERSION, never Windows VERSION.

@@ -10,3 +10,5 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 
 ## AQ Server website
 Use React 18, TypeScript, Vite, Tailwind CSS, lucide-react. Typography: Inter and Playfair Display, with Microsoft YaHei UI fallback for Chinese. Keep the first section dark and full viewport. Preserve the two-image soft circular pointer reveal, reduced-motion behavior and responsive phone/tablet/desktop layouts. CTA must download an existing installer; release history must use readable line spacing. Never publish credentials, signing private keys or monitoring archives.
+
+Platform releases are independent: read src/release-versions.json for Windows and Ubuntu versions. Display each platform version and update date beside its download, with separate release notes. Windows 0.2.0 and retained Ubuntu 0.1.3 must not be presented as matching versions. Future Windows releases do not imply an Ubuntu update.

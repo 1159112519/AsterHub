@@ -2,3 +2,5 @@ AQ Server Ubuntu uses the system Python runtime and packages aiohttp (Apache-2.0
 xterm.js and addon-fit: MIT, licenses in /usr/share/aq-server/web/vendor/.
 Lucide: ISC, license in /usr/share/aq-server/web/vendor/LICENSE-lucide.txt.
 Fonts are system fonts with their distribution licenses.
+
+The GPU navigation geometry is from Lucide 0.509.0, under the same ISC license. Other vendored Lucide icons remain at 0.468.0.

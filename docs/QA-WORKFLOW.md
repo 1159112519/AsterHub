@@ -45,3 +45,7 @@
 新增 platform:ubuntu。Ubuntu 安装包通过独立账号和本地服务运行，Hermes 使用同一个已安装的 GTK/WebKit 原生窗口。报告需给出版本、实际动作、截图及观察；服务健康检查、计划文件、代理回复“已收到”均不算交互验收。
 
 Linux 运行时回归命令：`PYTHONPATH=linux python3 -m unittest discover -s linux/tests -v`。`linux/tests/native_driver.py` 是原生窗口动作/截图驱动，和 HTTP 端点测试分开保留证据。只有版本与实际包散列一致、包含可核验执行证据的复测，才能用于关闭对应缺陷。Ubuntu 与 Windows 的原生窗口、文件拖出行为、托盘及升级能力分别声明。
+
+## 平台版本与维护范围
+
+Windows 0.2.0 / Ubuntu 0.1.3 从本次起独立发布。递增版本工具默认只处理 Windows；Ubuntu 后续按需维护，不要求跟随 Windows 改动。核对两个包时分别读取 stable.json 与 ubuntu.json，不要求版本号相等。官网应同时展示各平台版本、日期、下载和更新记录。定时跟进仅在对应自动化启用且本机执行环境可用时运行。

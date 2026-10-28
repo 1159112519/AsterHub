@@ -34,6 +34,30 @@ class ConfirmHostKey(paramiko.MissingHostKeyPolicy):
         self.path.chmod(0o600)
 
 
+def recent_series(points, now):
+    return [point for point in points if now-300 <= point['timestamp'] <= now][-601:]
+
+
+def calculate_network(current, previous):
+    current = current or {'interfaces': []}
+    elapsed = current.get('sampleSeconds', 0)-(previous or {}).get('sampleSeconds', 0)
+    baseline = {x['id']: x for x in (previous or {}).get('interfaces', [])}
+    current['receive'] = current['send'] = None
+    valid = []
+    for item in current.get('interfaces', []):
+        item['receive'] = item['send'] = None
+        before = baseline.get(item['id'])
+        if not previous or not before or elapsed <= 0:
+            continue
+        down = item['receivedBytes']-before['receivedBytes']; up = item['sentBytes']-before['sentBytes']
+        if down < 0 or up < 0:
+            continue
+        item['receive'] = down/elapsed; item['send'] = up/elapsed; valid.append(item)
+    if valid:
+        current['receive'] = sum(x['receive'] for x in valid); current['send'] = sum(x['send'] for x in valid)
+    return current
+
+
 class Device:
     def __init__(self, manager, config):
         self.manager, self.config = manager, config
@@ -103,9 +127,7 @@ class Device:
         sample['perCore']=[round(v,2) for v in rates[1:]]
         memory=sample['memory']; memory['used']=max(0,memory['total']-memory['available'])
         memory['percent']=100*memory['used']/memory['total'] if memory['total'] else 0
-        elapsed=sample['timestamp']-previous['timestamp'] if previous else 0
-        sample['network']={'receive':max(0,(sample['networkCounters'][0]-previous['networkCounters'][0])/elapsed) if elapsed>0 else 0,
-                           'send':max(0,(sample['networkCounters'][1]-previous['networkCounters'][1])/elapsed) if elapsed>0 else 0}
+        sample['network']=calculate_network(sample.get('network'), previous.get('network') if previous else None)
         self.previous=sample
         self.hardware.update({k:v for k,v in sample.get('hardware',{}).items() if v is not None})
         sample['hardware']=dict(self.hardware)
@@ -113,8 +135,10 @@ class Device:
         self.latest=sample
         self.status='connected'; self.error=None; self.failures=0
         self.history_tail.append({'timestamp':sample['timestamp'],'cpu':sample['cpuPercent'],'memory':memory['percent'],
-                                  'gpu':sum(x.get('utilization') or 0 for x in sample['gpus'])/len(sample['gpus']) if sample['gpus'] else 0})
-        self.history_tail=self.history_tail[-120:]
+                                  'gpu':sum(x.get('utilization') or 0 for x in sample['gpus'])/len(sample['gpus']) if sample['gpus'] else None,
+                                  'download':sample['network']['receive'], 'upload':sample['network']['send'],
+                                  'storage':next((x['percent'] for x in sample.get('volumes',[]) if x['path']=='/'), None)})
+        self.history_tail=recent_series(self.history_tail,sample['timestamp'])
         return sample
 
     def public(self):

@@ -37,6 +37,52 @@ def process_info(pid):
         return {'pid': int(pid), 'name': '', 'username': '—', 'startToken': None, 'rss': None}
 
 
+def network_snapshot():
+    routes = set()
+    for line in read('/proc/net/route').splitlines()[1:]:
+        fields = line.split()
+        if len(fields) > 3 and fields[1] == '00000000' and int(fields[3], 16) & 1:
+            routes.add(fields[0])
+    interfaces = []
+    for line in read('/proc/net/dev').splitlines()[2:]:
+        name, _, values = line.partition(':')
+        name = name.strip(); values = values.split()
+        if name == 'lo' or len(values) < 9 or (routes and name not in routes):
+            continue
+        if not routes and read('/sys/class/net/'+name+'/operstate').strip() not in ('up', 'unknown'):
+            continue
+        interfaces.append({'id': name, 'name': name, 'receivedBytes': int(values[0]), 'sentBytes': int(values[8])})
+    return {'sampleSeconds': time.monotonic(), 'interfaces': interfaces}
+
+
+def storage_volumes():
+    ignored = {'tmpfs','devtmpfs','proc','sysfs','cgroup','cgroup2','squashfs','nsfs','devpts','securityfs','pstore','debugfs','tracefs','fusectl','mqueue','hugetlbfs','autofs','configfs','binfmt_misc','efivarfs'}
+    volumes, devices = [], set()
+    for line in read('/proc/self/mounts').splitlines():
+        fields = line.split()
+        if len(fields) < 3 or fields[2] in ignored:
+            continue
+        path = fields[1].replace(r'\040', ' ').replace(r'\011', '\t').replace(r'\134', '\\')
+        try:
+            if not os.path.isdir(path):
+                continue
+            identity = os.stat(path).st_dev
+            if identity in devices:
+                continue
+            stat = os.statvfs(path); total = stat.f_blocks * stat.f_frsize
+            if total <= 0:
+                continue
+            devices.add(identity)
+            volumes.append({'path': path, 'label': fields[0], 'fileSystem': fields[2], 'total': total,
+                            'used': (stat.f_blocks-stat.f_bfree)*stat.f_frsize,
+                            'available': stat.f_bavail*stat.f_frsize,
+                            'percent': 100*(stat.f_blocks-stat.f_bfree)/stat.f_blocks})
+        except OSError:
+            continue
+    volumes.sort(key=lambda v: (v['path'] != '/', v['path']))
+    return volumes[:128]
+
+
 def collect():
     cpu = []
     for line in read('/proc/stat').splitlines():
@@ -63,13 +109,10 @@ def collect():
     for line in read('/etc/os-release').splitlines():
         if line.startswith('PRETTY_NAME='):
             os_name = line.split('=', 1)[1].strip('"')
-    net = [0, 0]
-    for line in read('/proc/net/dev').splitlines()[2:]:
-        name, _, values = line.partition(':')
-        values = values.split()
-        if name.strip() != 'lo' and len(values) >= 9:
-            net[0] += int(values[0]); net[1] += int(values[8])
-    disk = shutil.disk_usage(os.path.expanduser('~'))
+    network = network_snapshot()
+    net = [sum(x['receivedBytes'] for x in network['interfaces']), sum(x['sentBytes'] for x in network['interfaces'])]
+    volumes = storage_volumes()
+    disk = shutil.disk_usage('/')
     gpus, gpu_processes, gpu_error = [], [], None
     if shutil.which('nvidia-smi'):
         query = 'index,uuid,name,memory.total,memory.used,utilization.gpu,temperature.gpu,power.draw,power.limit,fan.speed,driver_version'
@@ -101,7 +144,7 @@ def collect():
     return {'timestamp': time.time(), 'cpuCounters': cpu,
         'memory': {'total':mem.get('MemTotal',0),'available':mem.get('MemAvailable',mem.get('MemFree',0)),
                    'swapTotal':mem.get('SwapTotal',0),'swapFree':mem.get('SwapFree',0)},
-        'disk':dict(total=disk.total,used=disk.used,free=disk.free), 'networkCounters': net,
+        'disk':dict(total=disk.total,used=disk.used,free=disk.free), 'networkCounters': net, 'network': network, 'volumes': volumes, 'primaryStoragePath': '/',
         'gpus':gpus,'gpuProcesses':gpu_processes,'processes':processes[:40], 'gpuError':gpu_error,
         'hardware':{'os':os_name or platform.system(),'hostname':platform.node(),'architecture':platform.machine(),
                     'cpuModel':model or platform.machine(),'logicalCpus':max(0,len(cpu)-1),'physicalCores':len(cores),

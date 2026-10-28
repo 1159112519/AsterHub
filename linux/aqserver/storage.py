@@ -6,8 +6,8 @@ import sqlite3
 import secrets
 import time
 
-VERSION = '0.1.2'
-DEFAULTS = {'theme':'light','interval':2,'terminalFontSize':14,'terminalFontFamily':'monospace',
+VERSION = '0.1.3'
+DEFAULTS = {'theme':'dark','interval':2,'terminalFontSize':14,'terminalFontFamily':'monospace',
             'retentionDays':30,'historyOrder':['chart','gpus','processes'],
             'devices':[{'id':'local','name':'本机','type':'local','enabled':True},
                        {'id':'aq-server','name':'aq-server','type':'ssh','host':'117.50.162.34','port':22,'username':'baiyang','keyPath':'','enabled':False}]}

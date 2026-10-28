@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$SigningKey,[Parameter(Mandatory=$true)][string]$Package,[Parameter(Mandatory=$true)][string]$Metadata,[Parameter(Mandatory=$true)][string]$ReleaseDirectory)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot
-$version=([IO.File]::ReadAllText((Join-Path $root 'VERSION'))).Trim()
+$version=([IO.File]::ReadAllText((Join-Path $root 'linux/VERSION'))).Trim()
 $build=Get-Content -LiteralPath $Metadata -Raw -Encoding UTF8|ConvertFrom-Json
 if($build.version-ne$version){throw 'Ubuntu metadata version mismatch'}
 $hash=(Get-FileHash -LiteralPath $Package -Algorithm SHA256).Hash.ToLowerInvariant()

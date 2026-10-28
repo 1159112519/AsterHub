@@ -1,9 +1,9 @@
-﻿using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Text;using System.Security.Cryptography;using System.Web.Script.Serialization;
+using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Text;using System.Security.Cryptography;using System.Web.Script.Serialization;
 public static class UpdateTests {
  static List<string> log=new List<string>();static void Check(bool ok,string name){if(!ok)throw new Exception(name);log.Add("PASS "+name);}
- sealed class Endpoint : IDisposable {
+ public sealed class Endpoint : IDisposable {
   readonly System.Net.Sockets.TcpListener listener;readonly System.Threading.Tasks.Task worker;public string Url;
-  public Endpoint(byte[] response){listener=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);listener.Start();Url="http://127.0.0.1:"+((System.Net.IPEndPoint)listener.LocalEndpoint).Port+"/setup.exe";worker=System.Threading.Tasks.Task.Run(()=>{using(var client=listener.AcceptTcpClient())using(var stream=client.GetStream()){client.ReceiveTimeout=5000;var reader=new StreamReader(stream,Encoding.ASCII,false,1024,true);while(!string.IsNullOrEmpty(reader.ReadLine())){}var header=Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "+response.Length+"\r\nConnection: close\r\n\r\n");stream.Write(header,0,header.Length);stream.Write(response,0,response.Length);}});}
+  public Endpoint(byte[] response,int delay=0){listener=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);listener.Start();Url="http://127.0.0.1:"+((System.Net.IPEndPoint)listener.LocalEndpoint).Port+"/setup.exe";worker=System.Threading.Tasks.Task.Run(()=>{using(var client=listener.AcceptTcpClient())using(var stream=client.GetStream()){client.ReceiveTimeout=5000;var reader=new StreamReader(stream,Encoding.ASCII,false,1024,true);while(!string.IsNullOrEmpty(reader.ReadLine())){}if(delay>0)System.Threading.Thread.Sleep(delay);var header=Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "+response.Length+"\r\nConnection: close\r\n\r\n");stream.Write(header,0,header.Length);stream.Write(response,0,response.Length);}});}
   public void Dispose(){listener.Stop();try{worker.Wait(5000);}catch{}}
  }
  static byte[] Signed(ReleaseInfo release,RSACryptoServiceProvider rsa){var json=new JavaScriptSerializer();var payload=Encoding.UTF8.GetBytes(json.Serialize(release));return Encoding.UTF8.GetBytes(json.Serialize(new ReleaseEnvelope{payload=Convert.ToBase64String(payload),signature=Convert.ToBase64String(rsa.SignData(payload,CryptoConfig.MapNameToOID("SHA256")))}));}
@@ -22,6 +22,7 @@ public static class UpdateTests {
 
   }
   string manifest=Environment.GetEnvironmentVariable("AQSERVER_RELEASE_MANIFEST");if(!string.IsNullOrEmpty(manifest)){var release=AppUpdates.VerifyManifest(File.ReadAllBytes(manifest),UpdatePublicKey.Xml);Check(release.ParsedVersion==AppUpdates.CurrentVersion,"published manifest matches embedded public key and application version");string installer=Environment.GetEnvironmentVariable("AQSERVER_RELEASE_INSTALLER");if(!string.IsNullOrEmpty(installer)){AppUpdates.VerifyInstaller(installer,release);Check(true,"published installer matches signed release");}}
+  log.AddRange(UpdateSourceTests.Run(folder));
   File.WriteAllLines(Path.Combine(folder,"update-results.txt"),log);return 0;
  }catch(Exception ex){File.WriteAllLines(Path.Combine(folder,"update-results.txt"),log);File.WriteAllText(Path.Combine(folder,"update-error.txt"),ex.ToString());return 1;}}
 }

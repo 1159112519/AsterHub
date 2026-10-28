@@ -30,6 +30,7 @@
     <ProjectReference Include="..\AQServer.Storage\AQServer.Storage.csproj"><Project>{34682B90-3B23-583F-AE84-9AEA1363D964}</Project><Name>AQServer.Storage</Name><Private>False</Private></ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PeripheralCollector.cs" />
     <Compile Include="Capture.cs" />
     <Compile Include="ConnectionProbe.cs" />
     <Compile Include="ConPtySession.cs" />

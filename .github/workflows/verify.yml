@@ -24,6 +24,8 @@ jobs:
         run: python3 qa/check_version.py
       - name: Validate defect queue contract
         run: python3 -m unittest discover -s qa -p 'test_*.py' -v
+      - name: Verify chart interaction ordering
+        run: node qa/test_chart_hover.mjs
       - name: Install locked website dependencies
         working-directory: website
         run: npm ci
