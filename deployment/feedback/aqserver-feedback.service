@@ -1,0 +1,26 @@
+[Unit]
+Description=AQ Server user feedback intake
+After=network.target
+
+[Service]
+Type=simple
+User=aqserver-feedback
+Group=aqserver-feedback
+ExecStart=/usr/bin/python3 /opt/aq-server-feedback/feedback_api.py --data /var/lib/aq-server-feedback/inbox --port 18772
+WorkingDirectory=/opt/aq-server-feedback
+StateDirectory=aq-server-feedback
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/aq-server-feedback
+MemoryMax=128M
+CPUQuota=15%
+TasksMax=48
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

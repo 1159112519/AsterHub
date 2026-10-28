@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
 // ConPTY owns a new process/job; it never attaches/reparents an existing console window.
-public sealed class ConPtySession : IDisposable {
+public sealed class ConPtySession : ITerminalSession {
  IntPtr pseudo, process, job; FileStream input,output; int disposed; readonly object gate=new object(); readonly BlockingCollection<byte[]> inputQueue=new BlockingCollection<byte[]>(128); int queuedBytes;
- public Func<string,Task> Output; public event Action<int> Exited;
+ public Func<string,Task> Output {get;set;} public event Action<int> Exited;
  public static string Quote(string value){var b=new StringBuilder("\"");int slashes=0;foreach(char c in value??""){if(c=='\\'){slashes++;continue;}if(c=='\"'){b.Append('\\',slashes*2+1);b.Append(c);}else{b.Append('\\',slashes);b.Append(c);}slashes=0;}b.Append('\\',slashes*2);b.Append('\"');return b.ToString();}
  public ConPtySession(string command,int columns,int rows){
   IntPtr readIn=IntPtr.Zero,writeIn=IntPtr.Zero,readOut=IntPtr.Zero,writeOut=IntPtr.Zero,attributes=IntPtr.Zero,value=IntPtr.Zero;

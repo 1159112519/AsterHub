@@ -46,11 +46,14 @@
     <Compile Include="Appearance\TrayIcon.cs" />
     <Compile Include="Appearance\Workspace.cs" />
     <Compile Include="Application\About.cs" />
+    <Compile Include="Application\FeedbackClient.cs" />
+    <Compile Include="Application\FeedbackWindow.cs" />
     <Compile Include="Application\AppUpdates.cs" />
     <Compile Include="Application\UpdateSources.cs" />
     <Compile Include="Application\UpdateInstallation.cs" />
     <Compile Include="Application\UpdatePublicKey.cs" />
     <Compile Include="Diagnostics\ArchiveTests.cs" />
+    <Compile Include="Diagnostics\AuthFeedbackTests.cs" />
     <Compile Include="Diagnostics\CaptureTests.cs" />
     <Compile Include="Diagnostics\CompactTests.cs" />
     <Compile Include="Diagnostics\DesignReview.cs" />

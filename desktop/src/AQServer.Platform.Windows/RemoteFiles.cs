@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,7 +26,7 @@ public static class FileTools {
  public static void RejectRecursiveLocalCopy(string source,string destination){string src=Path.GetFullPath(source).TrimEnd(Path.DirectorySeparatorChar,Path.AltDirectorySeparatorChar);string dst=Path.GetFullPath(destination).TrimEnd(Path.DirectorySeparatorChar,Path.AltDirectorySeparatorChar);if(string.Equals(src,dst,StringComparison.OrdinalIgnoreCase)||dst.StartsWith(src+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))throw new IOException("不能将文件夹复制到自身或其子目录。");}
  public static List<Tuple<string,string>> PathParts(bool local,string path){string root=local?Path.GetPathRoot(path):"/";var parts=new List<Tuple<string,string>>{Tuple.Create(local?root:"根目录",root)};string accumulated=root;foreach(var segment in path.Substring(root.Length).Split(local?new[]{'/','\\'}:new[]{'/'},StringSplitOptions.RemoveEmptyEntries)){accumulated=Join(local,accumulated,segment);parts.Add(Tuple.Create(segment,accumulated));}return parts;}
  public static string Parent(bool local,string p){if(local){var d=Directory.GetParent(p);return d==null?p:d.FullName;}var q=p.TrimEnd('/');int n=q.LastIndexOf('/');return n<=0?"/":q.Substring(0,n);}
- public static string Key(Server s){return s.IsLocal?"local":s.Host+":"+s.Port+":"+s.User+":"+s.KeyPath;}
+ public static string Key(Server s){return s.IsLocal?"local":s.Host+":"+s.Port+":"+s.User+":"+s.KeyPath+":"+s.AuthMode+":"+s.ProtectedPassword+":"+(s.Password==null?"saved":SshAuthentication.SessionIdentity(s));}
  public static int Natural(string a,string b){var aa=Regex.Matches(a,@"\d+|\D+");var bb=Regex.Matches(b,@"\d+|\D+");for(int i=0;i<Math.Min(aa.Count,bb.Count);i++){string x=aa[i].Value,y=bb[i].Value;int c;if(char.IsDigit(x[0])&&char.IsDigit(y[0])){x=x.TrimStart('0');y=y.TrimStart('0');c=x.Length.CompareTo(y.Length);if(c==0)c=string.CompareOrdinal(x,y);}else c=string.Compare(x,y,StringComparison.CurrentCultureIgnoreCase);if(c!=0)return c;}return aa.Count.CompareTo(bb.Count);}
  public static List<FileEntry> Sort(IEnumerable<FileEntry> x){var l=x.ToList();l.Sort((a,b)=>a.IsDirectory!=b.IsDirectory?(a.IsDirectory?-1:1):Natural(a.Name,b.Name));return l;}
 }
@@ -35,7 +35,7 @@ public sealed class FileConnection : IDisposable {
  public FileConnection(Server s){Device=s.Copy();}
  static string Arg(string s){return "\""+(s??"").Replace("\\","\\").Replace("\"","\\\"")+"\"";}
  static string Run(string exe,string args){using(var p=new Process{StartInfo=new ProcessStartInfo(exe,args){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=Encoding.UTF8}}){p.Start();var output=p.StandardOutput.ReadToEndAsync();var err=p.StandardError.ReadToEndAsync();if(!p.WaitForExit(10000)){try{p.Kill();}catch{}throw new IOException("读取 OpenSSH 配置超时");}if(p.ExitCode!=0&&!(exe=="ssh-keygen.exe"&&p.ExitCode==1))throw new IOException("无法读取 OpenSSH 配置；请检查 SSH 安装及配置。");return output.Result;}}
- public async Task Connect(CancellationToken token){if(Device.IsLocal){Home=Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);return;} await Task.Run(async()=>{
+ public async Task Connect(CancellationToken token){if(SshAuthentication.Managed(Device)){client=SshAuthentication.Files(Device);client.BufferSize=131072;client.OperationTimeout=TimeSpan.FromSeconds(30);await client.ConnectAsync(token).ConfigureAwait(false);Home=client.WorkingDirectory;return;}if(Device.IsLocal){Home=Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);return;} await Task.Run(async()=>{
  token.ThrowIfCancellationRequested();string host=Device.Host,user=Device.User,proxy="",hostAlias="";int port=Device.Port;var ids=new List<string>();var known=new List<string>();string cfg=Run("ssh.exe","-G -p "+port+" "+(string.IsNullOrWhiteSpace(user)?"":"-l "+Arg(user)+" ")+"-- "+Arg(host));
  foreach(var line in cfg.Split('\n')){int n=line.IndexOf(' ');if(n<0)continue;string k=line.Substring(0,n).Trim(),v=line.Substring(n+1).Trim();if(k=="hostname")host=v;else if(k=="user"&&string.IsNullOrWhiteSpace(user))user=v;else if(k=="hostkeyalias")hostAlias=v;else if(k=="port")int.TryParse(v,out port);else if(k=="identityfile")ids.Add(v);else if((k=="proxyjump"||k=="proxycommand")&&v!="none")proxy=v;else if(k=="userknownhostsfile"||k=="globalknownhostsfile")known.AddRange(Regex.Matches(v,"\"[^\"]+\"|\\S+").Cast<Match>().Select(m=>m.Value.Trim('"')));}
  if(proxy.Length>0)throw new NotSupportedException("此配置使用 ProxyJump / ProxyCommand。文件面板暂不支持代理；请用集成终端的系统 sftp 命令。");

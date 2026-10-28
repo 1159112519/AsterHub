@@ -15,27 +15,15 @@ public static class UpdateSourceTests
         string prior = Environment.GetEnvironmentVariable("AQSERVER_RUNTIME_ROOT");
         try {
             Environment.SetEnvironmentVariable("AQSERVER_RUNTIME_ROOT", Path.Combine(Path.GetFullPath(folder), "source-preference"));
-            string expected = "https://updates.example.org/aqserver/releases/stable.json";
-            Check(UpdateSources.Normalize("https://updates.example.org/aqserver/") == expected, "website normalizes to manifest", log);
-            Check(UpdateSources.Normalize("https://updates.example.org/aqserver/releases") == expected, "release directory normalizes without duplicate segment", log);
-            foreach (string address in new[] { "file:///C:/fixture.json", "relative", "https://example.org/?q=1", "https://example.org/#fragment" }) {
-                bool rejected = false;
-                try { UpdateSources.Normalize(address); } catch (ArgumentException) { rejected = true; }
-                Check(rejected, "invalid update-source syntax rejected", log);
-            }
-            UpdateSources.Save("https://updates.example.org/aqserver/");
-            Check(UpdateSources.CurrentEndpoint == expected, "source preference persists and deserializes", log);
-            UpdateSources.Save(AppUpdates.Endpoint);
-            Check(UpdateSources.CurrentEndpoint == AppUpdates.Endpoint, "source preference can be replaced and reset", log);
-            File.WriteAllText(UpdateSources.PreferencePath, "{corrupt");
-            Check(UpdateSources.CurrentEndpoint == AppUpdates.Endpoint, "corrupt preference falls back to default", log);
-            var release = new ReleaseInfo { version = "99.0.0", installerUrl = AppUpdates.Website + "releases/setup.exe", ManifestEndpoint = "https://mirror.example.org/aqserver/releases/stable.json" };
-            Check(AppUpdates.DownloadAddress(release) == "https://mirror.example.org/aqserver/releases/setup.exe", "verified-source origin transports signed installer filename", log);
-            Check(!new JavaScriptSerializer().Serialize(release).Contains("ManifestEndpoint"), "transport origin is excluded from signed payload", log);
-            release.ManifestEndpoint = "https://mirror.example.org/aqserver/releases/latest.json";
-            Check(AppUpdates.DownloadAddress(release) == "https://mirror.example.org/aqserver/releases/setup.exe", "custom JSON filename uses the same verified transport directory", log);
-            release.installerUrl = "https://publisher.example.org/custom.exe";
-            Check(AppUpdates.DownloadAddress(release) == release.installerUrl, "custom signed download remains unchanged", log);
+            Directory.CreateDirectory(Path.GetDirectoryName(UpdateSources.PreferencePath));
+            File.WriteAllText(UpdateSources.PreferencePath,"{\"endpoint\":\"https://untrusted.example.org/stable.json\"}");
+            Check(UpdateSources.CurrentEndpoint==AppUpdates.Endpoint,"legacy user update-source override ignored",log);
+            Check(AppUpdates.Endpoint=="https://raw.githubusercontent.com/1159112519/aq-server/main/website/public/releases/stable.json","official channel fixed to publisher",log);
+            File.WriteAllText(UpdateSources.PreferencePath,"{corrupt");
+            Check(UpdateSources.CurrentEndpoint==AppUpdates.Endpoint,"corrupt legacy settings cannot change official channel",log);
+            var release=new ReleaseInfo{version="99.0.0",installerUrl="https://github.com/1159112519/aq-server/releases/download/v99.0.0/setup.exe",ManifestEndpoint="https://untrusted.example.org/stable.json"};
+            Check(AppUpdates.DownloadAddress(release)==release.installerUrl,"signed installer URL cannot be redirected by legacy source",log);
+            Check(!new JavaScriptSerializer().Serialize(release).Contains("ManifestEndpoint"),"transport origin excluded from signed payload",log);
             var bytes = Enumerable.Range(0, 2048).Select(i => (byte)i).ToArray();
             release.ManifestEndpoint = null; release.installerBytes = bytes.Length;
             using (var sha = SHA256.Create()) release.installerSha256 = BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "");

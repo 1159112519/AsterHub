@@ -11,7 +11,7 @@ public sealed class AboutWindow : Window
     readonly Action installExit;
     readonly CancellationTokenSource lifetime = new CancellationTokenSource();
     readonly TextBlock status, versionLine, notes, sourceLine;
-    readonly Button check, download, sourceButton;
+    readonly Button check, download, feedbackButton;
     readonly ProgressBar progress;
     CancellationTokenSource operation;
     ReleaseInfo release;
@@ -61,16 +61,16 @@ public sealed class AboutWindow : Window
         var title = Theme.Text("版本亮点", 15, Theme.Ink, false, true);
         title.Margin = new Thickness(0, 0, 0, 10); DockPanel.SetDock(title, Dock.Top); content.Children.Add(title);
         notes = new TextBlock {
-            Text = "更清晰的底部指标与统一的图形比例\n合并历史时间筛选、导出与存档操作\n统一按钮、表单与深浅主题\n支持配置更新源，完善连接状态与取消操作",
+            Text = "更清晰的底部指标与统一的图形比例\n合并历史时间筛选、导出与存档操作\n统一按钮、表单与深浅主题\n支持密码连接与问题反馈，固定官方更新渠道",
             TextWrapping = TextWrapping.Wrap, Foreground = Theme.Muted, FontSize = 15,
             LineHeight = 27, LineStackingStrategy = LineStackingStrategy.BlockLineHeight
         };
         content.Children.Add(new ScrollViewer { Content = notes, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         card.Child = content; Grid.SetRow(card, 2); root.Children.Add(card);
         var sourceRow = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
-        sourceButton = Theme.Nav("更新源…", ChangeSource); sourceButton.MinWidth = 82;
-        sourceButton.Padding = new Thickness(8, 0, 8, 0);
-        DockPanel.SetDock(sourceButton, Dock.Right); sourceRow.Children.Add(sourceButton);
+        feedbackButton = Theme.Nav("反馈问题", () => new FeedbackWindow(this).ShowDialog()); feedbackButton.MinWidth = 82;
+        feedbackButton.Padding = new Thickness(8, 0, 8, 0);
+        DockPanel.SetDock(feedbackButton, Dock.Right); sourceRow.Children.Add(feedbackButton);
         sourceLine = Theme.Text("", 13, Theme.Muted); sourceRow.Children.Add(sourceLine); UpdateSourceLine();
         Grid.SetRow(sourceRow, 3); root.Children.Add(sourceRow);
         progress = new ProgressBar { Height = 4, Minimum = 0, Maximum = 100, Foreground = Theme.Accent,
@@ -80,7 +80,7 @@ public sealed class AboutWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var site = Theme.Nav("访问官网", () => Process.Start(new ProcessStartInfo(UpdateSources.WebsiteFor(UpdateSources.CurrentEndpoint)) { UseShellExecute = true }));
+        var site = Theme.Nav("项目主页", () => Process.Start(new ProcessStartInfo("https://github.com/1159112519/aq-server") { UseShellExecute = true }));
         site.HorizontalAlignment = HorizontalAlignment.Left; footer.Children.Add(site);
         check = Theme.Button("检查更新", Check); check.MinWidth = 110; Grid.SetColumn(check, 1); footer.Children.Add(check);
         download = Theme.Button("更新并重启", Download); download.MinWidth = 110; download.Margin = new Thickness(10, 0, 0, 0);
@@ -92,14 +92,14 @@ public sealed class AboutWindow : Window
     void UpdateSourceLine()
     {
         string address = UpdateSources.CurrentEndpoint;
-        sourceLine.Text = "更新服务 · " + new Uri(address).Host;
+        sourceLine.Text = "官方更新 · 发布签名校验";
         sourceLine.ToolTip = address;
     }
 
     void Busy(bool value)
     {
         busy = value; check.Content = value ? "取消" : "检查更新";
-        download.IsEnabled = sourceButton.IsEnabled = !value;
+        download.IsEnabled = feedbackButton.IsEnabled = !value;
     }
 
     async void Check()
@@ -166,31 +166,6 @@ public sealed class AboutWindow : Window
         }
     }
 
-    void ChangeSource()
-    {
-        var dialog = new Window { Owner = this, Title = "更新源", Width = 560, Height = 320, MinWidth = 500, MinHeight = 300,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Theme.Bg, Foreground = Theme.Ink,
-            FontFamily = Theme.Chinese, FontSize = 15, Resources = Theme.Resources(), ResizeMode = ResizeMode.CanResize, UseLayoutRounding = true };
-        var root = new Grid { Margin = new Thickness(24) };
-        for (int i = 0; i < 4; i++) root.RowDefinitions.Add(new RowDefinition { Height = i == 2 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
-        root.Children.Add(Theme.Text("官网或更新清单地址", 16, Theme.Ink, false, true));
-        var address = new TextBox { Text = UpdateSources.CurrentEndpoint, FontSize = 15, MinHeight = 42, Margin = new Thickness(0, 14, 0, 12) };
-        Grid.SetRow(address, 1); root.Children.Add(address);
-        var hint = Theme.Text("更换地址后仍会验证发布签名与安装包完整性。", 13, Theme.Muted);
-        hint.TextWrapping = TextWrapping.Wrap; hint.VerticalAlignment = VerticalAlignment.Top; Grid.SetRow(hint, 2); root.Children.Add(hint);
-        var actions = new DockPanel();
-        var reset = Theme.Nav("恢复默认", () => address.Text = AppUpdates.Endpoint); DockPanel.SetDock(reset, Dock.Left); actions.Children.Add(reset);
-        var save = Theme.Button("保存", () => {
-            try { UpdateSources.Save(address.Text); dialog.DialogResult = true; }
-            catch (Exception error) { hint.Text = error.Message; hint.Foreground = Theme.Red; }
-        });
-        save.MinWidth = 82; DockPanel.SetDock(save, Dock.Right); actions.Children.Add(save);
-        Grid.SetRow(actions, 3); root.Children.Add(actions); dialog.Content = root;
-        if (dialog.ShowDialog() == true) {
-            release = null; installer = null; download.Visibility = Visibility.Collapsed;
-            status.Text = "更新源已保存，可以检查更新。"; UpdateSourceLine();
-        }
-    }
 
     public void Render(string file) { Snapshot.Save((Grid)Content, file, 580, 600, 144, null); }
 }

@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$SigningKey,[string]$BaseUrl='http://8.140.49.4/aqserver',[string]$ReleaseDirectory)
+param([Parameter(Mandatory=$true)][string]$SigningKey,[string]$BaseUrl='http://8.140.49.4/aqserver',[string]$ReleaseDirectory,[string]$DownloadBaseUrl)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot
 $version=([IO.File]::ReadAllText((Join-Path $root 'VERSION'))).Trim()
@@ -10,7 +10,7 @@ $entry=[regex]::Match($changelog,'(?ms)^## '+[regex]::Escape($version)+'[^\r\n]*
 if(!$entry.Success){throw 'Current version has no changelog entry'}
 $notes=$entry.Groups[1].Value.Trim()
 New-Item -ItemType Directory -Force -Path $releaseDir|Out-Null
-$release=[ordered]@{appId='AQServer';version=$version;publishedUtc=[DateTime]::UtcNow.ToString('o');notes=$notes;installerUrl=$BaseUrl.TrimEnd('/')+'/releases/'+$name;installerSha256=(Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant();installerBytes=(Get-Item -LiteralPath $installer).Length}
+$release=[ordered]@{appId='AQServer';version=$version;publishedUtc=[DateTime]::UtcNow.ToString('o');notes=$notes;installerUrl=$(if($DownloadBaseUrl){$DownloadBaseUrl.TrimEnd('/')+'/'+$name}else{$BaseUrl.TrimEnd('/')+'/releases/'+$name});installerSha256=(Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant();installerBytes=(Get-Item -LiteralPath $installer).Length}
 $payload=[Text.Encoding]::UTF8.GetBytes(($release|ConvertTo-Json -Compress))
 $rsa=New-Object Security.Cryptography.RSACryptoServiceProvider
 $rsa.PersistKeyInCsp=$false

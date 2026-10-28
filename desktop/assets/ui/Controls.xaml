@@ -5,7 +5,7 @@
   <Style x:Key="QuietButton" TargetType="{x:Type Button}">
     <Setter Property="Cursor" Value="Hand"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type Button}">
-      <Border x:Name="chrome" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+      <Border x:Name="chrome" CornerRadius="14" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="False"/>
       </Border>
       <ControlTemplate.Triggers>
@@ -34,7 +34,7 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="{x:Type Button}">
-          <Border CornerRadius="8" x:Name="chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+          <Border CornerRadius="14" x:Name="chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="False"/>
           </Border>
           <ControlTemplate.Triggers>
@@ -89,6 +89,12 @@
   </Style>
   
  
+  <Style TargetType="{x:Type PasswordBox}">
+    <Setter Property="Background" Value="#0C1218"/><Setter Property="Foreground" Value="#E9F0ED"/><Setter Property="CaretBrush" Value="#A1EF9B"/>
+    <Setter Property="BorderBrush" Value="#40585F"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="10,8"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="{x:Type PasswordBox}"><Border x:Name="field" CornerRadius="10" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}"><ScrollViewer x:Name="PART_ContentHost" Style="{x:Null}"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="field" Property="BorderBrush" Value="#7FBDB9"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+  </Style>
+
   <Style TargetType="{x:Type CheckBox}">
     <Setter Property="Foreground" Value="#E9F0ED"/>
     <Setter Property="FontSize" Value="15"/>

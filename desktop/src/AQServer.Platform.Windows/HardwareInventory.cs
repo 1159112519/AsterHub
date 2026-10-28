@@ -21,6 +21,7 @@ internal static class AqModuleSsh {
   if(!Regex.IsMatch(s.Host??"",@"^[a-zA-Z0-9._:-]+$")||!Regex.IsMatch(s.User??"",@"^[a-zA-Z0-9._-]*$")||s.Port<1||s.Port>65535)throw new InvalidOperationException("服务器地址、用户或端口无效");
   string program=Convert.ToBase64String(Encoding.UTF8.GetBytes(python));
   string remote="python3 -c 'import base64;exec(base64.b64decode(\""+program+"\"))'";
+  if(SshAuthentication.Managed(s))return SshAuthentication.Execute(s,remote,22);
   string args="-n -o BatchMode=yes -o ConnectTimeout=7 -o StrictHostKeyChecking=accept-new -p "+s.Port;
   if(!string.IsNullOrWhiteSpace(s.KeyPath))args+=" -i "+Quote(Environment.ExpandEnvironmentVariables(s.KeyPath));
   args+=" -- "+Quote(string.IsNullOrWhiteSpace(s.User)?s.Host:s.User+"@"+s.Host)+" "+Quote(remote);

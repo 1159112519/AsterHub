@@ -24,6 +24,8 @@ jobs:
         run: python3 qa/check_version.py
       - name: Validate defect queue contract
         run: python3 -m unittest discover -s qa -p 'test_*.py' -v
+      - name: Verify feedback intake validation and storage privacy
+        run: python3 -m unittest discover -s deployment/feedback -p 'test_*.py' -v
       - name: Verify chart interaction ordering
         run: node qa/test_chart_hover.mjs
       - name: Install locked website dependencies
@@ -55,7 +57,7 @@ jobs:
           $qa=Join-Path $pwd 'artifacts/ci-qa'
           New-Item -ItemType Directory -Path $qa -Force|Out-Null
           $env:AQSERVER_LAYOUT_PATH=Join-Path $qa 'layout.xml'
-          foreach($name in @('module-tests','update-tests','workspace-tests','v12-tests','history-process-tests')){
+          foreach($name in @('module-tests','update-tests','workspace-tests','v12-tests','history-process-tests','auth-feedback-tests')){
             $folder=Join-Path $qa $name
             $p=Start-Process -FilePath (Join-Path $pwd 'desktop/bin/Release/AQServer.exe') -ArgumentList @(('--'+$name),('"'+$folder+'"')) -WindowStyle Hidden -PassThru -Wait
             if($p.ExitCode-ne 0){Get-ChildItem $folder -Filter '*error.txt'|ForEach-Object{Get-Content $_.FullName};throw ($name+' failed: '+$p.ExitCode)}

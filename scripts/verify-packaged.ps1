@@ -15,7 +15,7 @@ $env:AQSERVER_RELEASE_INSTALLER=$ReleaseInstaller
 $manifest=Get-Content -LiteralPath (Join-Path $payload 'payload-manifest.json') -Raw | ConvertFrom-Json
 foreach($file in $manifest){$path=Join-Path $payload $file.File;if(!(Test-Path -LiteralPath $path)-or(Get-FileHash -LiteralPath $path).Hash-ne$file.SHA256){throw ('Payload mismatch '+$file.File)}}
 $results=@('PAYLOAD_HASHES_VERIFIED='+$manifest.Count)
-$known=@('module-tests','peripheral-tests','tray-tests','v124-native','update-tests','footer-layout-tests','startup-smoke','v122-native','v12-tests','workspace-tests','terminal-tests','theme-tests','v5-tests','history-process-tests','v6-tests')
+$known=@('auth-feedback-tests','module-tests','peripheral-tests','tray-tests','v124-native','update-tests','footer-layout-tests','startup-smoke','v122-native','v12-tests','workspace-tests','terminal-tests','theme-tests','v5-tests','history-process-tests','v6-tests')
 if(!$Tests){$Tests=$known}
 foreach($test in $Tests){if($test-notin$known){throw ('Unknown packaged regression '+$test)}}
 foreach($test in $Tests){

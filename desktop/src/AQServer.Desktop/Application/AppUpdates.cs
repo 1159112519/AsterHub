@@ -17,7 +17,7 @@ public sealed class ReleaseInfo {
 }
 public static class AppUpdates {
  public const string Website="http://8.140.49.4/aqserver/";
- public const string Endpoint=Website+"releases/stable.json";
+ public const string Endpoint="https://raw.githubusercontent.com/1159112519/aq-server/main/website/public/releases/stable.json";
  public static Version CurrentVersion{get{return Assembly.GetExecutingAssembly().GetName().Version;}}
  public static string DisplayVersion{get{return CurrentVersion.Major+"."+CurrentVersion.Minor+"."+CurrentVersion.Build;}}
  public static ReleaseInfo VerifyManifest(byte[] envelopeBytes,string publicKey){
@@ -54,15 +54,8 @@ public static class AppUpdates {
    }
   }
  },token);}
- // A configured mirror may transport the same signed package; the signed hash and size are never changed.
- internal static string DownloadAddress(ReleaseInfo release){
-  Uri source,installer;
-  if(Uri.TryCreate(release.ManifestEndpoint,UriKind.Absolute,out source)&&Uri.TryCreate(release.installerUrl,UriKind.Absolute,out installer)&&
-    source.AbsolutePath.EndsWith(".json",StringComparison.OrdinalIgnoreCase)&&
-    installer.AbsoluteUri.StartsWith(Website+"releases/",StringComparison.OrdinalIgnoreCase))
-   return new Uri(source,Uri.EscapeDataString(Path.GetFileName(installer.LocalPath))).AbsoluteUri;
-  return release.installerUrl;
- }
+ // Installer URL is covered by the publisher signature; never rebase it to another origin.
+ internal static string DownloadAddress(ReleaseInfo release){return release.installerUrl;}
  public static void VerifyInstaller(string path,ReleaseInfo release){var file=new FileInfo(path);if(!file.Exists||file.Length!=release.installerBytes)throw new InvalidDataException("安装包大小校验失败。");string hash;using(var input=File.OpenRead(path))using(var sha=SHA256.Create())hash=BitConverter.ToString(sha.ComputeHash(input)).Replace("-","");if(!string.Equals(hash,release.installerSha256,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("安装包校验失败，请重新下载。");}
  public static Task<string> Download(ReleaseInfo release,IProgress<double> progress,CancellationToken token){return DownloadTo(release,progress,token,Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"AQServer","Updates"));}
  internal static Task<string> DownloadTo(ReleaseInfo release,IProgress<double> progress,CancellationToken token,string folder){return Task.Run(()=>{
@@ -79,11 +72,11 @@ public static class AppUpdates {
   var network=error as WebException;
   if(network!=null){
    var response=network.Response as HttpWebResponse;
-   if(response!=null&&response.StatusCode==HttpStatusCode.NotFound)return "这个更新源没有发布清单（404），请检查更新源地址。";
-   if(network.Status==WebExceptionStatus.Timeout)return "连接更新服务超时。可在“更新源”中更换可访问的网站地址。";
-   if(network.Status==WebExceptionStatus.NameResolutionFailure)return "无法解析更新服务域名，请检查网络或更新源地址。";
+   if(response!=null&&response.StatusCode==HttpStatusCode.NotFound)return "官方更新信息暂不可用（404），请稍后重试。";
+   if(network.Status==WebExceptionStatus.Timeout)return "连接官方更新服务超时，请检查网络后重试。";
+   if(network.Status==WebExceptionStatus.NameResolutionFailure)return "无法解析官方更新服务域名，请检查网络。";
    if(network.Status==WebExceptionStatus.TrustFailure||network.Status==WebExceptionStatus.SecureChannelFailure)return "更新服务的安全连接失败，请检查系统时间和证书。";
-   return "无法连接更新服务，请检查网络，或在“更新源”中更换地址。";
+   return "无法连接官方更新服务，请检查网络后重试。";
   }
   if(error is UnauthorizedAccessException||error is IOException)return "无法保存安装包，请检查磁盘空间和目录权限。";
   return "检查更新未完成，请稍后重试。";
