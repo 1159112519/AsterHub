@@ -19,7 +19,7 @@ public sealed class ArchiveProcessTable : Border {
   public event PropertyChangedEventHandler PropertyChanged;
   void Set(ref string field,string value,string property){value=value??"—";if(field==value)return;field=value;var changed=PropertyChanged;if(changed!=null)changed(this,new PropertyChangedEventArgs(property));}
   public void Update(GpuProcess process){
-   Set(ref gpu,process.Gpu,"Gpu");Set(ref pid,process.Pid,"Pid");Set(ref user,process.User,"User");Set(ref kind,process.Type,"Kind");Set(ref name,process.Name,"Name");Set(ref memory,GpuTelemetry.Memory(process.Memory),"Memory");
+   Set(ref gpu,process.Gpu,"Gpu");Set(ref pid,process.Pid,"Pid");Set(ref user,process.User,"User");Set(ref kind,process.Type,"Kind");Set(ref name,GpuTelemetry.ProcessName(process.Name),"Name");Set(ref memory,GpuTelemetry.Memory(process.Memory),"Memory");
    Set(ref tip,(process.MemorySource??"NVIDIA · 进程显存")+(string.IsNullOrEmpty(process.SharedMemory)?"":"\n共享 GPU 内存："+process.SharedMemory)+"\nC：计算进程；C/G：Windows GPU 计数器记录。","Tip");
   }
  }

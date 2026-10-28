@@ -8,6 +8,8 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Xml;
 public static class GpuTelemetry {
+ // Keep the original NVIDIA identity for archives and process validation; normalize only visible text.
+ public static string ProcessName(string name){return string.IsNullOrWhiteSpace(name)||name.Trim().StartsWith("[Not Found]",StringComparison.OrdinalIgnoreCase)||name.Trim().Equals("Not Found",StringComparison.OrdinalIgnoreCase)?"其他进程":name;}
  public static bool Available(string text){double n;return double.TryParse((text??"").Trim().Replace(" W","").Replace(" %",""),NumberStyles.Float,CultureInfo.InvariantCulture,out n)&&!double.IsNaN(n)&&!double.IsInfinity(n)&&n>=0;}
  public static string Numeric(string text){return Available(text)?Regex.Match(text,@"[0-9]+(?:\.[0-9]+)?").Value:null;}
  public static string Unit(string value,string unit){return Available(value)?value+unit:"未提供";}
