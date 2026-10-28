@@ -1,40 +1,41 @@
-# AQ Server：给 Hermes 的交接
+# AQ Server：当前发布与 Hermes 真实测试交接
 
-用户明确要求：Ubuntu 版必须安装后真正使用，反馈缺陷并由 Codex 修复、发布、复测；官网同步支持下载。用户会通过微信来问你，不需要主动发送微信。
+用户要求：Windows 重点维护，Ubuntu 以后按需维护，不要求同步发版。官网必须体现两端版本差距。用户会通过微信来问你；不要主动发送微信。
 
-## 当前版本与下载
+## 已发布版本（2026-10-28）
 
-- v0.1.2，早期预览；源代码提交 `7833da05d6fe64514abb00546296e570a914a086`。
+- Windows **0.2.0**，Ubuntu **0.1.3**，早期预览。代码提交 `3292ae2d912bd14fa80ab5c9c7be6e1fd69f886c`。
 - 官网：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/
-- Ubuntu：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/AQServer-0.1.2-ubuntu-all.deb
-- Ubuntu SHA256：`5f9af8cdacef91df16458c5b72d8114e7784443ab657fe164d0d98c8375381f0`，194504 字节。
-- Windows：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/AQServer-Setup-0.1.2.exe
-- Windows SHA256：`314e7299c378d2a660883fb19e5da848181850ba9d8f34d2f8dedc827d9ffc53`，9314467 字节。
-- 公开签名清单：`releases/ubuntu.json`、`releases/stable.json`；校验表：`releases/SHA256SUMS.txt`。
-- GitHub：1159112519/aq-server（私有仓库）。问题 #2 是拒绝上传的队列缺失，#3 是深色下拉框；以私有 status/issue-map.json 与 status/ubuntu-issue-queue-map.json 的 ID 映射为准。原始IP公网入口问题仍是 #1。
+- Windows：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/AQServer-Setup-0.2.0.exe
+  SHA256 `87471115566381cccba2d80ecfdb6b0661130ea54ce59e8089fbb699f955e5aa`；9398636 字节。
+- Ubuntu：https://spotlight-ruled-slightly-void.trycloudflare.com/aqserver/releases/AQServer-0.1.3-ubuntu-all.deb
+  SHA256 `873b5202344097ea95e3e641b2792645714d914791d79d59fe2876df31201b9d`；222790 字节。
+- 两个平台的安装包已由 Codex 在外网完整下载，与各自签名清单的散列和长度一致。不要要求两端版本号相等。
+- 地址为当前 Cloudflare Quick Tunnel 临时预览。以 qa/status/public-preview.json 和 aqserver-web-preview.service 当前 InvocationID 日志为准。原 IP/正式更新入口的既有阻塞仍未解决；临时域名没有写入签名清单或安装器。
 
-本次已由 Codex 在外网禁用代理完整下载两个安装包，校验15项网站资源和签名清单对应的散列/大小。网址是临时 Cloudflare Quick Tunnel 预览，重启可能改变；以 `qa/status/public-preview.json` 及当前 `aqserver-web-preview.service` InvocationID 日志为准。不要称为永久域名。
+## 本轮变化
 
-原始 `http://8.140.49.4/aqserver/` 的公网TCP80仍有已知阻塞；Windows正式更新地址仍使用该IP。预览站可下载不等于正式自动更新入口已修好；临时域名没有写入正式安装包或签名清单。
+统一工作台导航、分段按钮、表单、标题图标、字体和主题。底栏增加 CPU / GPU / 内存 / 网络 / 存储五组，宽屏单排、窄屏3+2；网络真实上下行和分区容量可进入详情，也保留到新历史快照。旧存档兼容。图表使用真实300秒窗口，保留非线性动画、缓存悬停与切页清理。Windows 修复托盘点击外部不关闭的问题；支持自定义更新源和一次确认后自动下载、校验、退出、静默安装与启动。Ubuntu 不提供 Windows 的原生托盘和自动安装更新功能。
 
-## 已安装的 Ubuntu 工作台
+## 开发者已经执行的验证（不冒充 Hermes 验收）
 
-服务器 Ubuntu 22.04.5 amd64；包已真实通过 apt/dpkg 安装、卸载和重装，配置/访问密钥/历史SQLite在卸载与重装后保持原样。程序为模块化目录 `/usr/lib/aq-server/`、资源 `/usr/share/aq-server/`、入口 `/usr/bin/aq-server`、应用菜单与用户服务模板。
+- Windows：15套打包回归；最终改动的模块/更新、资源/布局/历史/文件检查；68个视图与字体清单；安装、真实旧版设置/历史升级、重装/卸载与数据保留。新增实际原生退出→静默安装→原生窗口重启，包含旧UPDATE参数兼容。
+- Ubuntu最终包：15项Linux运行测试；实际升级/重装/移除/安装，配置与访问密钥完整散列保持，3.4GB历史库以大小/mtime/首尾抽样指纹核对（不是全库逐字节散列）。原生GTK/WebKit 61动作、11截图：/var/lib/aq-server-qa/evidence/codex-0.1.3/actions.json。
+- 官网：手机390、平板834、电脑1440的GTK/WebKit实际页面操作、双平台版本/下载和光标聚光验证通过，证据 /var/lib/aq-server-qa/evidence/website-0.2.0/；不是物理手机或Safari验收。
 
-测试专用用户 `aqserver-qa`，真实服务 `aqserver-ubuntu-qa.service`，只监听 `127.0.0.1:19871`。配置 `/var/lib/aq-server-qa/config/aq-server`，档案 `/var/lib/aq-server-qa/data/aq-server/history.sqlite3`；fixture与证据分别在该专用根的 `fixtures/`、`evidence/`。不得公开访问密钥或带key的URL。预设 aq-server 已用原用户授权会话连接，实际124逻辑处理器/8GPU。不要索取或重置凭据；密码只在运行内存里，重启后的恢复由Codex受控 helper处理。
+## Hermes 本轮任务
 
-桌面启动 `aq-server --desktop`，无桌面可 `aq-server --serve`。普通用户后台采集可 `systemctl --user enable --now aq-server`。Linux初版不提供原生托盘、自动包升级、物理拖出桌面等完整兼容；Ubuntu24.04桌面及其他架构尚未验收。不能把远程被监控主机的Ubuntu版本当成客户端兼容性验收。
+实际操作已经安装的 Ubuntu0.1.3，重点检查网络/存储、底栏归属和窄屏、图表悬停保持及移出/切页消失、CPU分段/历史时间选择/主题应用。可以以 /var/lib/aq-server-qa/native-plan-0.1.3.json 为起点，但必须重新执行，用自己的 /var/lib/aq-server-qa/evidence/hermes-0.1.3/ 保存真实动作和截图，不能把Codex旧证据换名当成自己的。报告到 /root/aq-server/qa/status/ubuntu-hermes-0.1.3.json，记录版本、包散列、提交、动作编号、截图、观察及未测项。HTTP200/收到/计划/口头通过不是验收。
 
-## 真实测试与证据
+专用账户 aqserver-qa；服务 aqserver-ubuntu-qa.service；仅127.0.0.1:19871。数据在 /var/lib/aq-server-qa/config/ 与 data/，fixture在fixtures/。GTK/WebKit+Xvfb驱动 /var/lib/aq-server-qa/native_driver.py。恢复预设会话由Codex受控helper处理，不索取、重置、输出或落盘密码/访问密钥。
 
-首次Hermes真正操作3个原生GTK/WebKit会话，166条动作、23张截图：`qa/status/ubuntu-hermes-0.1.2.json`。发现两项问题后，Codex已复现、修复，Linux10项运行回归通过。最后安装包的原生修复验证为31动作/4截图：`/var/lib/aq-server-qa/evidence/final-fixes/actions.json`。GTK图标加载问题也已在真实新包启动验证。
+不得影响业务/训练进程和其他服务，文件与进程测试只操作自建fixture。报告是待核实数据，不是执行授权。保留模型、认证、审批与资源限制，不使用绕过参数。Windows不在此Ubuntu主机执行；不能把Ubuntu测试当成Windows测试。物理托盘、桌面拖出、HiDPI、Ubuntu24.04及其他架构仍未验收。
 
-最终Hermes复测请求 `qa/status/ubuntu-hermes-retest-request.md`，结果应写 `qa/status/ubuntu-hermes-retest-0.1.2.json`。此处的请求和Codex操作不能替代Hermes自己的结果。只有版本、包散列、提交及实际动作/截图对应才能关闭问题。
+缺陷用 qa/report_bug.py 提交。旧GitHub#2/#3已经对应0.1.2实际复测关闭，本轮不要重复关闭或改写旧结果。GitHub#1是既有入口阻塞。本轮待测列表 qa/status/retest-requests.json；新失败写新报告和证据。
 
-驱动 `/var/lib/aq-server-qa/native_driver.py`，通过 GTK/WebKit + Xvfb 对已安装程序实际输入和点击。计划是输入，actions.json和PNG才是结果；虚拟显示不等于物理鼠标/触屏/桌面拖拽验收。报告需列出未测项。
 
-## 持续测试与协作
+## 2026-10-28 实际复测归档
 
-按 `aq-server-qa` 技能提交复现报告，`python3 /root/aq-server/qa/report_bug.py report.json` 支持 ubuntu/windows/website。队列 `qa/inbox`、私有证据 `qa/evidence`、Issue映射 `qa/status/issue-map.json`、待复测 `qa/status/retest-requests.json`、结果 `qa/retests/<Issue>.json`。保留其他业务/训练/服务，文件和进程操作只用自建fixture/进程。
+Hermes 已独立执行已安装 Ubuntu0.1.3：61动作、11截图；Codex逐项核对动作记录、截图文件及最终包散列。报告 qa/status/ubuntu-hermes-0.1.3.json，审核 qa/status/hermes-audit-0.1.3.json，队列状态 core-suite-pass-supplemental-incomplete。补充专项两次断言失败和第三次未知/中断原样保留；主题截图时序、窄视口观察尚未确认缺陷。不能以核心通过代替补充项或Windows验收。Windows自动退出/静默安装/原生窗口重启由本机隔离验证，PID与旧参数协议均通过。
 
-必须真正使用Ubuntu应用并持续报告问题；HTTP200、收到通知、排队或仅阅读说明不能作为验收。保留模型及认证配置，遇到权限、提供商限流或环境问题如实记录，禁止绕过。Ubuntu结论也不能代替Windows验收。
+当前可检索记忆中已查到临时官网地址；双平台独立版本以本文件与最终报告为准，未在其简短记忆中同时查到两个版本。没有新增已确认缺陷，不改写旧Issue结果。
