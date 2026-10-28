@@ -7,7 +7,7 @@ const windowsDate = releaseVersions.windowsDate.replace(/-/g, '.');
 const ubuntuDate = releaseVersions.ubuntuDate.replace(/-/g, '.');
 const installer = `./releases/AQServer-Setup-${windowsVersion}.exe`;
 const ubuntuInstaller = `./releases/AQServer-${ubuntuVersion}-ubuntu-all.deb`;
-const repository = 'https://github.com/1159112519/aq-server';
+const repository = 'https://github.com/1159112519/aq-server-releases/releases';
 
 function ProductReveal() {
   const art = useRef<HTMLDivElement>(null);
@@ -80,10 +80,10 @@ export default function App() {
   return <>
     <header className="site-header">
       <a className="brand" href="#home" aria-label="AQ Server 首页"><img src="./favicon.ico" alt="" width="29" height="29" /><span>AQ<span className="brand-space">Server</span></span></a>
-      <nav className="desktop-nav" aria-label="主导航"><a href="#experience">产品体验</a><a href="#updates">版本更新</a><a href={repository} target="_blank" rel="noreferrer" title="项目仓库，需授权访问">GitHub <ArrowUpRight size={13} /></a></nav>
+      <nav className="desktop-nav" aria-label="主导航"><a href="#experience">产品体验</a><a href="#updates">版本更新</a><a href={repository} target="_blank" rel="noreferrer" title="公开版本更新与发行说明">GitHub <ArrowUpRight size={13} /></a></nav>
       <a className="header-download" href="#download"><Download size={14} />下载 <span>v{windowsVersion}</span></a>
       <button className="mobile-menu-button" type="button" aria-label={mobileOpen ? '关闭导航' : '打开导航'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
-      {mobileOpen && <nav id="mobile-navigation" className="mobile-nav" aria-label="移动导航"><a href="#experience" onClick={() => setMobileOpen(false)}>产品体验<ChevronRight size={16} /></a><a href="#updates" onClick={() => setMobileOpen(false)}>版本更新<ChevronRight size={16} /></a><a href={repository} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)}>项目仓库<ArrowUpRight size={16} /></a></nav>}
+      {mobileOpen && <nav id="mobile-navigation" className="mobile-nav" aria-label="移动导航"><a href="#experience" onClick={() => setMobileOpen(false)}>产品体验<ChevronRight size={16} /></a><a href="#updates" onClick={() => setMobileOpen(false)}>版本更新<ChevronRight size={16} /></a><a href={repository} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)}>更新日志<ArrowUpRight size={16} /></a></nav>}
     </header>
     <main>
       <section className="hero" id="home">
@@ -107,6 +107,6 @@ export default function App() {
       <section className="updates section-shell" id="updates"><div className="section-heading"><span className="section-kicker">02 / RELEASE NOTES</span><h2>持续打磨，<br /><span>把细节做好。</span></h2><p>这是早期版本。持续完善体验，<br />逐步走向稳定发布。</p></div><article className="release-card"><div className="release-card-heading"><h3>Windows v{windowsVersion}</h3><span>{windowsDate} · 公开预览</span></div><ul><li><Check size={15} />统一暖灰工作台、分组导航、图标与四套 Windows 主题</li><li><Check size={15} />五个常驻资源模块，新增真实网络上下行与分区容量</li><li><Check size={15} />更清晰的历史时间选择，网络与存储快照随采样归档</li><li><Check size={15} />保留非线性曲线与数字动画，修复托盘菜单关闭行为</li><li><Check size={15} />偏好设置支持应用，分栏与列宽可调整</li><li><Check size={15} />一键更新并重启：自动下载、校验、退出、安装与重新打开</li></ul><div className="release-card-footer"><a href={installer} download>下载安装包<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article><article className="release-card ubuntu-release"><div className="release-card-heading"><h3>Ubuntu v{ubuntuVersion}</h3><span>{ubuntuDate} · 独立预览</span></div><p>保留本次已验证的 GTK/WebKit 工作台，包含网络上下行、分区容量和五项常驻资源。Ubuntu 后续按需维护，不随 Windows 同步发版。</p><div className="release-card-footer"><a href={ubuntuInstaller} download>下载 Ubuntu v{ubuntuVersion}<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article></section>
       <section className="install-note section-shell"><ShieldCheck size={23} strokeWidth={1.5} /><div><h3>升级，保留你的配置与历史。</h3><p>Windows 检查新版本后点击“更新并重启”，确认后自动下载、校验、退出、安装并重新打开。配置和历史保留，终端会话会结束。Ubuntu 通过 apt 手动安装或升级。</p><p className="small-note">早期版本尚未使用 Windows 发布者代码签名证书，安装时可能显示未知发布者。</p></div></section>
     </main>
-    <footer className="site-footer section-shell"><a className="footer-brand" href="#home">AQ Server<span>Your server, in focus.</span></a><div><span>Windows v{windowsVersion} · Ubuntu v{ubuntuVersion}</span><a href={repository} target="_blank" rel="noreferrer"><Github size={15} />项目仓库（需授权）<ArrowUpRight size={12} /></a></div></footer>
+    <footer className="site-footer section-shell"><a className="footer-brand" href="#home">AQ Server<span>Your server, in focus.</span></a><div><span>Windows v{windowsVersion} · Ubuntu v{ubuntuVersion}</span><a href={repository} target="_blank" rel="noreferrer"><Github size={15} />版本更新与发行说明<ArrowUpRight size={12} /></a></div></footer>
   </>;
 }
