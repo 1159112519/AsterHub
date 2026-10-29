@@ -1,0 +1,1 @@
+import React from 'react';import{createRoot}from'react-dom/client';import DesignApp from './DesignApp';import '../styles.css';import '../refinements.css';import '../native/native.css';import './design.css';createRoot(document.getElementById('root')).render(<DesignApp/>);

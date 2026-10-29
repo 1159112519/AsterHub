@@ -1,0 +1,3 @@
+import React from 'react';
+// A star at the center of three linked devices; shared desktop and tray silhouette.
+export function BrandMark(){return <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 8 13 13M25 9 20 13M24 25 20 20" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/><path d="M16 7.5c1.4 5.6 2.9 7.1 8.5 8.5-5.6 1.4-7.1 2.9-8.5 8.5-1.4-5.6-2.9-7.1-8.5-8.5 5.6-1.4 7.1-2.9 8.5-8.5Z" fill="currentColor"/><circle cx="5.8" cy="6.8" r="2.1" fill="currentColor"/><circle cx="26.3" cy="7.7" r="2.1" fill="currentColor"/><circle cx="25.4" cy="26.2" r="2.1" fill="currentColor"/></svg>}

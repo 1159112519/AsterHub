@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Check, ChevronRight, Cpu, Download, Files, Gauge, Github, HardDrive, Layers3, Menu, Monitor, Server, ShieldCheck, Terminal, X } from 'lucide-react';
 import releaseVersions from './release-versions.json';
-const windowsVersion = releaseVersions.windows;
+const stableWindowsVersion = releaseVersions.windows;
+const windowsVersion = releaseVersions.windowsPreview;
 const ubuntuVersion = releaseVersions.ubuntu;
-const windowsDate = releaseVersions.windowsDate.replace(/-/g, '.');
+const windowsDate = releaseVersions.windowsPreviewDate.replace(/-/g, '.');
+const stableWindowsDate = releaseVersions.windowsDate.replace(/-/g, '.');
 const ubuntuDate = releaseVersions.ubuntuDate.replace(/-/g, '.');
-const installer = `./releases/AQServer-Setup-${windowsVersion}.exe`;
+const installer = `./releases/AsterHub-Setup-${windowsVersion}.exe`;
 const ubuntuInstaller = `./releases/AQServer-${ubuntuVersion}-ubuntu-all.deb`;
 const repository = 'https://github.com/1159112519/aq-server/releases';
 
@@ -54,9 +56,9 @@ function ProductReveal() {
     reduced.addEventListener('change', reset);
     return () => { cancelAnimationFrame(frame); resize.disconnect(); reduced.removeEventListener('change', reset); hero.removeEventListener('pointermove', move as EventListener); hero.removeEventListener('pointerleave', reset); };
   }, []);
-  return <div ref={art} className="product-art" aria-label="AQ Server 多 GPU 监控界面预览">
+  return <div ref={art} className="product-art" aria-label="AsterHub 多 GPU 监控界面预览">
     <div className="image-stage">
-      <img className="monitor-image base-image" src="./media/monitor-base.webp" alt="AQ Server 八卡资源监控界面，展示 GPU 利用率、显存、温度和功耗" width="2160" height="1500" fetchPriority="high" />
+      <img className="monitor-image base-image" src="./media/monitor-base.webp" alt="AsterHub 八卡资源监控界面，展示 GPU 利用率、显存、温度和功耗" width="2160" height="1500" {...{fetchpriority: 'high'}} />
       <div className="focus-image" aria-hidden="true"><img className="monitor-image" src="./media/monitor-focus.webp" alt="" width="2160" height="1500" /></div>
     </div>
     <div className="art-caption"><span><span className="status-light" />8 GPUs. One clear view.</span><span>模拟界面 · 移动光标聚焦细节 <ArrowUpRight size={13} /></span></div>
@@ -79,7 +81,7 @@ export default function App() {
   }, [mobileOpen]);
   return <>
     <header className="site-header">
-      <a className="brand" href="#home" aria-label="AQ Server 首页"><img src="./favicon.ico" alt="" width="29" height="29" /><span>AQ<span className="brand-space">Server</span></span></a>
+      <a className="brand" href="#home" aria-label="AsterHub 首页"><img src="./favicon.ico" alt="" width="29" height="29" /><span>AsterHub</span></a>
       <nav className="desktop-nav" aria-label="主导航"><a href="#experience">产品体验</a><a href="#updates">版本更新</a><a href={repository} target="_blank" rel="noreferrer" title="公开版本更新与发行说明">GitHub <ArrowUpRight size={13} /></a></nav>
       <a className="header-download" href="#download"><Download size={14} />下载 <span>v{windowsVersion}</span></a>
       <button className="mobile-menu-button" type="button" aria-label={mobileOpen ? '关闭导航' : '打开导航'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
@@ -92,21 +94,23 @@ export default function App() {
           <div className="release-note"><span>{windowsVersion}</span> 全新工作台 · 网络与存储监控 <ArrowUpRight size={13} /></div>
           <h1>Your server,<br /><em>in focus.</em></h1>
           <p className="hero-description">让复杂的运行状态，变得一目了然。<br />从本机到远程服务器，监控、终端与文件，<br className="desktop-break" />留在同一个安静的工作空间。</p>
-          <div className="hero-actions"><a className="download-button" href={installer} download><Download size={18} /><span>下载 Windows 版</span><ArrowUpRight size={18} /></a><a className="download-button ubuntu-button" href={ubuntuInstaller} download><Terminal size={18} /><span>下载 Ubuntu 版</span><ArrowUpRight size={18} /></a></div>
-          <p className="compatibility">Windows 10 / 11 · x64 <span>Ubuntu 22.04 · .deb</span></p>
+          <div className="hero-actions">
+            <div className="hero-platform"><a className="download-button" href={installer} download><Download size={18} /><span>下载 Windows 预览版</span><ArrowUpRight size={18} /></a><p className="compatibility">Windows 10 / 11 · x64<br />v{windowsVersion} · {windowsDate}</p></div>
+            <div className="hero-platform"><a className="download-button ubuntu-button" href={ubuntuInstaller} download><Terminal size={18} /><span>下载 Ubuntu 版</span><ArrowUpRight size={18} /></a><p className="compatibility">Ubuntu 22.04 · .deb<br />v{ubuntuVersion} · {ubuntuDate}</p></div>
+          </div>
         </div>
         <ProductReveal />
         <div className="hero-bottom"><span><Server size={14} /> LOCAL & REMOTE<span className="bottom-divider" />CPU / GPU / MEMORY / NETWORK / STORAGE</span><a href="#experience">SCROLL TO EXPLORE<ArrowDown size={13} /></a></div>
       </section>
-      <section className="downloads section-shell" id="download"><div className="downloads-heading"><span className="section-kicker">GET AQ SERVER</span><h2>选择你的工作环境。</h2><p>Windows v{windowsVersion} · Ubuntu v{ubuntuVersion}，按平台独立发布。</p></div><div className="download-grid"><article className="platform-card"><Monitor size={26} strokeWidth={1.4} /><h3>Windows <span className="platform-version">v{windowsVersion}</span></h3><div className="platform-date">{windowsDate} 更新 · 当前主版本</div><p>Windows 10 / 11 · x64</p><a className="platform-download" href={installer} download>下载 EXE 安装包<Download size={16} /></a><div className="platform-detail">模块化目录安装，保留你的连接配置与历史档案。终端需要 WebView2，首次安装可能需要下载运行时。</div></article><article className="platform-card"><Terminal size={26} strokeWidth={1.4} /><h3>Ubuntu <span className="platform-version">v{ubuntuVersion}</span></h3><div className="platform-date">{ubuntuDate} 更新 · 独立预览版</div><p>Ubuntu 22.04 amd64 · Debian 安装包</p><a className="platform-download" href={ubuntuInstaller} download>下载 DEB 安装包<Download size={16} /></a><code>sudo apt install ./AQServer-{ubuntuVersion}-ubuntu-all.deb</code><div className="platform-detail">安装后从应用菜单打开，或运行 <strong>aq-server --desktop</strong>。首次安装由 apt 获取 GTK/WebKit 和 Python 运行库。无桌面服务器可运行本地服务；工作台需要本机访问密钥。</div></article></div><div className="download-footnote"><span>两个平台独立迭代，版本与功能进度可能不同。Ubuntu v{ubuntuVersion} 为保留的预览版，后续不随 Windows 同步更新；Ubuntu 24.04、原生托盘和自动升级尚未支持或验证。</span><a href="./releases/SHA256SUMS.txt">查看 SHA-256<ArrowUpRight size={13} /></a></div></section>
+      <section className="downloads section-shell" id="download"><div className="downloads-heading"><span className="section-kicker">GET ASTERHUB</span><h2>选择你的工作环境。</h2><p>Windows v{windowsVersion} 预览 · Ubuntu v{ubuntuVersion}，按平台独立发布。</p></div><div className="download-grid"><article className="platform-card"><Monitor size={26} strokeWidth={1.4} /><h3>Windows <span className="platform-version">v{windowsVersion}</span></h3><div className="platform-date">{windowsDate} 更新 · Windows 新工作台预览</div><p>Windows 10 / 11 · x64</p><a className="platform-download" href={installer} download>下载 EXE 安装包<Download size={16} /></a><div className="platform-detail">模块化目录安装，终端与文件传输已接回。预览版与原稳定版的数据独立保存，不会自动迁移已保存的凭据。需要 WebView2 Runtime。</div><a className="stable-download" href={`./releases/AQServer-Setup-${stableWindowsVersion}.exe`} download>下载稳定版 v{stableWindowsVersion} · {stableWindowsDate}</a></article><article className="platform-card"><Terminal size={26} strokeWidth={1.4} /><h3>Ubuntu <span className="platform-version">v{ubuntuVersion}</span></h3><div className="platform-date">{ubuntuDate} 更新 · 独立预览版</div><p>Ubuntu 22.04 amd64 · Debian 安装包</p><a className="platform-download" href={ubuntuInstaller} download>下载 DEB 安装包<Download size={16} /></a><code>sudo apt install ./AQServer-{ubuntuVersion}-ubuntu-all.deb</code><div className="platform-detail">安装后从应用菜单打开，或运行 <strong>aq-server --desktop</strong>。首次安装由 apt 获取 GTK/WebKit 和 Python 运行库。无桌面服务器可运行本地服务；工作台需要本机访问密钥。</div></article></div><div className="download-footnote"><span>两个平台独立迭代，版本与功能进度可能不同。Ubuntu v{ubuntuVersion} 为保留的预览版，后续不随 Windows 同步更新；Ubuntu 24.04、原生托盘和自动升级尚未支持或验证。</span><a href="./releases/SHA256SUMS.txt">稳定版与 Ubuntu SHA-256<ArrowUpRight size={13} /></a></div></section>
       <section className="experience section-shell" id="experience">
         <div className="section-heading"><span className="section-kicker">01 / THE EXPERIENCE</span><h2>信息完整，<br /><span>工作空间保持轻盈。</span></h2><p>需要时展开，忙碌时安静常驻。<br />让监控融入工作，而不是占满你的注意力。</p></div>
         <div className="feature-grid">{features.map(({ icon: Icon, title, description, detail }) => <article className="feature" key={title}><Icon size={23} strokeWidth={1.5} /><h3>{title}</h3><p>{description}</p><div>{detail}</div></article>)}</div>
         <div className="principle-strip"><span><Layers3 size={16} />多主题，保持一致的界面语言</span><span><Files size={16} />上传下载采用复制，保留原文件</span><span><Cpu size={16} />根据设备能力显示资源</span></div>
       </section>
-      <section className="updates section-shell" id="updates"><div className="section-heading"><span className="section-kicker">02 / RELEASE NOTES</span><h2>持续打磨，<br /><span>把细节做好。</span></h2><p>这是早期版本。持续完善体验，<br />逐步走向稳定发布。</p></div><article className="release-card"><div className="release-card-heading"><h3>Windows v{windowsVersion}</h3><span>{windowsDate} · 公开预览</span></div><ul><li><Check size={15} />统一暖灰工作台、分组导航、图标与四套 Windows 主题</li><li><Check size={15} />五个常驻资源模块，新增真实网络上下行与分区容量</li><li><Check size={15} />更清晰的历史时间选择，网络与存储快照随采样归档</li><li><Check size={15} />保留非线性曲线与数字动画，修复托盘菜单关闭行为</li><li><Check size={15} />偏好设置支持应用，分栏与列宽可调整</li><li><Check size={15} />一键更新并重启：自动下载、校验、退出、安装与重新打开</li></ul><div className="release-card-footer"><a href={installer} download>下载安装包<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article><article className="release-card ubuntu-release"><div className="release-card-heading"><h3>Ubuntu v{ubuntuVersion}</h3><span>{ubuntuDate} · 独立预览</span></div><p>保留本次已验证的 GTK/WebKit 工作台，包含网络上下行、分区容量和五项常驻资源。Ubuntu 后续按需维护，不随 Windows 同步发版。</p><div className="release-card-footer"><a href={ubuntuInstaller} download>下载 Ubuntu v{ubuntuVersion}<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article></section>
-      <section className="install-note section-shell"><ShieldCheck size={23} strokeWidth={1.5} /><div><h3>升级，保留你的配置与历史。</h3><p>Windows 检查新版本后点击“更新并重启”，确认后自动下载、校验、退出、安装并重新打开。配置和历史保留，终端会话会结束。Ubuntu 通过 apt 手动安装或升级。</p><p className="small-note">早期版本尚未使用 Windows 发布者代码签名证书，安装时可能显示未知发布者。</p></div></section>
+      <section className="updates section-shell" id="updates"><div className="section-heading"><span className="section-kicker">02 / RELEASE NOTES</span><h2>持续打磨，<br /><span>把细节做好。</span></h2><p>这是早期版本。持续完善体验，<br />逐步走向稳定发布。</p></div><div className="release-stack"><article className="release-card"><div className="release-card-heading"><h3>Windows v{windowsVersion}</h3><span>{windowsDate} · 公开预览</span></div><ul><li><Check size={15} />修复历史记录黑屏、启动白屏和设置切页跳动</li><li><Check size={15} />GPU 进程可展开完整命令，结束操作需确认并核验身份</li><li><Check size={15} />网络接口、吞吐趋势与链路详情；存储 I/O、队列与卷容量</li><li><Check size={15} />多标签终端、文件复制传输和可调整分栏</li><li><Check size={15} />恢复检查更新与反馈建议，保留细腻的曲线和数字动画</li><li><Check size={15} />优化连接测试居中、底栏留白与负载配色</li></ul><div className="release-card-footer"><a href={installer} download>下载安装包<Download size={15} /></a><a href="./releases/PREVIEW-SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article><article className="release-card ubuntu-release"><div className="release-card-heading"><h3>Ubuntu v{ubuntuVersion}</h3><span>{ubuntuDate} · 独立预览</span></div><p>保留本次已验证的 GTK/WebKit 工作台，包含网络上下行、分区容量和五项常驻资源。Ubuntu 后续按需维护，不随 Windows 同步发版。</p><div className="release-card-footer"><a href={ubuntuInstaller} download>下载 Ubuntu v{ubuntuVersion}<Download size={15} /></a><a href="./releases/SHA256SUMS.txt">SHA-256<ArrowUpRight size={13} /></a></div></article></div></section>
+      <section className="install-note section-shell"><ShieldCheck size={23} strokeWidth={1.5} /><div><h3>同一通道升级，保留配置与历史。</h3><p>Windows 检查新版本后点击“安装并重新启动”，确认后自动下载、校验、退出、安装并重新打开。同一通道内配置和历史保留，终端会话会结束。Windows 预览版与原稳定版使用独立数据，不自动迁移已保存的凭据。Ubuntu 通过 apt 手动安装或升级。</p><p className="small-note">早期版本尚未使用 Windows 发布者代码签名证书，安装时可能显示未知发布者。</p></div></section>
     </main>
-    <footer className="site-footer section-shell"><a className="footer-brand" href="#home">AQ Server<span>Your server, in focus.</span></a><div><span>Windows v{windowsVersion} · Ubuntu v{ubuntuVersion}</span><a href={repository} target="_blank" rel="noreferrer"><Github size={15} />版本更新与发行说明<ArrowUpRight size={12} /></a></div></footer>
+    <footer className="site-footer section-shell"><a className="footer-brand" href="#home">AsterHub<span>Your server, in focus.</span></a><div><span>Windows v{windowsVersion} · Ubuntu v{ubuntuVersion}</span><a href={repository} target="_blank" rel="noreferrer"><Github size={15} />版本更新与发行说明<ArrowUpRight size={12} /></a></div></footer>
   </>;
 }

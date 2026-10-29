@@ -16,6 +16,18 @@ class FeedbackTests(unittest.TestCase):
         self.payload = {"schemaVersion": 1, "appVersion": "0.2.1", "platform": "Windows", "category": "bug", "title": "界面问题", "description": "打开历史后点击时间点，出现一次抖动。"}
     def tearDown(self):
         self.folder.cleanup()
+    def test_preview_version_is_preserved(self):
+        self.payload["appVersion"] = "0.3.0-preview.4"
+        receipt = self.store.accept(self.payload, "192.0.2.1")
+        saved = json.loads(next(self.root.rglob("*.json")).read_text(encoding="utf-8"))
+        self.assertEqual(saved["appVersion"], "0.3.0-preview.4")
+        self.assertEqual(saved["id"], receipt["id"])
+    def test_unsupported_or_malformed_versions_rejected(self):
+        for version in ["0.3.0-preview", "0.3.0-preview.-1", "0.3.0-preview.4-extra", "0.3.0-beta.1", "1.2.3.4", "0.3.0-preview.\n4"]:
+            with self.subTest(version=version):
+                self.payload["appVersion"] = version
+                with self.assertRaises(api.FeedbackError): self.store.validate(self.payload)
+        self.assertEqual(list(self.root.rglob("*.json")), [])
     def test_receipt_and_private_storage(self):
         result = self.store.accept(self.payload, "192.0.2.1")
         files = list(self.root.rglob("*.json"))

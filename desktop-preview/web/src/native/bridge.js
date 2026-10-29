@@ -1,0 +1,7 @@
+export function createClient(transport,timeout=12000){
+ let sequence=0;const pending=new Map(),listeners=new Set();
+ const receive=event=>{const message=event.data;if(message?.type==='capture'||message?.type==='devices'||message?.type==='navigate'||message?.type==='update-progress'){listeners.forEach(entry=>{if(entry.type===message.type)entry.fn(message.value)});return}const request=pending.get(message?.id);if(!request)return;pending.delete(message.id);clearTimeout(request.timer);message.ok?request.resolve(message.result):request.reject(new Error(message.error||'请求失败'))};
+ transport?.addEventListener('message',receive);
+ return {available:Boolean(transport),subscribe(fn,type='capture'){const entry={fn,type};listeners.add(entry);return()=>listeners.delete(entry)},request(method,params={},requestTimeout=timeout){if(!transport)return Promise.reject(new Error('请从 AsterHub.Preview.exe 打开此界面'));const id=String(++sequence);return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(id);reject(new Error('请求超时，请重试'))},requestTimeout);pending.set(id,{resolve,reject,timer});try{transport.postMessage({id,method,params})}catch(error){clearTimeout(timer);pending.delete(id);reject(error)}})},dispose(){transport?.removeEventListener('message',receive);listeners.clear();for(const request of pending.values()){clearTimeout(request.timer);request.reject(new Error('连接已关闭'))}pending.clear()}};
+}
+export const native=createClient(globalThis.chrome?.webview);

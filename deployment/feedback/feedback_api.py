@@ -51,7 +51,7 @@ class FeedbackStore:
             if key not in ("contact", "environment") and not value:
                 raise FeedbackError(400, "请填写标题和问题详情。")
             if value: clean[key] = value
-        if not re.fullmatch(r"\d+\.\d+\.\d+", clean["appVersion"]) or clean["category"] not in CATEGORIES or clean["platform"] not in {"Windows", "Ubuntu"}:
+        if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-preview\.[0-9]+)?", clean["appVersion"]) or clean["category"] not in CATEGORIES or clean["platform"] not in {"Windows", "Ubuntu"}:
             raise FeedbackError(400, "版本、平台或分类不正确。")
         return clean
 

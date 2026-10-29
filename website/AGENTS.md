@@ -12,3 +12,9 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 Use React 18, TypeScript, Vite, Tailwind CSS, lucide-react. Typography: Inter and Playfair Display, with Microsoft YaHei UI fallback for Chinese. Keep the first section dark and full viewport. Preserve the two-image soft circular pointer reveal, reduced-motion behavior and responsive phone/tablet/desktop layouts. CTA must download an existing installer; release history must use readable line spacing. Never publish credentials, signing private keys or monitoring archives.
 
 Platform releases are independent: read src/release-versions.json for Windows and Ubuntu versions. Display each platform version and update date beside its download, with separate release notes. Windows 0.2.0 and retained Ubuntu 0.1.3 must not be presented as matching versions. Future Windows releases do not imply an Ubuntu update.
+
+## Website layout fixes 2026-10-29
+Keep each platform requirement directly under its download button in normal flow. Keep Windows/Ubuntu release cards together in .release-stack; never let a third direct grid item wrap into the introduction column. On phones the product image follows the download groups instead of covering them. Keep public platform versions independent and retain signed manifests and existing installer filenames. New AsterHub icon proposals remain separate until selected.
+
+## Windows preview channel 2026-10-29
+Show 0.3.0-preview.4 explicitly as the new Windows workbench preview with a separate installer and signed windows-preview.json. Retain stable 0.2.1 download and stable.json unchanged. Ubuntu 0.1.3 remains independent. Preview and stable data are separate. Do not promise automatic migration of saved credentials between them.

@@ -1,0 +1,10 @@
+/* Keep the scrolling viewport inset from every corner and border. */
+.scroll-surface{position:relative;isolation:isolate;border-radius:inherit;overflow:hidden;padding:10px 7px;max-height:calc(var(--surface-max-height,860px) - 2px);--scroll-edge-color:color-mix(in srgb,var(--surface2) 88%,#000)}
+.scroll-surface-scroll{overflow:auto;overscroll-behavior:contain;max-height:calc(var(--surface-max-height,860px) - 22px);scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 32%,transparent) transparent;border-radius:15px}
+.scroll-surface-scroll::-webkit-scrollbar{width:6px;height:6px}.scroll-surface-scroll::-webkit-scrollbar-track{background:transparent}.scroll-surface-scroll::-webkit-scrollbar-thumb{border-radius:8px;background:color-mix(in srgb,var(--muted) 32%,transparent);border:1px solid transparent;background-clip:padding-box}
+.scroll-surface-body{padding:13px 18px}
+.scroll-edge{position:absolute;left:7px;right:15px;height:35px;z-index:3;pointer-events:none;opacity:0;transition:opacity var(--motion-feedback,.14s) var(--ease);border-radius:0}
+.scroll-edge.top{top:10px;background:linear-gradient(to bottom,var(--scroll-edge-color),transparent)}.scroll-edge.bottom{bottom:10px;background:linear-gradient(to top,var(--scroll-edge-color),transparent)}
+.scroll-surface[data-scroll-up="true"]>.scroll-edge.top,.scroll-surface[data-scroll-down="true"]>.scroll-edge.bottom{opacity:1}
+[data-theme="light"] .scroll-surface{--scroll-edge-color:color-mix(in srgb,var(--surface2) 94%,#385240)}
+@media(max-width:600px){.scroll-surface-body{padding:9px 12px}}

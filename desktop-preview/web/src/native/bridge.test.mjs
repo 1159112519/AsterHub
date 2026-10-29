@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createClient} from './bridge.js';
+function transport(){let receive;return {out:[],addEventListener(t,fn){receive=fn},removeEventListener(){receive=null},postMessage(value){this.out.push(value)},reply(data){receive?.({data})}}}
+test('responses correlate even when native operations finish out of order',async()=>{const t=transport(),c=createClient(t);const a=c.request('a'),b=c.request('b');t.reply({id:t.out[1].id,ok:true,result:'second'});t.reply({id:t.out[0].id,ok:true,result:'first'});assert.equal(await a,'first');assert.equal(await b,'second');c.dispose()});
+test('capture notifications remain independent from requests and unsubscribe',()=>{const t=transport(),c=createClient(t);let count=0;const off=c.subscribe(()=>count++);t.reply({type:'capture',value:{}});off();t.reply({type:'capture',value:{}});assert.equal(count,1);c.dispose()});
+test('expired reply cannot resolve another request',async()=>{const t=transport(),c=createClient(t,10);const a=c.request('slow');await assert.rejects(a,/超时/);t.reply({id:t.out[0].id,ok:true,result:'old'});c.dispose()});
+test('missing host fails rather than providing fixture data',async()=>{const c=createClient(null);await assert.rejects(c.request('snapshot.latest'),/AsterHub.Preview.exe/) });
+test('native error propagates without replacing current snapshot',async()=>{const t=transport(),c=createClient(t),p=c.request('history.read');t.reply({id:t.out[0].id,ok:false,error:'记录已不可用'});await assert.rejects(p,/不可用/);c.dispose()});
+
+test('device-list events cannot be interpreted as capture snapshots',()=>{const t=transport(),c=createClient(t);let captures=0,devices=0;c.subscribe(()=>captures++);const off=c.subscribe(()=>devices++,'devices');t.reply({type:'devices',value:{items:[]}});assert.equal(captures,0);assert.equal(devices,1);off();t.reply({type:'devices',value:{items:[]}});assert.equal(devices,1);c.dispose()});

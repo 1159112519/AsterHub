@@ -1,0 +1,33 @@
+/* Footer and platform downloads participate in normal flow at every text size. */
+.hero{display:flex;flex-direction:column;justify-content:space-between;height:auto;min-height:max(800px,100svh);max-height:none;padding-bottom:28px}
+.hero-content{flex-shrink:0}
+.hero-actions{align-items:flex-start;flex-wrap:wrap;gap:18px 24px;white-space:normal}
+.hero-platform{display:flex;flex-direction:column;align-items:stretch;min-width:200px}
+.hero-platform .download-button{min-height:52px;font-size:14px;border-radius:8px;white-space:nowrap}
+.hero-platform .compatibility{margin:12px 0 0;font-size:12px;line-height:1.6;letter-spacing:0;color:#8d9a9f}
+.hero-bottom{position:relative;inset:auto;margin-top:44px;gap:24px;align-items:center;flex-wrap:wrap;font-size:11px;line-height:1.7;letter-spacing:.65px;flex-shrink:0}
+.hero-bottom>span{flex-wrap:wrap;row-gap:6px;min-width:0}
+.hero-bottom>a{min-height:28px;flex-shrink:0}
+.updates{align-items:start;column-gap:clamp(32px,6vw,85px)}
+.release-stack{display:grid;gap:20px;min-width:0}
+.release-stack .release-card{max-width:none;width:100%;margin:0}
+.release-card-heading{gap:14px;flex-wrap:wrap;align-items:center}
+.release-card h3{font-size:22px;line-height:1.4;white-space:nowrap}
+.release-card-heading>span{font-size:12px;line-height:1.6;white-space:nowrap}
+.release-card ul{gap:16px}
+.release-card li{font-size:14px;line-height:1.95}
+.release-card li>svg{margin-top:6px}
+.release-card-footer{gap:20px;flex-wrap:wrap;font-size:13px;line-height:1.7}
+.release-card-footer a:last-child{font-size:12px}
+@media(max-width:960px){.updates{grid-template-columns:1fr;row-gap:28px}.updates .section-heading{display:block}.updates .section-heading h2{margin-top:18px}.updates .section-heading>p{margin-top:16px}.release-stack{width:100%;max-width:720px;justify-self:end}}
+@media(max-width:800px){.hero{min-height:max(850px,100svh)}.hero-bottom{margin-top:48px}.hero-platform{min-width:190px}}
+@media(max-width:540px){.hero{min-height:max(880px,100svh);padding-bottom:24px}.hero-actions{gap:16px 12px}.hero-platform{flex:1 1 200px;min-width:0;max-width:360px}.hero-platform .download-button{justify-content:space-between;min-height:50px}.hero-platform .compatibility{font-size:12px;margin-top:9px}.hero-bottom{font-size:10px;letter-spacing:.2px;gap:12px}.hero-bottom>a{display:none}.bottom-divider{display:none}.hero-bottom>span{column-gap:8px}.release-card{padding:23px 20px}.release-card h3{font-size:21px}.release-card li{font-size:14px}.release-card-heading>span{font-size:11px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* On phones the product preview follows the downloads instead of sitting behind them. */
+@media(max-width:540px){.hero>.product-art{position:relative;inset:auto;width:calc(100% + 30px);margin-top:34px;transform:perspective(1200px) rotateY(-6deg) rotateZ(-2deg);z-index:3}.hero:after{background:linear-gradient(180deg,#0b0d10 0%,#0b0d10e6 48%,#0b0d1020 80%)}.art-caption{flex-wrap:wrap;gap:8px;padding:12px 4px;font-size:10px}.art-caption>span:last-child{margin-right:0}.hero-bottom{margin-top:26px}}
+
+.stable-download{display:inline-flex;align-items:center;margin-top:18px;font-size:13px;line-height:22px;color:var(--muted,#a4ada5);text-decoration:underline;text-underline-offset:4px}
+
+/* Long preview versions wrap inside narrow release cards. */
+@media(max-width:540px){.updates{grid-template-columns:minmax(0,1fr)}.release-card h3{white-space:normal;overflow-wrap:anywhere}.platform-card h3{flex-wrap:wrap}}

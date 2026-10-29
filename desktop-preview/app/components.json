@@ -1,0 +1,28 @@
+{
+  "version": "0.3.0-preview.4",
+  "architecture": "x64",
+  "components": [
+    {
+      "name": "AQServer.Core",
+      "file": "app/modules/AQServer.Core.dll",
+      "version": "0.2.2.0"
+    },
+    {
+      "name": "AQServer.Platform.Windows",
+      "file": "app/modules/AQServer.Platform.Windows.dll",
+      "version": "0.2.2.0"
+    },
+    {
+      "name": "AQServer.Storage",
+      "file": "app/modules/AQServer.Storage.dll",
+      "version": "0.2.2.0"
+    },
+    {
+      "name": "AsterHub.WorkbenchHost",
+      "file": "AsterHub.Preview.exe",
+      "version": "0.3.0.0"
+    }
+  ],
+  "stage": "Windows Preview 4: WPF/WebView2 shell and React workbench",
+  "backendBaseline": "isolated 0.2.2 candidate"
+}

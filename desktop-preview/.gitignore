@@ -1,0 +1,11 @@
+node_modules/
+app/AsterHub.Preview.exe
+app/app/
+app/VERSION
+app/payload-manifest.json
+app/resources/workbench/index.html
+app/resources/workbench/assets/
+installer/payload-*/
+installer/*result.json
+installer/compiler.log
+AsterHub-Setup-*.exe

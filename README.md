@@ -1,6 +1,6 @@
-# AQ Server
+# AsterHub
 
-Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 当前版本 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
+Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工作台公开预览 **0.3.0-preview.4**，稳定版保留 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
 
 - 多核 CPU、多 GPU、内存、网络上下行和分区容量监控，支持没有 GPU 的设备。
 - 已连接设备持续采集，历史保存在本机；切换设备不影响采集。
@@ -10,9 +10,12 @@ Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 当前�
 - Windows 支持密码、空密码、私钥及 SSH 配置连接；密码可由当前 Windows 账户加密保存。
 - 关于页面可提交问题反馈并获得编号，连接密码、终端内容和历史数据不会自动上传。
 
+新的 Windows 工作台源码与构建说明见 [desktop-preview/](desktop-preview/README.md)。预览与稳定通道分开更新、独立保存数据。
+
 ## 下载
 
-- [Windows 安装包与免安装版](https://github.com/1159112519/aq-server/releases)
+- [Windows 预览版 0.3.0-preview.4](https://github.com/1159112519/aq-server/releases/tag/v0.3.0-preview.4)
+- [Windows 稳定版安装包与免安装版](https://github.com/1159112519/aq-server/releases)
 - [Ubuntu Debian 安装包](https://github.com/1159112519/aq-server/releases/tag/ubuntu-v0.1.3)
 
 请在Release的Assets中选择对应平台的正式安装包。GitHub自动生成的Source code压缩包是源码，不是可直接安装的软件。

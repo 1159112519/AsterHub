@@ -1,0 +1,18 @@
+Pinned terminal dependencies (downloaded 2026-10-21)
+- Microsoft.Web.WebView2 SDK 1.0.2903.40, official Microsoft NuGet; net462 WPF/Core assemblies, win-x64 WebView2Loader.dll. LICENSE.txt and NOTICE.txt in deps/webview2/sdk must accompany distributions.
+- @xterm/xterm 5.5.0 from npm registry (xterm.js official package), MIT; LICENSE-xterm.txt.
+- @xterm/addon-fit 0.10.0 from npm registry, MIT; LICENSE-addon-fit.txt.
+- All HTML, JS, CSS load from app-local TerminalAssets through a restricted WebView2 virtual host; no CDN or network fetch by terminal page. Shell network traffic uses Windows OpenSSH.
+- Prerequisite: Windows 10 1809+ ConPTY and Evergreen WebView2 Runtime. Tested installed Runtime 155.0.4283.62 on native Windows.
+
+Upstream primary references:
+https://learn.microsoft.com/windows/console/creating-a-pseudoconsole-session
+https://learn.microsoft.com/microsoft-edge/webview2/get-started/wpf
+https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution
+https://github.com/xtermjs/xterm.js/releases/tag/5.5.0
+https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.2903.40
+
+SHA256:
+xterm.js 1F991AC3B4B283EBF96E60AE23A00A52765DD3A2E46FA6FDDA9F1AAB032F7495
+addon-fit.js BDAEFA370B1BFC42EE88D46FE6072400902A4D4B2D45CD93438DDA9B23C97089
+Microsoft.Web.WebView2.Core.dll 88A3B62F45225A811CDB85DF6DFD95C2BFF9A0E43E3B04F813B125EACA56CC9F
