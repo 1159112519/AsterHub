@@ -59,8 +59,8 @@ function ProductReveal() {
   }, []);
   return <div ref={art} className="product-art" aria-label="AsterHub 多 GPU 监控界面预览">
     <div className="image-stage">
-      <img className="monitor-image base-image" src="./media/asterhub-preview5-base.webp" alt="AsterHub 八卡资源监控界面，展示 GPU 利用率、显存、温度和功耗" width="1600" height="1100" {...{fetchpriority: 'high'}} />
-      <div className="focus-image" aria-hidden="true"><img className="monitor-image" src="./media/asterhub-preview5-eight-gpu.webp" alt="" width="1600" height="1100" /></div>
+      <img className="monitor-image base-image" src="./media/asterhub-preview5-final-base.webp" alt="AsterHub 八卡资源监控界面，展示 GPU 利用率、显存、温度和功耗" width="1600" height="1100" {...{fetchpriority: 'high'}} />
+      <div className="focus-image" aria-hidden="true"><img className="monitor-image" src="./media/asterhub-preview5-final-eight-gpu.webp" alt="" width="1600" height="1100" /></div>
     </div>
     <div className="art-caption"><span><span className="status-light" />多卡，同时看清。</span><span>当前预览界面 · 示例数据 <ArrowUpRight size={13} /></span></div>
   </div>;
