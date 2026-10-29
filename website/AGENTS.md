@@ -21,3 +21,9 @@ Show 0.3.0-preview.4 explicitly as the new Windows workbench preview with a sepa
 
 ## AsterHub scroll experience 2026-10-29
 Use current preview.4 screenshots with synthetic, explicitly labelled example data. Never reuse the former AQ Server workbench images for the current Windows preview. The primary route is /asterhub/. Keep previous release URLs and signed manifests working. Desktop chapters change a sticky product image as the reader scrolls; tablet and phone use the same chapters with inline images, without scroll capture. Keep the soft pointer reveal, keyboard controls and reduced-motion support. Use Chinese primary copy, English secondary copy. Do not imply Ubuntu has current Windows features.
+
+## Approved silver glass brand 2026-10-29
+Use the selected smooth silver glass icon from outputs/asterhub-zheguang-glass-v4 for the site header, favicon and app brand. Tablet and phone inline chapter images and text use subtle, non-linear entrances once per page, without scroll capture or looping; reduced-motion shows content immediately. Preserve the desktop sticky chapter images and the hero pointer reveal.
+
+## Preview.5 polish delivery 2026-10-29
+Current Windows preview is 0.3.0-preview.5; use actual preview.5 screenshots with the same explicitly labelled synthetic data. Preserve historical downloads and signatures. Settings actions are contextual, dense CPU grids wrap, and number/curve geometry remains stable.

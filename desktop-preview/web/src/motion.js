@@ -2,11 +2,19 @@ import {gsap} from 'gsap';
 
 // Motion describes a change of state, never an unrelated decoration.
 export const motion=Object.freeze({
- duration:Object.freeze({feedback:.14,page:.24,surface:.28,exit:.18,layout:.28,value:.85,chart:1.05,trace:.9}),
+ duration:Object.freeze({feedback:.14,page:.24,surface:.28,exit:.18,layout:.28,value:.95,chart:1.05,meter:1.05,meterEcho:1.3,trace:.9}),
  ease:Object.freeze({settle:'power3.out',leave:'power2.in',css:'cubic-bezier(.22,1,.36,1)'}),
  amplitude:Object.freeze({surfaceScale:.986,contentShift:2})
 });
 export function reducedMotion(){return document.documentElement.dataset.motion==='reduced'||matchMedia('(prefers-reduced-motion: reduce)').matches}
+// One shared subscription covers both the in-app switch and the OS preference.
+// React consumers re-run their layout effects and settle any in-flight values.
+const motionListeners=new Set();let stopMotionPreference=null;
+export function subscribeReducedMotion(listener){
+ motionListeners.add(listener);
+ if(!stopMotionPreference){const media=matchMedia('(prefers-reduced-motion: reduce)'),notify=()=>motionListeners.forEach(fn=>fn()),observer=new MutationObserver(notify);observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion']});media.addEventListener('change',notify);stopMotionPreference=()=>{observer.disconnect();media.removeEventListener('change',notify)}}
+ return()=>{motionListeners.delete(listener);if(!motionListeners.size&&stopMotionPreference){stopMotionPreference();stopMotionPreference=null}}
+}
 export function motionOptions(kind,extra={}){return {duration:reducedMotion()?0:motion.duration[kind],ease:motion.ease.settle,overwrite:'auto',...extra}}
 export function installMotionTokens(){const root=document.documentElement;for(const [key,value] of Object.entries(motion.duration))root.style.setProperty(`--motion-${key}`,`${value}s`);root.style.setProperty('--ease',motion.ease.css)}
 export function revealContent(element){if(!element||reducedMotion())return null;return gsap.fromTo(element,{opacity:.9,y:motion.amplitude.contentShift},{opacity:1,y:0,...motionOptions('page'),clearProps:'transform,opacity'})}

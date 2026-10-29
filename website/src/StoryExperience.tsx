@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
-const media = (name: string) => `./media/asterhub-preview4-${name}.webp`;
+const media = (name: string) => `./media/asterhub-preview5-${name}.webp`;
 export const chapters = [
   { id:'overview', label:'资源概览', eyebrow:'THE WHOLE PICTURE', title:['先看全局。','再决定关注哪里。'], text:'CPU、GPU、内存、网络与存储，放在同一个工作空间。设备忙在哪里、还有多少余量，不必在多个工具之间来回确认。', points:['点击资源卡片，在当前页面展开详情','底部速览常驻，切换页面仍能看见状态','按设备提供的能力显示数据'], image:'overview', caption:'资源概览 · 同一视野里的五类资源' },
   { id:'gpu', label:'GPU', eyebrow:'EVERY GPU, IN FOCUS', title:['每一张卡。','都值得看清。'], text:'从一张显卡到多卡设备，利用率、显存、温度与功耗一起呈现。选择经典卡片，或用趋势卡片看见变化，风格由你决定。', points:['多卡同时可见，区分忙碌与空闲','展开 GPU 详情，查看完整进程命令','结束进程前确认，并核验目标身份'], image:'eight-gpu', caption:'八卡界面示意 · 经典与趋势两种显示风格' },
@@ -23,6 +23,25 @@ export function usePageMotion() {
       const context = gsap.context(() => {
         document.querySelectorAll<HTMLElement>('[data-reveal]').forEach(node => {
           gsap.from(node, { y:24, autoAlpha:0, duration:.7, ease:'power2.out', scrollTrigger:{trigger:node,start:'top 90%',once:true} });
+        });
+      });
+      return () => context.revert();
+    });
+    // Inline tablet/phone chapters reveal independently, once, with soft deceleration.
+    // GSAP restores styles when the viewport or reduced-motion setting changes.
+    mm.add('(max-width: 1099px) and (prefers-reduced-motion: no-preference)', () => {
+      const context = gsap.context(() => {
+        document.querySelectorAll<HTMLElement>('[data-story-reveal]').forEach(node => {
+          const isImage = node.dataset.storyReveal === 'image';
+          const chapter = node.closest<HTMLElement>('.story-step');
+          const direction = Array.from(chapter?.parentElement?.children || []).indexOf(chapter!) % 2 ? -1 : 1;
+          gsap.from(node, {
+            autoAlpha: 0, y: isImage ? 28 : 18, x: isImage ? 0 : direction * 8,
+            scale: isImage ? .975 : 1, rotation: isImage ? direction * .35 : 0,
+            transformOrigin: '50% 70%', duration: isImage ? .95 : .75,
+            ease: 'power3.out', clearProps: 'transform,opacity,visibility,transformOrigin',
+            scrollTrigger: { trigger: node, start: 'top 94%', once: true },
+          });
         });
       });
       return () => context.revert();
@@ -73,11 +92,11 @@ export function StoryExperience() {
         {active===1&&styleControls('桌面')}
       </div>
       <div className="story-copy">{chapters.map((chapter,i)=><article className={'story-step'+(active===i?' is-current':'')} id={'story-'+chapter.id} key={chapter.id} data-scene={chapter.id}>
-        <div className="story-inline-image"><button onClick={()=>setViewer({image:image(i),caption:chapter.caption})} aria-label={'放大'+chapter.label+'界面'}><img src={image(i)} width="1600" height="1100" alt={'AsterHub '+chapter.label+'，示例数据'} loading="lazy" decoding="async"/><span><Maximize2 size={14}/>查看界面</span></button>{i===1&&styleControls('移动端')}<p>Windows 预览界面 · 示例数据</p></div>
-        <div className="story-step-heading"><span className="story-number">0{i+1}</span><span>{chapter.eyebrow}</span></div>
-        <h3>{chapter.title[0]}<br/><span>{chapter.title[1]}</span></h3><p className="story-description">{chapter.text}</p>
-        <ul>{chapter.points.map(point=><li key={point}><Check size={15}/>{point}</li>)}</ul>
-        {i===3&&<p className="story-boundary">外部文件可通过系统选择器上传；撤销不还原已经覆盖的旧文件。</p>}
+        <div className="story-inline-image" data-story-reveal="image"><button onClick={()=>setViewer({image:image(i),caption:chapter.caption})} aria-label={'放大'+chapter.label+'界面'}><img src={image(i)} width="1600" height="1100" alt={'AsterHub '+chapter.label+'，示例数据'} loading="lazy" decoding="async"/><span><Maximize2 size={14}/>查看界面</span></button>{i===1&&styleControls('移动端')}<p>Windows 预览界面 · 示例数据</p></div>
+        <div className="story-step-heading" data-story-reveal="copy"><span className="story-number">0{i+1}</span><span>{chapter.eyebrow}</span></div>
+        <h3 data-story-reveal="copy">{chapter.title[0]}<br/><span>{chapter.title[1]}</span></h3><p className="story-description" data-story-reveal="copy">{chapter.text}</p>
+        <ul data-story-reveal="copy">{chapter.points.map(point=><li key={point}><Check size={15}/>{point}</li>)}</ul>
+        {i===3&&<p className="story-boundary" data-story-reveal="copy">外部文件可通过系统选择器上传；撤销不还原已经覆盖的旧文件。</p>}
       </article>)}</div>
     </div>
     <dialog ref={dialog} className="screenshot-viewer" aria-label="AsterHub 界面大图" onClose={()=>setViewer(null)} onClick={e=>{if(e.target===e.currentTarget)setViewer(null);}}>{viewer&&<div className="viewer-panel"><header><div><strong>{viewer.caption}</strong><span>Windows 预览界面 · 示例数据</span></div><button onClick={()=>setZoom(v=>!v)} aria-pressed={zoom}>{zoom?'适应窗口':'放大细节'}</button><button className="viewer-close" aria-label="关闭界面大图" onClick={()=>setViewer(null)}><X size={22}/></button></header><div className={'viewer-image'+(zoom?' is-zoomed':'')}><img src={viewer.image} alt={viewer.caption}/></div></div>}</dialog>

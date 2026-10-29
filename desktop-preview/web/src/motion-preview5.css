@@ -1,0 +1,29 @@
+/* Geometry and fill progress have one owner: their GSAP frame loop.
+   Do not let legacy CSS transitions restart or double-ease these values. */
+.chart.motion-chart .motion-data-stroke,
+.chart.motion-chart .motion-data-area,
+.sparkline.motion-sparkline > path {
+  animation: none;
+  transition: stroke 650ms var(--ease), fill 650ms var(--ease);
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}
+.meter.motion-meter > span,
+.meter.motion-meter > span.meter-echo {
+  transform-origin: left center;
+  transition: background-color 650ms var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart.motion-chart .motion-data-stroke,
+  .chart.motion-chart .motion-data-area,
+  .sparkline.motion-sparkline > path,
+  .meter.motion-meter > span {
+    transition: none;
+  }
+}
+[data-motion="reduced"] .chart.motion-chart .motion-data-stroke,
+[data-motion="reduced"] .chart.motion-chart .motion-data-area,
+[data-motion="reduced"] .sparkline.motion-sparkline > path,
+[data-motion="reduced"] .meter.motion-meter > span {
+  transition: none;
+}

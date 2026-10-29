@@ -1,0 +1,19 @@
+/* One full-width command row; action text never inherits a scaled/monospace label. */
+.gpu-inspector .inspector-range-control { flex:0 0 auto; width:auto; }
+.gpu-inspector .inspector-range.themed-select { width:138px; min-width:138px; height:32px; padding:0 10px; gap:8px; border-radius:11px; font-size:12px; line-height:1.4; }
+.gpu-inspector .inspector-range.themed-select>span { overflow:visible; text-overflow:clip; white-space:nowrap; }
+.gpu-inspector .inspector-section-title { align-items:center; gap:12px; }
+.gpu-inspector .inspector-table-scroll table { width:100%; table-layout:auto; }
+.gpu-inspector .inspector-table-scroll th,.gpu-inspector .inspector-table-scroll td { font-family:inherit; }
+.gpu-inspector .inspector-table-scroll td { vertical-align:top; }
+.gpu-inspector .process-action-column { width:80px; min-width:80px; }
+.gpu-inspector .process-end-button { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; font:500 12px/1.5 var(--font-ui,"Segoe UI","Microsoft YaHei UI",sans-serif); padding:5px 8px; min-height:28px; border-radius:9px; transform:none; letter-spacing:0; -webkit-font-smoothing:antialiased; }
+.gpu-inspector .process-command-toggle { display:inline-flex; align-items:center; gap:3px; margin:7px 0 0; padding:2px 0; border:0; background:transparent; color:var(--muted); cursor:pointer; font:inherit; font-size:12px; line-height:1.5; }
+.gpu-inspector .process-command-toggle svg { transform:rotate(-90deg); transition:transform .24s var(--ease,cubic-bezier(.22,1,.36,1)); }
+.gpu-inspector .process-command-toggle[aria-expanded="true"] svg { transform:rotate(0); }
+.gpu-inspector .process-command-row>td { padding:0 0 12px; border-top:0; }
+.gpu-inspector .process-command-flat { padding:10px 0 12px; background:transparent; border-top:1px solid var(--line); border-bottom:1px solid var(--line); border-radius:0; }
+.gpu-inspector .process-command-flat code { display:block; padding:0; background:none; border:0; border-radius:0; color:var(--text); font:12px/1.75 "Cascadia Mono",Consolas,"Microsoft YaHei UI",monospace; white-space:pre-wrap; overflow-wrap:anywhere; word-break:normal; }
+@media(prefers-reduced-motion:reduce) { .process-command-toggle svg { transition:none; } }
+
+.gpu-inspector .process-command-row>td,.gpu-inspector .process-command-flat { text-align:left!important; }

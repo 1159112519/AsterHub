@@ -1,38 +1,83 @@
 import {MotionSurface} from './motion-surface';
-import {motionOptions,reducedMotion} from './motion';
-import React,{useEffect,useState,useRef,useMemo,useLayoutEffect} from 'react';
+import {motionOptions,reducedMotion,subscribeReducedMotion} from './motion';
+import './motion-preview5.css';
+import React,{useEffect,useState,useRef,useMemo,useLayoutEffect,useSyncExternalStore} from 'react';
 import {gsap} from 'gsap';
 import {X,ChevronDown,ArrowUpRight,MoreHorizontal} from 'lucide-react';
 import {minutesLabel} from './data';
 export function IconButton({icon:Icon,label,onClick,className='',...props}){return <button type="button" aria-label={label} title={label} className={`icon-button ${className}`} onClick={onClick} {...props}><Icon size={18}/></button>}
 export function Button({children,icon:Icon,tone='',className='',...props}){return <button type="button" className={`button ${tone} ${className}`} {...props}>{Icon&&<Icon size={16}/>}<span>{children}</span></button>}
 export function NumberValue(props){return Number.isFinite(props.value)?<AnimatedNumber {...props}/>:<span className={`number ${props.className||''}`}>—</span>}
-function AnimatedNumber({value,decimals=0,suffix='',className=''}){const ref=useRef(null),current=useRef(value),initialText=useRef(value.toFixed(decimals));useLayoutEffect(()=>{if(ref.current)ref.current.textContent=current.current.toFixed(decimals);const obj={v:current.current};const t=gsap.to(obj,{v:value,...motionOptions('value'),onUpdate(){current.current=obj.v;if(ref.current)ref.current.textContent=obj.v.toFixed(decimals)}});return ()=>t.kill()},[value,decimals]);return <span className={`number ${className}`}><span ref={ref}>{initialText.current}</span>{suffix&&<small>{suffix}</small>}</span>}
-export function Meter({value,color='var(--green)',label}){return <div className="meter" aria-label={label} role="meter" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100}><span className="meter-echo" style={{transform:`scaleX(${Math.max(0,Math.min(value,100))/100})`,background:color}}/><span style={{transform:`scaleX(${Math.max(0,Math.min(value,100))/100})`,background:color}}/></div>}
-// Clamp Bézier handles to each interval: a curve never crosses its measured bounds.
-function smooth(points){const clamp=(v,a,b)=>Math.max(Math.min(a,b),Math.min(Math.max(a,b),v));return points.map((p,i)=>{if(!i)return `M${p[0]},${p[1]}`;const a=points[i-1],before=points[Math.max(0,i-2)],after=points[Math.min(points.length-1,i+1)];return `C${a[0]+(p[0]-before[0])/6},${clamp(a[1]+(p[1]-before[1])/6,a[1],p[1])} ${p[0]-(after[0]-a[0])/6},${clamp(p[1]-(after[1]-a[1])/6,a[1],p[1])} ${p[0]},${p[1]}`}).join(' ')}
-function resample(points,count){if(!points?.length)return [];return Array.from({length:count},(_,i)=>{const j=i/Math.max(1,count-1)*(points.length-1),a=points[Math.floor(j)],b=points[Math.ceil(j)],f=j%1;return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]})}
-export function Sparkline({values,color='var(--green)',bounds=false,maxValue=100}){const ref=useRef(null),previous=useRef(null);const points=useMemo(()=>values.map((v,i)=>[i/Math.max(1,values.length-1)*112,29-Math.max(0,Math.min(maxValue,v))/maxValue*25]),[values,maxValue]);useLayoutEffect(()=>{const node=ref.current,next=smooth(points),old=previous.current;previous.current=points;if(!node)return;if(old?.length&&points.length>1&&!reducedMotion()){const t=gsap.fromTo(node,{attr:{d:smooth(resample(old,points.length))}},{attr:{d:next},...motionOptions('chart')});return()=>t.kill()}node.setAttribute('d',next)},[points]);return <svg className="sparkline" viewBox="0 0 112 32" aria-hidden="true" preserveAspectRatio="none"><g className="sparkline-guides" style={{display:bounds?undefined:'none'}}><line x1="0" x2="112" y1="3" y2="3"/><line x1="0" x2="112" y1="29" y2="29"/></g><path ref={ref} d={smooth(points)} fill="none" stroke={color} strokeWidth="1.7" vectorEffect="non-scaling-stroke"/></svg>}
+function useMotionPreference(){return useSyncExternalStore(subscribeReducedMotion,reducedMotion)}
+function AnimatedNumber({value,decimals=0,suffix='',className=''}){
+ const preference=useMotionPreference(),ref=useRef(null),current=useRef(value),initialText=useRef(value.toFixed(decimals));
+ useLayoutEffect(()=>{if(preference){current.current=value;if(ref.current)ref.current.textContent=value.toFixed(decimals);return}const obj={v:current.current};if(ref.current)ref.current.textContent=obj.v.toFixed(decimals);const t=gsap.to(obj,{v:value,...motionOptions('value'),ease:'power2.inOut',onUpdate(){current.current=obj.v;if(ref.current)ref.current.textContent=obj.v.toFixed(decimals)}});return()=>t.kill()},[value,decimals,preference]);
+ return <span className={`number ${className}`}><span ref={ref}>{initialText.current}</span>{suffix&&<small>{suffix}</small>}</span>
+}
+export function Meter({value,color='var(--green)',label}){
+ const preference=useMotionPreference(),fill=useRef(null),echo=useRef(null),mounted=useRef(false),positions=useRef([0,0]),ratio=Math.max(0,Math.min(Number.isFinite(value)?value:0,100))/100;
+ useLayoutEffect(()=>{const nodes=[fill.current,echo.current],paint=(i,v)=>{positions.current[i]=v;nodes[i].style.transform=`scaleX(${v})`};if(!mounted.current||preference){nodes.forEach((_,i)=>paint(i,ratio));mounted.current=true;return}const animations=nodes.map((node,i)=>{const state={v:positions.current[i]};return gsap.to(state,{v:ratio,...motionOptions(i?'meterEcho':'meter'),ease:'power2.inOut',onUpdate(){paint(i,state.v)}})});return()=>animations.forEach(t=>t.kill())},[ratio,preference]);
+ return <div className="meter motion-meter" aria-label={label} role="meter" aria-valuenow={Number.isFinite(value)?value:undefined} aria-valuemin={0} aria-valuemax={100}><span ref={echo} className="meter-echo" style={{background:color}}/><span ref={fill} style={{background:color}}/></div>
+}
+// Store the displayed Bezier control points, not the last requested samples.
+// Subdivision matches topology exactly, without changing the visible curve.
+function curveCoordinates(points){
+ const clamp=(v,a,b)=>Math.max(Math.min(a,b),Math.min(Math.max(a,b),v));
+ if(!points.length)return [];
+ const result=[...points[0]];
+ for(let i=1;i<points.length;i++){const p=points[i],a=points[i-1],before=points[Math.max(0,i-2)],after=points[Math.min(points.length-1,i+1)];result.push(a[0]+(p[0]-before[0])/6,clamp(a[1]+(p[1]-before[1])/6,a[1],p[1]),p[0]-(after[0]-a[0])/6,clamp(p[1]-(after[1]-a[1])/6,a[1],p[1]),...p)}
+ return result
+}
+function curvePath(curve){if(!curve.length)return '';let path=`M${curve[0]},${curve[1]}`;for(let i=2;i<curve.length;i+=6)path+=` C${curve[i]},${curve[i+1]} ${curve[i+2]},${curve[i+3]} ${curve[i+4]},${curve[i+5]}`;return path}
+function subdivideCurve(curve,count){
+ const originalCount=(curve.length-2)/6;
+ if(count===originalCount)return curve;
+ const roots=[],heap=[],mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+ const make=points=>({points,length:Math.hypot(points[1][0]-points[0][0],points[1][1]-points[0][1])+Math.hypot(points[2][0]-points[1][0],points[2][1]-points[1][1])+Math.hypot(points[3][0]-points[2][0],points[3][1]-points[2][1])});
+ const push=node=>{let i=heap.length;heap.push(node);while(i){const parent=(i-1)>>1;if(heap[parent].length>=node.length)break;heap[i]=heap[parent];i=parent}heap[i]=node};
+ const pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let child=i*2+1;if(child+1<heap.length&&heap[child+1].length>heap[child].length)child++;if(heap[child].length<=last.length)break;heap[i]=heap[child];i=child}heap[i]=last}return first};
+ let start=curve.slice(0,2);
+ for(let i=2;i<curve.length;i+=6){const node=make([start,curve.slice(i,i+2),curve.slice(i+2,i+4),curve.slice(i+4,i+6)]);roots.push(node);push(node);start=node.points[3]}
+ if(!roots.length&&count){const node=make(Array.from({length:4},()=>curve.slice(0,2)));roots.push(node);push(node)}
+ // Longest-leaf lookup is logarithmic. Keep the subdivision tree so output
+ // follows original segment order without a costly sort or repeated scans.
+ for(let leaves=roots.length;leaves<count;leaves++){const node=pop(),[a,b,c,d]=node.points,ab=mid(a,b),bc=mid(b,c),cd=mid(c,d),abc=mid(ab,bc),bcd=mid(bc,cd),center=mid(abc,bcd);node.left=make([a,ab,abc,center]);node.right=make([center,bcd,cd,d]);push(node.left);push(node.right)}
+ const result=curve.slice(0,2),stack=roots.slice().reverse();
+ while(stack.length){const node=stack.pop();if(node.left){stack.push(node.right,node.left)}else{const p=node.points;result.push(...p[1],...p[2],...p[3])}}
+ return result
+}
+function useCurveMotion(stroke,area,points,baseline,hasArea=false){
+ const preference=useMotionPreference(),current=useRef(null),targetCurve=curveCoordinates(points),signature=curvePath(targetCurve);
+ useLayoutEffect(()=>{
+  const node=stroke.current;if(!node)return;
+  const paint=frame=>{const path=curvePath(frame.curve);node.setAttribute('d',path);if(area.current)area.current.setAttribute('d',path?`${path} L${frame.curve.at(-2)},${frame.baseline} L${frame.curve[0]},${frame.baseline} Z`:'')};
+  const target={curve:targetCurve,baseline},previous=current.current;
+  if(!previous?.curve.length||!targetCurve.length||preference){current.current=target;paint(target);return}
+  const count=Math.max((previous.curve.length-2)/6,(targetCurve.length-2)/6),from=subdivideCurve(previous.curve,count),to=subdivideCurve(targetCurve,count),progress={value:0};
+  // Paint newly attached area nodes from the same visible geometry as the stroke.
+  paint(previous);
+  // React never writes d. Interrupted transitions start at the last painted frame.
+  const animation=gsap.to(progress,{value:1,...motionOptions('chart'),ease:'power2.inOut',onUpdate(){const f=progress.value;current.current={curve:from.map((v,i)=>v+(to[i]-v)*f),baseline:previous.baseline+(baseline-previous.baseline)*f};paint(current.current)},onComplete(){current.current=target;paint(target)}});
+  return()=>animation.kill()
+ },[signature,baseline,hasArea,preference]);
+}
+function AnimatedCurve({points,color,fill,baseline}){const stroke=useRef(null),area=useRef(null);useCurveMotion(stroke,area,points,baseline,Boolean(fill));return <>{fill&&<path ref={area} className="data-area motion-data-area" fill={fill}/>}<path ref={stroke} className="data-stroke motion-data-stroke" fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round"/></>}
+export function Sparkline({values,color='var(--green)',bounds=false,maxValue=100}){
+ const stroke=useRef(null),area=useRef(null),scale=Math.max(Number.EPSILON,maxValue),points=values.map((v,i)=>[i/Math.max(1,values.length-1)*112,29-Math.max(0,Math.min(scale,v))/scale*25]);useCurveMotion(stroke,area,points,29);
+ return <svg className="sparkline motion-sparkline" viewBox="0 0 112 32" aria-hidden="true" preserveAspectRatio="none"><g className="sparkline-guides" style={{display:bounds?undefined:'none'}}><line x1="0" x2="112" y1="3" y2="3"/><line x1="0" x2="112" y1="29" y2="29"/></g><path ref={stroke} fill="none" stroke={color} strokeWidth="1.7" vectorEffect="non-scaling-stroke"/></svg>
+}
 export function Chart({series,height=220,onSelect,selected=null,compact=false,startMinute=540,unit='%',rangeMinutes=15,startDate='2026-10-28',selectionPopover=null,timestamps=null,maxValue=100,axisFormat=null}){
  const [hover,setHover]=useState(null),host=useRef(null),svg=useRef(null),raf=useRef(null),pending=useRef(null);const [chartWidth,setChartWidth]=useState(900);const w=chartWidth,h=height,left=36,right=14,top=16,bottom=30,n=series[0]?.values.length||66;useEffect(()=>{const observer=new ResizeObserver(entries=>{const width=Math.round(entries[0].contentRect.width);if(width>100)setChartWidth(width)});if(host.current)observer.observe(host.current);return()=>observer.disconnect()},[]);const chartId=React.useId().replace(/:/g,'');
  const points=useMemo(()=>series.map(s=>s.values.map((v,i)=>[left+(timestamps?.length>1?(timestamps[i]-timestamps[0])/Math.max(1,timestamps.at(-1)-timestamps[0]):i/Math.max(1,s.values.length-1))*(w-left-right),top+(maxValue-v)/maxValue*(h-top-bottom)])),[series,h,w,timestamps,maxValue]);
- useEffect(()=>{if(!svg.current||reducedMotion())return;const paths=svg.current.querySelectorAll('.data-stroke');const t=gsap.fromTo(paths,{strokeDasharray:'2200 2200',strokeDashoffset:2200},{strokeDashoffset:0,...motionOptions('trace'),stagger:.04,clearProps:'strokeDasharray,strokeDashoffset'});return ()=>t.kill()},[]);
- // New samples change point count. Match the old curve's topology before interpolating.
- const previousPoints=useRef([]),previousWidth=useRef(w),previousScale=useRef(maxValue),previousDomain=useRef('');
- const domain=series.map(s=>s.name).join('|')+`/${rangeMinutes}/${startMinute}`;
- useLayoutEffect(()=>{const nodes=svg.current?.querySelectorAll('.data-stroke')||[],animations=[];const compatible=previousWidth.current===w&&previousDomain.current===domain&&previousScale.current===maxValue;
- nodes.forEach((node,i)=>{const next=smooth(points[i]),prev=previousPoints.current[i],area=node.parentElement.querySelector('.data-area');const old=prev?.length?smooth(resample(prev,points[i].length)):null;const areaPath=p=>`${p} L${w-right},${h-bottom} L${left},${h-bottom} Z`;
- if(old&&old!==next&&!reducedMotion()&&compatible){animations.push(gsap.fromTo(node,{attr:{d:old}},{attr:{d:next},...motionOptions('chart')}));if(area)animations.push(gsap.fromTo(area,{attr:{d:areaPath(old)}},{attr:{d:areaPath(next)},...motionOptions('chart')}))}else{node.setAttribute('d',next);if(area)area.setAttribute('d',areaPath(next))}});
- previousPoints.current=points;previousWidth.current=w;previousDomain.current=domain;previousScale.current=maxValue;return()=>animations.forEach(t=>t.kill())},[points,domain]);
  useEffect(()=>()=>{if(raf.current)cancelAnimationFrame(raf.current)},[]);
  function pick(e){const r=host.current.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*w;const fraction=Math.max(0,Math.min(1,(x-left)/(w-left-right)));if(timestamps?.length){const target=timestamps[0]+fraction*(timestamps.at(-1)-timestamps[0]);let lo=0,hi=timestamps.length-1;while(lo<hi){const mid=Math.floor((lo+hi)/2);if(timestamps[mid]<target)lo=mid+1;else hi=mid}return lo>0&&target-timestamps[lo-1]<timestamps[lo]-target?lo-1:lo}return Math.round(fraction*(n-1))}
  function move(e){pending.current=e.clientX;if(!raf.current)raf.current=requestAnimationFrame(()=>{setHover(pick({clientX:pending.current}));raf.current=null})}
  const selectedPx=selected===null?0:points[0]?.[selected]?.[0]??left,peekWidth=Math.min(376,w-24),peekLeft=Math.max(12,Math.min(w-peekWidth-12,selectedPx+(selectedPx<w/2?14:-peekWidth-14)));
  const index=hover??selected,px=index==null?0:points[0]?.[index]?.[0]??left;const dateFor=i=>timestamps?.length?new Date(timestamps[Math.round(i)]):new Date(new Date(startDate+'T00:00:00').getTime()+(startMinute+i/(n-1)*rangeMinutes)*60000);const timeFor=i=>dateFor(i).toLocaleTimeString('zh-CN',{hour12:false});
- return <div className={`chart ${compact?'compact-chart':''}`} ref={host} onPointerMove={move} onPointerLeave={()=>{if(raf.current)cancelAnimationFrame(raf.current);raf.current=null;pending.current=null;setHover(null)}} onClick={e=>onSelect?.(pick(e))} tabIndex={0} role={onSelect?'slider':'img'} aria-label={onSelect?'历史时间图，左右键选择时间点':'资源趋势图，聚焦后用左右键查看数值'} aria-valuemin={onSelect?0:undefined} aria-valuemax={onSelect?n-1:undefined} aria-valuenow={onSelect?(selected??n-1):undefined} aria-valuetext={onSelect?timeFor(selected??n-1):undefined} onKeyDown={e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?n-1:Math.max(0,Math.min(n-1,(index??n-1)+(e.key==='ArrowLeft'?-1:1)));setHover(next);onSelect?.(next)}}}>
+ return <div className={`chart motion-chart ${compact?'compact-chart':''}`} ref={host} onPointerMove={move} onPointerLeave={()=>{if(raf.current)cancelAnimationFrame(raf.current);raf.current=null;pending.current=null;setHover(null)}} onClick={e=>onSelect?.(pick(e))} tabIndex={0} role={onSelect?'slider':'img'} aria-label={onSelect?'历史时间图，左右键选择时间点':'资源趋势图，聚焦后用左右键查看数值'} aria-valuemin={onSelect?0:undefined} aria-valuemax={onSelect?n-1:undefined} aria-valuenow={onSelect?(selected??n-1):undefined} aria-valuetext={onSelect?timeFor(selected??n-1):undefined} onKeyDown={e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?n-1:Math.max(0,Math.min(n-1,(index??n-1)+(e.key==='ArrowLeft'?-1:1)));setHover(next);onSelect?.(next)}}}>
  <svg ref={svg} viewBox={`0 0 ${w} ${h}`} style={{height}} preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id={`plot-${chartId}`}><rect x={left} y={top-1} width={w-left-right} height={h-top-bottom+2}/></clipPath>{series.map((s,i)=><linearGradient key={s.name} id={`area-${chartId}-${i}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={s.color} stopOpacity=".13"/><stop offset="100%" stopColor={s.color} stopOpacity=".01"/></linearGradient>)}</defs>
  {[0,.25,.5,.75,1].map(f=>maxValue*f).map(v=><g key={v}><line x1={left} x2={w-right} y1={top+(maxValue-v)/maxValue*(h-top-bottom)} y2={top+(maxValue-v)/maxValue*(h-top-bottom)} className="grid-line"/><text x={left-12} y={top+(maxValue-v)/maxValue*(h-top-bottom)+4} textAnchor="end" className="axis-label">{axisFormat?axisFormat(v):Number(v.toFixed(1))}</text></g>)}
- {points.map((p,i)=><g key={series[i].name} clipPath={`url(#plot-${chartId})`}>{series.length<3&&<path className="data-area" d={`${smooth(p)} L${w-right},${h-bottom} L${left},${h-bottom} Z`} fill={`url(#area-${chartId}-${i})`}/>}<path className="data-stroke" d={smooth(p)} fill="none" stroke={series[i].color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+ {points.map((p,i)=><g key={series[i].name} clipPath={`url(#plot-${chartId})`}><AnimatedCurve points={p} color={series[i].color} fill={series.length<3?`url(#area-${chartId}-${i})`:null} baseline={h-bottom}/></g>)}
  {[0,.25,.5,.75,1].map(f=><text key={f} x={left+f*(w-left-right)} y={h-5} textAnchor={f===0?'start':f===1?'end':'middle'} className="axis-label">{(timestamps?.length?new Date(timestamps[0]+f*(timestamps.at(-1)-timestamps[0])).toLocaleTimeString('zh-CN',{hour12:false}):timeFor(f*(n-1))).slice(0,5)}</text>)}
  {index!==null&&<g><line x1={px} x2={px} y1={top} y2={h-bottom} className="crosshair"/>{points.map((p,i)=><circle key={i} cx={p[index]?.[0]} cy={p[index]?.[1]} r="4" fill={series[i].color} stroke="var(--surface)" strokeWidth="2"/>)}</g>}</svg>
  {hover!==null&&(!selectionPopover||hover!==selected)&&<div className="chart-tooltip" style={{left:`clamp(100px,${px/w*100}%,calc(100% - 110px))`}}><time>{dateFor(hover).toLocaleDateString('zh-CN',{month:'long',day:'numeric'})} {timeFor(hover)}</time>{series.map(s=><div key={s.name}><span className="legend-dot" style={{background:s.color}}/>{s.name}<strong>{s.values[hover]?.toFixed(1)} {unit}</strong></div>)}</div>}

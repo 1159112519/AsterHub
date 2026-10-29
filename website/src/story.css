@@ -24,3 +24,7 @@ html{scroll-padding-top:110px}body{overflow-x:clip}.section-shell{padding-left:m
 @media(min-width:1800px){.hero .product-art{right:-8vw}}
 
 @media(max-width:540px){.site-header .header-download{min-width:42px;min-height:42px;justify-content:center;padding:10px}.site-header .mobile-menu-button{min-width:42px;min-height:42px}}
+
+/* Soft composited entrances for inline product chapters. */
+@media(max-width:1099px){.story-inline-image{transform-origin:50% 70%;backface-visibility:hidden}}
+@media(prefers-reduced-motion:reduce){[data-story-reveal]{opacity:1!important;visibility:visible!important;transform:none!important}}
