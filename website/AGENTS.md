@@ -18,3 +18,6 @@ Keep each platform requirement directly under its download button in normal flow
 
 ## Windows preview channel 2026-10-29
 Show 0.3.0-preview.4 explicitly as the new Windows workbench preview with a separate installer and signed windows-preview.json. Retain stable 0.2.1 download and stable.json unchanged. Ubuntu 0.1.3 remains independent. Preview and stable data are separate. Do not promise automatic migration of saved credentials between them.
+
+## AsterHub scroll experience 2026-10-29
+Use current preview.4 screenshots with synthetic, explicitly labelled example data. Never reuse the former AQ Server workbench images for the current Windows preview. The primary route is /asterhub/. Keep previous release URLs and signed manifests working. Desktop chapters change a sticky product image as the reader scrolls; tablet and phone use the same chapters with inline images, without scroll capture. Keep the soft pointer reveal, keyboard controls and reduced-motion support. Use Chinese primary copy, English secondary copy. Do not imply Ubuntu has current Windows features.

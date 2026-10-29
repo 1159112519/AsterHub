@@ -12,6 +12,12 @@ Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工�
 
 新的 Windows 工作台源码与构建说明见 [desktop-preview/](desktop-preview/README.md)。预览与稳定通道分开更新、独立保存数据。
 
+## 官网
+
+[访问 AsterHub 官网](https://spotlight-ruled-slightly-void.trycloudflare.com/asterhub/)（当前为临时预览域名）。
+
+滚动浏览资源概览、GPU、终端、文件、网络、存储与历史，界面随章节切换。电脑采用固定展示区，平板和手机采用顺序图文。展示图来自当前 Windows 预览前端，使用示例数据。
+
 ## 下载
 
 - [Windows 预览版 0.3.0-preview.4](https://github.com/1159112519/aq-server/releases/tag/v0.3.0-preview.4)
@@ -50,4 +56,4 @@ npm run dev
 
 ## 发布状态
 
-Windows v0.2.0 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+Windows v0.3.0-preview.4 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
