@@ -28,3 +28,22 @@ html{scroll-padding-top:110px}body{overflow-x:clip}.section-shell{padding-left:m
 /* Soft composited entrances for inline product chapters. */
 @media(max-width:1099px){.story-inline-image{transform-origin:50% 70%;backface-visibility:hidden}}
 @media(prefers-reduced-motion:reduce){[data-story-reveal]{opacity:1!important;visibility:visible!important;transform:none!important}}
+
+/* Chinese glyphs need their full advance; Latin display tracking must not squeeze them. */
+.hero .hero-title,
+.product-intro h2,
+.story-heading h2,
+.principles-heading h2,
+.questions h2,
+.story-step h3,
+.principle-rows h3,
+.downloads-heading h2,
+.updates .section-heading h2,
+.install-note h3{letter-spacing:.015em}
+.hero .hero-title{line-height:1.35}
+.product-intro h2{line-height:1.52}
+.story-heading h2,.principles-heading h2,.questions h2,.downloads-heading h2,.updates .section-heading h2{line-height:1.45}
+.story-step h3,.principle-rows h3,.install-note h3{line-height:1.5}
+.hero .hero-description,.product-intro>p:last-child,.story-description,.principle-rows p,.question-list details>p,.release-card li,.install-note p,.platform-detail{letter-spacing:.015em}
+/* Keep the highlighted promise together when a narrow line needs to wrap. */
+.product-intro h2 span{display:inline-block}
