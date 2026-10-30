@@ -1,9 +1,12 @@
 /* Inspector controls share a measured row outside the plot's hover surface. */
-.chart-control-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;margin:0 0 8px;position:relative;z-index:9}
-.chart-control-bar .themed-select{display:inline-flex;align-items:center;justify-content:space-between;flex:0 1 auto;width:138px;min-width:0;height:32px;min-height:32px;box-sizing:border-box;padding:0 10px;gap:8px;border-radius:11px;font-family:inherit;font-size:12px;line-height:1.4;white-space:nowrap}
-.chart-control-bar .chart-time-select{margin-left:auto}
+.chart-control-bar{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0;margin:0 0 8px;position:relative;z-index:9}
+.chart-control-bar .themed-select{display:inline-flex;align-items:center;justify-content:space-between;flex:0 1 auto;width:138px;min-width:0;height:34px;min-height:34px;box-sizing:border-box;padding:0 10px;gap:8px;border-radius:11px;font-family:inherit;font-size:13px;line-height:1.4;white-space:nowrap}
+.chart-control-bar .chart-time-select{margin-left:0}
 .chart-control-bar .themed-select>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chart-controls-external:has(.chart-control-bar:hover) .chart-tooltip,.chart-controls-external:has(.chart-control-bar:focus-within):not(:has(.chart:hover)) .chart-tooltip,body:has(.chart-control-bar [aria-expanded="true"]) .chart-tooltip{visibility:hidden}
 
 
 
+
+.chart-control-bar .themed-select{background:color-mix(in srgb,var(--text) 3%,transparent);border-color:color-mix(in srgb,var(--text) 9%,transparent)}
+.chart-control-bar .themed-select:hover,.chart-control-bar .themed-select[aria-expanded="true"]{background:color-mix(in srgb,var(--text) 6%,transparent)}

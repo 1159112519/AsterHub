@@ -7,7 +7,7 @@ public static class UpdateSources {
     // Fixed publisher-owned repository paths only. No user overrides, mirrors, or temporary tunnels.
     public static string[] ManifestEndpoints { get { return new[] {
         AppUpdates.Endpoint,
-        "https://api.github.com/repos/1159112519/aq-server/contents/website/public/releases/windows-preview.json?ref=main",
+        "https://api.github.com/repos/1159112519/AsterHub/contents/website/public/releases/windows-preview.json?ref=main",
         AppUpdates.Endpoint // one fresh attempt recovers transient failures / API rate limits
     }; } }
     public static string CurrentEndpoint { get { return AppUpdates.Endpoint; } }

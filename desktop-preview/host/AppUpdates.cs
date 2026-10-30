@@ -17,7 +17,7 @@ public sealed class ReleaseInfo {
 }
 public static class AppUpdates {
  public const string Website="http://8.140.49.4/aqserver/";
- public const string Endpoint="https://raw.githubusercontent.com/1159112519/aq-server/main/website/public/releases/windows-preview.json";
+ public const string Endpoint="https://raw.githubusercontent.com/1159112519/AsterHub/main/website/public/releases/windows-preview.json";
  public static int CompareVersions(string a,string b){const string format=@"^[0-9]+\.[0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-preview\.[0-9]+)?$";if(!System.Text.RegularExpressions.Regex.IsMatch(a??"",format)||!System.Text.RegularExpressions.Regex.IsMatch(b??"",format))throw new InvalidDataException("预览版本格式无效");var aa=a.Split('-');var bb=b.Split('-');int c=new Version(aa[0]).CompareTo(new Version(bb[0]));if(c!=0)return c;if(aa.Length==1)return bb.Length==1?0:1;if(bb.Length==1)return -1;int an,bn;if(!int.TryParse(aa[1].Replace("preview.",""),out an)||!int.TryParse(bb[1].Replace("preview.",""),out bn))throw new InvalidDataException("预览版本格式无效");return an.CompareTo(bn);}
  public static Version CurrentVersion{get{return Assembly.GetExecutingAssembly().GetName().Version;}}
  public static string DisplayVersion{get{return ((AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(),typeof(AssemblyInformationalVersionAttribute))).InformationalVersion;}}

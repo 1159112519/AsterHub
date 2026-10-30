@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
-const media = (name: string) => `./media/asterhub-preview7-final-${name}.webp`;
+const media = (name: string) => `./media/asterhub-preview8-final-${name}.webp`;
 export const chapters = [
   { id:'overview', label:'资源概览', eyebrow:'THE WHOLE PICTURE', title:['先看全局。','再决定关注哪里。'], text:'CPU、GPU、内存、网络与存储，放在同一个工作空间。设备忙在哪里、还有多少余量，不必在多个工具之间来回确认。', points:['点击资源卡片，在当前页面展开详情','离开概览后，底部速览继续显示资源状态','按设备提供的能力显示数据'], image:'overview', caption:'资源概览 · 同一视野里的五类资源' },
   { id:'gpu', label:'GPU', eyebrow:'EVERY GPU, IN FOCUS', title:['每一张卡。','都值得看清。'], text:'从一张显卡到多卡设备，利用率、显存、温度与功耗一起呈现。选择经典卡片，或用趋势卡片看见变化，风格由你决定。', points:['多卡同时可见，区分忙碌与空闲','展开 GPU 详情，查看完整进程命令','结束进程前确认，并核验目标身份'], image:'eight-gpu', caption:'八卡界面示意 · 经典与趋势两种显示风格' },

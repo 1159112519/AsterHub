@@ -16,7 +16,7 @@ public sealed class DeploymentInfo {
     public string appId,feedbackEndpoint,website,expiresUtc;
 }
 public static class FeedbackClient {
-    public const string Discovery="https://raw.githubusercontent.com/1159112519/aq-server/main/website/public/releases/services.json";
+    public const string Discovery="https://raw.githubusercontent.com/1159112519/AsterHub/main/website/public/releases/services.json";
     public static DeploymentInfo VerifyDiscovery(byte[] bytes,string key) {
         if(bytes==null||bytes.Length>16384)throw new InvalidDataException("服务信息格式不正确。");
         var json=new JavaScriptSerializer();

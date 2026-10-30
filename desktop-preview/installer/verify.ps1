@@ -26,7 +26,7 @@ function Install([string]$log){
 }
 function CheckPayload {
  $manifest=Get-Content -LiteralPath (Join-Path $program 'payload-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
- if($manifest.version-ne '0.3.0-preview.7'){throw 'Wrong installed version'}
+ if($manifest.version-ne '0.3.0-preview.8'){throw 'Wrong installed version'}
  foreach($file in $manifest.files){$installed=Get-Item -LiteralPath (Join-Path $program $file.file);if($installed.Length-ne $file.bytes-or(Get-FileHash -LiteralPath $installed.FullName).Hash-ne $file.sha256){throw ('Installed payload differs: '+$file.file)}}
  foreach($folder in @('app/modules','runtime/managed','runtime/win-x64','resources/workbench','licenses','docs')){if(!(Test-Path -LiteralPath (Join-Path $program $folder))){throw ('Missing module folder '+$folder)}}
  return $manifest.files.Count

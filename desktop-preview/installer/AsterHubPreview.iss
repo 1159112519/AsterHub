@@ -7,7 +7,7 @@
 #ifndef Bootstrapper
 #error Bootstrapper is required
 #endif
-#define PreviewVersion "0.3.0-preview.7"
+#define PreviewVersion "0.3.0-preview.8"
 [Setup]
 #ifdef QAInstall
 AppId={{9B812031-C2DF-49B2-BBCC-BAB37C63C42B}
@@ -15,7 +15,7 @@ AppId={{9B812031-C2DF-49B2-BBCC-BAB37C63C42B}
 AppId={{2346218B-4E82-4C20-9A7C-9485C0A72696}
 #endif
 AppName=AsterHub Preview
-AppVerName=AsterHub 0.3.0-preview.7（预览版）
+AppVerName=AsterHub 0.3.0-preview.8（预览版）
 AppVersion={#PreviewVersion}
 AppPublisher=AsterHub
 DefaultDirName={localappdata}\Programs\AsterHub Preview
@@ -44,8 +44,8 @@ SolidCompression=yes
 CloseApplications=yes
 RestartApplications=no
 UsePreviousAppDir=yes
-VersionInfoVersion=0.3.0.7
-VersionInfoProductVersion=0.3.0.7
+VersionInfoVersion=0.3.0.8
+VersionInfoProductVersion=0.3.0.8
 VersionInfoTextVersion={#PreviewVersion}
 VersionInfoDescription=AsterHub Windows 预览版安装程序
 InfoBeforeFile={#ProjectRoot}\installer\notice.txt

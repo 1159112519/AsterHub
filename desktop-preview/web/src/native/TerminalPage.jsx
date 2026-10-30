@@ -1,5 +1,5 @@
-import React,{useEffect,useRef,useState} from 'react';
-import {Plus,X,Terminal as TerminalIcon,Copy,Eraser,RefreshCw} from 'lucide-react';
+import React,{useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {Plus,X,Terminal as TerminalIcon,Copy,Eraser} from 'lucide-react';
 import {native} from './bridge';
 import {createTerminalDeviceState} from './terminal-device-state.js';
 import xtermUrl from '../../../app/resources/terminal/xterm.js?url&no-inline';
@@ -21,22 +21,50 @@ function poll(record){if(record.stopped)return;native.request('terminal.read',{i
 async function renderer(meta,settings,isCurrent=()=>true){await assets();if(!isCurrent())return;if(records.has(meta.id))return records.get(meta.id);const node=document.createElement('div');node.className='native-terminal-emulator';const term=new globalThis.Terminal({...options(settings),allowProposedApi:false,convertEol:false}),fit=new globalThis.FitAddon.FitAddon();term.loadAddon(fit);term.open(node);const record={...meta,node,term,fit,offset:0,input:Promise.resolve(),queued:0,error:'',stopped:false};term.onData(data=>sendInput(record,data));term.onResize(({cols,rows})=>{if(!record.stopped&&record.state!=='exited')native.request('terminal.resize',{id:record.id,cols,rows}).catch(error=>{record.error=error.message;publish()})});term.attachCustomKeyEventHandler(event=>{if(event.type!=='keydown')return true;if(event.ctrlKey&&event.shiftKey&&event.code==='KeyC'){const text=term.getSelection();if(text)navigator.clipboard?.writeText(text).catch(()=>{});return false}if(event.ctrlKey&&event.shiftKey&&event.code==='KeyL'){term.clear();return false}return true});poll(record);return record;}
 
 export function TerminalPage({deviceId='local',settings={},active=true}){
- const [,render]=useState(0),host=useRef(null),settingsRef=useRef(settings);settingsRef.current=settings;
+ const [,render]=useState(0),[context,setContext]=useState(null),host=useRef(null),menu=useRef(null),menuOpener=useRef(null),settingsRef=useRef(settings);settingsRef.current=settings;
  sessions.setView(deviceId,active);
  const device=sessions.state(deviceId),busy=device.pending>0,error=device.error,setError=value=>sessions.setError(deviceId,value),canCreate=!busy&&sessions.hasDevice(deviceId)&&records.size<12;
  useEffect(()=>{const update=()=>render(n=>n+1);subscribers.add(update);return()=>subscribers.delete(update)},[]);
  useEffect(()=>{let alive=true,revision=0;const reconcile=list=>{if(alive&&Array.isArray(list?.items))sessions.updateDevices(list.items.map(row=>row.device.id))};const off=native.subscribe(list=>{revision++;reconcile(list)},'devices');const started=revision;native.request('devices.list').then(list=>{if(revision===started)reconcile(list)}).catch(()=>{});return()=>{alive=false;off()}},[]);
  useEffect(()=>{if(active)sessions.ensure(deviceId,settingsRef.current).catch(()=>{})},[active,deviceId]);
  const record=sessions.selected(deviceId),tabs=sessions.tabs(deviceId),selectedId=record?.id;
- useEffect(()=>{for(const item of records.values())Object.assign(item.term.options,options(settings));if(active&&record){requestAnimationFrame(()=>{if(record.node.isConnected){record.fit.fit();record.term.focus()}})}},[settings,active,record]);
- useEffect(()=>{if(!active||!record||!host.current)return;const node=host.current;node.replaceChildren(record.node);let frame;const fit=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{if(node.clientWidth>0&&node.clientHeight>0){record.fit.fit();record.term.focus()}})};const observer=new ResizeObserver(fit);observer.observe(node);fit();document.fonts?.ready.then(fit);return()=>{cancelAnimationFrame(frame);observer.disconnect();if(record.node.parentNode===node)node.removeChild(record.node)}},[active,record]);
- async function add(){try{await sessions.create(deviceId,settings)}catch{}}
- async function remove(item){try{await sessions.close(item)}catch{}}
+ const contextRecord=context?.deviceId===deviceId&&active?tabs.find(item=>item.id===context.id):null;
+ useEffect(()=>{setContext(null)},[deviceId,active]);
+ useLayoutEffect(()=>{
+  if(!contextRecord||!menu.current)return;
+  const node=menu.current,rect=node.getBoundingClientRect();
+  node.style.left=Math.max(8,Math.min(context.x,window.innerWidth-rect.width-8))+'px';
+  node.style.top=Math.max(8,Math.min(context.y,window.innerHeight-rect.height-8))+'px';
+  node.querySelector('button:not(:disabled)')?.focus();
+ },[context,contextRecord]);
+ useEffect(()=>{
+  if(!contextRecord)return;
+  const dismiss=event=>{if(!menu.current?.contains(event.target))setContext(null)};
+  const escape=event=>{if(event.key==='Escape'){event.preventDefault();setContext(null);menuOpener.current?.focus()}};
+  const resize=()=>setContext(null);
+  document.addEventListener('pointerdown',dismiss);document.addEventListener('keydown',escape);window.addEventListener('resize',resize);
+  return()=>{document.removeEventListener('pointerdown',dismiss);document.removeEventListener('keydown',escape);window.removeEventListener('resize',resize)};
+ },[contextRecord]);
+ useEffect(()=>{for(const item of records.values())Object.assign(item.term.options,options(settings));if(active&&record){requestAnimationFrame(()=>{if(record.node.isConnected){record.fit.fit();if(!menu.current)record.term.focus()}})}},[settings,active,record]);
+ useEffect(()=>{if(!active||!record||!host.current)return;const node=host.current;node.replaceChildren(record.node);let frame;const fit=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{if(node.clientWidth>0&&node.clientHeight>0){record.fit.fit();if(!menu.current)record.term.focus()}})};const observer=new ResizeObserver(fit);observer.observe(node);fit();document.fonts?.ready.then(fit);return()=>{cancelAnimationFrame(frame);observer.disconnect();if(record.node.parentNode===node)node.removeChild(record.node)}},[active,record]);
+ async function add(){setContext(null);try{await sessions.create(deviceId,settings)}catch{}}
+ async function remove(item){setContext(null);try{await sessions.close(item)}catch{}}
+ function openMenu(event,item){event.preventDefault();const tab=event.currentTarget.querySelector('[role="tab"]');menuOpener.current=tab;const rect=tab.getBoundingClientRect();setContext({id:item.id,deviceId,x:event.type==='keydown'?rect.left:event.clientX,y:event.type==='keydown'?rect.bottom:event.clientY})}
+ async function closeTabs(mode){
+  if(!contextRecord||busy)return;
+  // Capture this menu's device and records before any asynchronous close or view change.
+  const targets=sessions.tabs(context.deviceId).filter(item=>mode==='all'||(mode==='others'?item.id!==context.id:item.id===context.id));
+  setContext(null);
+  await Promise.allSettled(targets.map(item=>sessions.close(item)));
+ }
+ function menuKeys(event){const buttons=[...event.currentTarget.querySelectorAll('button:not(:disabled)')],index=buttons.indexOf(document.activeElement);if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();buttons[(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus()}if(event.key==='Tab')setContext(null)}
  const copy=async()=>{try{if(!record?.term.hasSelection()){setError('请先选择需要复制的终端文字');return}await navigator.clipboard.writeText(record.term.getSelection());setError('')}catch{setError('无法访问剪贴板，可使用 Ctrl+Shift+C 复制选中文字')}};
- return <section className="native-terminal-page" hidden={!active} aria-label="终端工作空间"><div className="page-heading"><div><div className="eyebrow">工作空间 · TERMINAL</div><h1>终端</h1><p>本机 PowerShell 与 SSH 会话，切换页面后继续运行。</p></div><button className="native-terminal-new" onClick={add} disabled={!canCreate}><Plus size={16}/>新建当前设备终端</button></div>
- <div className="native-terminal-panel" style={{'--terminal-bg':(themes[settings.theme]||themes.graphite).background}}><div className="native-terminal-toolbar"><div className="native-terminal-tabs" role="tablist" aria-label="终端会话">{tabs.map((item,index)=><div className={'native-terminal-tab '+(item.id===selectedId?'selected':'')} key={item.id}><button role="tab" aria-selected={item.id===selectedId} aria-controls="native-terminal-screen" onClick={()=>{sessions.select(deviceId,item.id);setError('')}}><TerminalIcon size={14}/><span>{item.name||'本机'} · {item.kind} {index+1}</span>{item.state==='exited'&&<small>已退出</small>}</button><button aria-label={'关闭终端 '+(index+1)} title="关闭此会话" onClick={()=>remove(item)} disabled={busy}><X size={13}/></button></div>)}</div><div className="native-terminal-tools"><button title="复制选中文字 · Ctrl+Shift+C" aria-label="复制选中文字" disabled={!record} onClick={copy}><Copy size={15}/></button><button title="清空显示 · Ctrl+Shift+L" aria-label="清空终端显示" disabled={!record} onClick={()=>record?.term.clear()}><Eraser size={15}/></button><button title="新建终端" aria-label="新建终端" onClick={add} disabled={!canCreate}><Plus size={16}/></button></div></div>
+ return <section className="native-terminal-page" hidden={!active} aria-label="终端工作空间"><div className="page-heading"><div><div className="eyebrow">工作空间 · TERMINAL</div><h1>终端</h1><p>本机 PowerShell 与 SSH 会话，切换页面后继续运行。</p></div></div>
+ <div className="native-terminal-panel" style={{'--terminal-bg':(themes[settings.theme]||themes.graphite).background}}><div className="native-terminal-toolbar"><div className="native-terminal-tabs" role="tablist" aria-label="终端会话">{tabs.map((item,index)=><div className={'native-terminal-tab '+(item.id===selectedId?'selected':'')} key={item.id} onContextMenu={event=>openMenu(event,item)} onKeyDown={event=>{if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10'))openMenu(event,item)}}><button role="tab" aria-selected={item.id===selectedId} aria-controls="native-terminal-screen" aria-haspopup="menu" onClick={()=>{setContext(null);sessions.select(deviceId,item.id);setError('')}}><TerminalIcon size={14}/><span>{item.name||'本机'} · {item.kind} {index+1}</span>{item.state==='exited'&&<small>已退出</small>}</button><button aria-label={'关闭终端 '+(index+1)} title="关闭此会话" onClick={()=>remove(item)} disabled={busy}><X size={13}/></button></div>)}<button className="native-terminal-add" title="新建当前设备终端" aria-label="新建终端" onClick={add} disabled={!canCreate}><Plus size={16}/></button></div><div className="native-terminal-tools"><button title="复制选中文字 · Ctrl+Shift+C" aria-label="复制选中文字" disabled={!record} onClick={copy}><Copy size={15}/></button><button title="清空显示 · Ctrl+Shift+L" aria-label="清空终端显示" disabled={!record} onClick={()=>record?.term.clear()}><Eraser size={15}/></button></div></div>
  {(error||record?.error)&&<p className="native-terminal-error" role="alert">{error||record.error}</p>}
- <div id="native-terminal-screen" role="tabpanel" className="native-terminal-screen" ref={host}/>{!record&&<div className="native-terminal-empty"><TerminalIcon size={30}/><strong>{busy?'正在启动终端…':'没有打开的会话'}</strong><p>{busy?'正在连接真实终端进程。':'新建当前所选设备的本机或 SSH 终端。'}</p>{!busy&&<button onClick={add} disabled={!canCreate}><Plus size={15}/>新建终端</button>}</div>}
- <div className="native-terminal-status"><span><i className={record?.state==='exited'?'ended':''}/>{record?record.state==='exited'?'会话已退出 · 代码 '+(record.exitCode??'—'):record.kind+' · '+record.name:'就绪'}</span><span>{record?record.term.cols+' × '+record.term.rows+' · ':''}Ctrl+C 中断 · Ctrl+Shift+C 复制 · Ctrl+V 粘贴</span>{record?.state==='exited'&&<button onClick={add} disabled={!canCreate}><RefreshCw size={12}/>新建会话</button>}</div></div></section>;
+ <div id="native-terminal-screen" role="tabpanel" className="native-terminal-screen" ref={host}/>{!record&&<div className="native-terminal-empty"><TerminalIcon size={30}/><strong>{busy?'正在启动终端…':'没有打开的会话'}</strong><p>{busy?'正在连接真实终端进程。':'点击标签栏的 +，新建当前设备的本机或 SSH 终端。'}</p></div>}
+ <div className="native-terminal-status"><span><i className={record?.state==='exited'?'ended':''}/>{record?record.state==='exited'?'会话已退出 · 代码 '+(record.exitCode??'—'):record.kind+' · '+record.name:'就绪'}</span><span>{record?record.term.cols+' × '+record.term.rows+' · ':''}Ctrl+C 中断 · Ctrl+Shift+C 复制 · Ctrl+V 粘贴</span></div></div>
+ {contextRecord&&<div className="native-terminal-context-menu" ref={menu} role="menu" aria-label="终端标签菜单" style={{left:context.x,top:context.y}} onKeyDown={menuKeys}><button role="menuitem" disabled={busy} onClick={()=>closeTabs('current')}>关闭当前终端</button><button role="menuitem" disabled={busy} onClick={()=>closeTabs('all')}>关闭所有终端</button><button role="menuitem" disabled={busy||tabs.length<2} onClick={()=>closeTabs('others')}>关闭其他终端</button></div>}
+ </section>;
 }
 export default TerminalPage;

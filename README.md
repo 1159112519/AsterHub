@@ -1,6 +1,6 @@
 # AsterHub
 
-Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工作台公开预览 **0.3.0-preview.7**，稳定版保留 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
+Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工作台公开预览 **0.3.0-preview.8**，稳定版保留 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
 
 - 多核 CPU、多 GPU、内存、网络上下行和分区容量监控，支持没有 GPU 的设备。
 - 已连接设备持续采集，历史保存在本机；切换设备不影响采集。
@@ -20,9 +20,9 @@ Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工�
 
 ## 下载
 
-- [Windows 预览版 0.3.0-preview.7](https://github.com/1159112519/aq-server/releases/tag/v0.3.0-preview.7)
-- [Windows 稳定版安装包与免安装版](https://github.com/1159112519/aq-server/releases)
-- [Ubuntu Debian 安装包](https://github.com/1159112519/aq-server/releases/tag/ubuntu-v0.1.3)
+- [Windows 预览版 0.3.0-preview.8](https://github.com/1159112519/AsterHub/releases/tag/v0.3.0-preview.8)
+- [Windows 稳定版安装包与免安装版](https://github.com/1159112519/AsterHub/releases)
+- [Ubuntu Debian 安装包](https://github.com/1159112519/AsterHub/releases/tag/ubuntu-v0.1.3)
 
 请在Release的Assets中选择对应平台的正式安装包。GitHub自动生成的Source code压缩包是源码，不是可直接安装的软件。
 
@@ -52,8 +52,8 @@ npm run dev
 
 ## 更新日志与问题反馈
 
-各版本新增功能、优化、修复与升级注意事项发布在 [GitHub Releases](https://github.com/1159112519/aq-server/releases)；完整记录见 [CHANGELOG.md](CHANGELOG.md)。Windows 与 Ubuntu 分别维护版本。反馈问题时请提供平台、版本和复现步骤，并遮盖私人信息。本仓库公开提供项目代码、版本说明及正式发行包。
+各版本新增功能、优化、修复与升级注意事项发布在 [GitHub Releases](https://github.com/1159112519/AsterHub/releases)；完整记录见 [CHANGELOG.md](CHANGELOG.md)。Windows 与 Ubuntu 分别维护版本。反馈问题时请提供平台、版本和复现步骤，并遮盖私人信息。本仓库公开提供项目代码、版本说明及正式发行包。
 
 ## 发布状态
 
-Windows v0.3.0-preview.7 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+Windows v0.3.0-preview.8 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。

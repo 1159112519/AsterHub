@@ -79,7 +79,7 @@ public sealed partial class WorkbenchWindow:Window {
   try{
    var req=json.Deserialize<Dictionary<string,object>>(e.WebMessageAsJson);id=Convert.ToString(req["id"],CultureInfo.InvariantCulture);if(id.Length>80)throw new ArgumentException("请求编号无效");string method=Convert.ToString(req["method"]);object payload;req.TryGetValue("params",out payload);var p=payload as Dictionary<string,object>??new Dictionary<string,object>();object result=null;
    switch(method){
-    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 7",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
+    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 8",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
     case "devices.list":result=DeviceList();break;
     case "devices.select":devices.Select(Convert.ToString(p["id"]));result=DeviceList();break;
     case "devices.save":var saved=devices.Save(p);string savedId=PreviewDevices.Id(saved);Tuple<ConnectionResult,DateTime> tested;if(draftProbes.TryGetValue(ProbeIdentity(saved),out tested)){probes[savedId]=tested.Item1;probeTimes[savedId]=tested.Item2;}else{probes.Remove(savedId);probeTimes.Remove(savedId);}capture.Configure(devices.All(),interval);result=devices.Public(saved);Send(new{type="devices",value=DeviceList()});break;

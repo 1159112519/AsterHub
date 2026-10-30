@@ -1,3 +1,4 @@
+import {inspectorHorizontalPosition} from './floating-placement';
 import './gpu-inspector-preview5.css';
 import {loadColor} from './load-color';
 import {ChartControlBar} from "./chart-control-bar";
@@ -35,9 +36,7 @@ export function GpuInspector({gpu,anchor,pulse,processes=[],onClose,liveSamples=
    const footerTop=footer?.getBoundingClientRect().top;
    const bottom=mobile?height-12:Math.min(height-16,footerTop>0?footerTop-16:height-96);
    const minTop=mobile?12:76,maxHeight=Math.max(180,bottom-minTop);
-   const h=Math.min(p.height,maxHeight),panelWidth=Math.min(mobile?width-24:600,width-margin*2);
-   let left=mobile?12:a.right+26;
-   if(!mobile&&left+panelWidth>width-margin){left=a.left-panelWidth-26;if(left<margin)left=Math.max(margin,Math.min(width-margin-panelWidth,a.left+a.width/2-panelWidth/2))}
+   const h=Math.min(p.height,maxHeight),horizontal=inspectorHorizontalPosition({anchorRight:a.right,viewportWidth:width,sidebarRight:document.querySelector('.sidebar')?.getBoundingClientRect().right??0,margin,gap:26}),panelWidth=horizontal.width,left=horizontal.left;
    let top=mobile?bottom-h:Math.max(minTop,Math.min(a.top+8,bottom-h));
    const cx=a.left+a.width/2,cy=a.top+a.height/2;
    const side=mobile?'none':cx<left?'left':cx>left+panelWidth?'right':cy<top+h/2?'top':'bottom';

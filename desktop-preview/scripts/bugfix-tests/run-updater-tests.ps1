@@ -1,7 +1,7 @@
 ﻿param([switch]$Baseline)
 $ErrorActionPreference='Stop'
 $sourceRoot=Split-Path (Split-Path $PSScriptRoot)
-$evidenceRoot=[IO.Path]::GetFullPath((Join-Path $sourceRoot '../asterhub-bugfixes-20261030-records/updater'))
+$evidenceRoot=[IO.Path]::GetFullPath((Join-Path $sourceRoot '../asterhub-preview8-20261030-records/updater'))
 New-Item -ItemType Directory -Force $evidenceRoot | Out-Null
 $sourceFiles=@('host/AppUpdates.cs','host/UpdateSources.cs','host/UpdatePublicKey.cs','host/UpdatePreferences.cs','host/StartupUpdatePolicy.cs','scripts/bugfix-tests/UpdaterTests.cs') | ForEach-Object {(Join-Path $sourceRoot $_).Replace('/','\')}
 $output=Join-Path $evidenceRoot 'updater-tests.exe'
