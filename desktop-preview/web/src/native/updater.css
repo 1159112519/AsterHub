@@ -1,0 +1,17 @@
+.native-updater{min-width:0}
+.native-updater-top{position:sticky;top:-20px;z-index:2;background:var(--panel,var(--bg));padding:20px 0 16px;border-bottom:1px solid var(--line);margin:-20px 0 18px}
+.native-updater-version{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.native-updater-version>div:first-child{flex:1 1 180px;min-width:0}
+.native-updater-version h3{margin:0 0 6px}
+.native-updater-version p{font-size:13px;line-height:22px;color:var(--muted);margin:0 0 6px;overflow-wrap:anywhere}
+.native-updater-version strong{display:block;font-size:14px;line-height:24px;font-weight:550;overflow-wrap:anywhere}
+.native-updater-actions{display:flex;flex:0 1 auto;gap:8px;align-items:center;flex-wrap:wrap}
+.native-updater-actions .button{white-space:nowrap;min-height:38px}
+.native-updater-top progress{width:100%;height:6px;margin-top:14px;accent-color:var(--accent)}
+.native-updater-confirm{padding:14px;border:1px solid var(--line);border-radius:10px;margin-top:14px}
+.native-updater-confirm p{font-size:13px;line-height:22px;margin:0 0 12px}
+.native-updater-confirm>div{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.native-updater-notes{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:18px 0}
+.native-updater-notes h4{margin:0 0 10px}
+.native-updater-notes p{font-size:13px;line-height:24px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+@media(max-width:650px){.native-updater-version{gap:10px}.native-updater-actions{width:100%}.native-updater-actions .button{flex:1}}

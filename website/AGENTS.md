@@ -30,3 +30,7 @@ Current Windows preview is 0.3.0-preview.5; use actual preview.5 screenshots wit
 
 ## Public copy and preview.6 2026-10-30
 Public download pages and release notes describe available features, user-visible fixes, supported systems and actionable limitations. Keep development arrangements, internal verification language, tester roles and implementation details in project documentation. Do not mix website animation changes into Windows application update notes. Windows preview.6 includes retained stale readings, gap-aware time-series scrolling and a single About & Update page; Ubuntu stays 0.1.3. Never infer identical features from adjacent downloads.
+
+
+## Preview.7 resource and update interaction 2026-10-30
+Use current preview.7 screenshots. Overview includes host state, CPU/GPU/memory/network/storage and whole-device configuration; the bottom resource strip folds away on overview and remains on other pages. Startup update checking is optional and asks before installing; confirmation downloads, verifies, installs and restarts. Keep stable Windows0.2.1 and Ubuntu0.1.3 independent.

@@ -1,7 +1,4 @@
 /* One full-width command row; action text never inherits a scaled/monospace label. */
-.gpu-inspector .inspector-range-control { flex:0 0 auto; width:auto; }
-.gpu-inspector .inspector-range.themed-select { width:138px; min-width:138px; height:32px; padding:0 10px; gap:8px; border-radius:11px; font-size:12px; line-height:1.4; }
-.gpu-inspector .inspector-range.themed-select>span { overflow:visible; text-overflow:clip; white-space:nowrap; }
 .gpu-inspector .inspector-section-title { align-items:center; gap:12px; }
 .gpu-inspector .inspector-table-scroll table { width:100%; table-layout:auto; }
 .gpu-inspector .inspector-table-scroll th,.gpu-inspector .inspector-table-scroll td { font-family:inherit; }
@@ -17,3 +14,4 @@
 @media(prefers-reduced-motion:reduce) { .process-command-toggle svg { transition:none; } }
 
 .gpu-inspector .process-command-row>td,.gpu-inspector .process-command-flat { text-align:left!important; }
+
