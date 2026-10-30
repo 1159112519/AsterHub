@@ -27,3 +27,6 @@ Use the selected smooth silver glass icon from outputs/asterhub-zheguang-glass-v
 
 ## Preview.5 polish delivery 2026-10-29
 Current Windows preview is 0.3.0-preview.5; use actual preview.5 screenshots with the same explicitly labelled synthetic data. Preserve historical downloads and signatures. Settings actions are contextual, dense CPU grids wrap, and number/curve geometry remains stable.
+
+## Public copy and preview.6 2026-10-30
+Public download pages and release notes describe available features, user-visible fixes, supported systems and actionable limitations. Keep development arrangements, internal verification language, tester roles and implementation details in project documentation. Do not mix website animation changes into Windows application update notes. Windows preview.6 includes retained stale readings, gap-aware time-series scrolling and a single About & Update page; Ubuntu stays 0.1.3. Never infer identical features from adjacent downloads.

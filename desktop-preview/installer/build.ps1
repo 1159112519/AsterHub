@@ -10,7 +10,7 @@ $payload=Join-Path $PSScriptRoot ('payload-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $payload | Out-Null
 $source=Join-Path $previewRoot 'app'
 $manifest=Get-Content -LiteralPath (Join-Path $source 'payload-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-if($manifest.version-ne '0.3.0-preview.5'){throw 'Unexpected preview payload version.'}
+if($manifest.version-ne '0.3.0-preview.6'){throw 'Unexpected preview payload version.'}
 foreach($file in $manifest.files){
  $inputFile=Join-Path $source $file.file
  if((Get-FileHash -LiteralPath $inputFile -Algorithm SHA256).Hash-ne $file.sha256){throw ('Source payload differs from verified manifest: '+$file.file)}
@@ -28,6 +28,6 @@ $extra=@();if($QAInstall){$extra+="/DQAInstall"}
 & $Compiler @extra ('/DProjectRoot='+$previewRoot) ('/DPayloadDir='+$payload) ('/DBootstrapper='+$Bootstrapper) (Join-Path $PSScriptRoot 'AsterHubPreview.iss') *> (Join-Path $PSScriptRoot 'compiler.log')
 if($LASTEXITCODE-ne 0){throw 'Inno Setup build failed.'}
 $suffix=if($QAInstall){'-QA'}else{''}
-$installer=Get-Item -LiteralPath (Join-Path $previewRoot ('AsterHub-Setup-0.3.0-preview.5'+$suffix+'.exe'))
+$installer=Get-Item -LiteralPath (Join-Path $previewRoot ('AsterHub-Setup-0.3.0-preview.6'+$suffix+'.exe'))
 @{version=$manifest.version;installer=$installer.FullName;bytes=$installer.Length;sha256=(Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash;payload=$payload;bootstrapperSha256=(Get-FileHash -LiteralPath $Bootstrapper -Algorithm SHA256).Hash;bootstrapperSignature=[string]$signature.Status} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot $(if($QAInstall){'build-qa-result.json'}else{'build-result.json'})) -Encoding utf8
 Write-Output ('INSTALLER='+$installer.FullName)

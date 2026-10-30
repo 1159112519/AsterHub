@@ -1,6 +1,6 @@
 # AsterHub Windows 工作台预览
 
-当前版本 **0.3.0-preview.5**。这是 Windows WPF + WebView2 迁移候选，与 `desktop/` 稳定版并行；Ubuntu 保持独立版本。
+当前版本 **0.3.0-preview.6**。这是 Windows WPF + WebView2 迁移候选，与 `desktop/` 稳定版并行；Ubuntu 保持独立版本。
 
 ## 模块
 

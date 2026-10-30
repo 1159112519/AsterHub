@@ -97,6 +97,31 @@ public static class SshAuthentication
     }
     public static SshClient Client(Server s) { var t=Resolve(s); var c=new SshClient(Info(s,t)); c.KeepAliveInterval=TimeSpan.FromSeconds(25); c.HostKeyReceived+=(o,e)=>VerifyHost(t,e); return c; }
     public static SftpClient Files(Server s) { var t=Resolve(s); var c=new SftpClient(Info(s,t)); c.KeepAliveInterval=TimeSpan.FromSeconds(25); c.HostKeyReceived+=(o,e)=>VerifyHost(t,e); return c; }
+    sealed class MonitorSession { public readonly object Gate=new object();public SshClient Client;public string Identity;public DateTime Used=DateTime.UtcNow; }
+    static readonly object MonitorGate=new object();
+    static readonly Dictionary<string,MonitorSession> MonitorSessions=new Dictionary<string,MonitorSession>();
+    static readonly System.Threading.Timer MonitorSweep=new System.Threading.Timer(delegate { SweepMonitoring(false); },null,60000,60000);
+    static void SweepMonitoring(bool all) {
+        lock(MonitorGate) { foreach(var pair in MonitorSessions.ToArray()) {
+            var entry=pair.Value;if(!System.Threading.Monitor.TryEnter(entry.Gate))continue;
+            try { if(all||(DateTime.UtcNow-entry.Used).TotalMinutes>2) { if(entry.Client!=null)entry.Client.Dispose();MonitorSessions.Remove(pair.Key); } }
+            finally { System.Threading.Monitor.Exit(entry.Gate); }
+        } }
+    }
+    public static void CloseMonitoring(){SweepMonitoring(true);}
+    public static string ExecuteMonitoring(Server s,string command,int seconds) {
+        string key=s.Host+":"+s.Port+"/"+s.User,identity;
+        using(var hash=SHA256.Create())identity=Convert.ToBase64String(hash.ComputeHash(Encoding.UTF8.GetBytes(s.AuthMode+"|"+Password(s)+"|"+KnownHostsPath)));
+        MonitorSession entry;lock(MonitorGate){if(!MonitorSessions.TryGetValue(key,out entry)){entry=new MonitorSession();MonitorSessions[key]=entry;}System.Threading.Monitor.Enter(entry.Gate);}
+        try {
+            entry.Used=DateTime.UtcNow;
+            if(entry.Client!=null&&(entry.Identity!=identity||!entry.Client.IsConnected)){entry.Client.Dispose();entry.Client=null;}
+            try {
+                if(entry.Client==null){entry.Client=Client(s);entry.Identity=identity;entry.Client.Connect();}
+                using(var cmd=entry.Client.CreateCommand(command)){cmd.CommandTimeout=TimeSpan.FromSeconds(seconds);string output=cmd.Execute();if(cmd.ExitStatus!=0)throw new IOException(string.IsNullOrWhiteSpace(cmd.Error)?"SSH 命令未完成。":cmd.Error.Trim());return output;}
+            } catch { if(entry.Client!=null){entry.Client.Dispose();entry.Client=null;}throw; }
+        } finally {entry.Used=DateTime.UtcNow;System.Threading.Monitor.Exit(entry.Gate);}
+    }
     public static string Execute(Server s,string command,int seconds) {
         using(var c=Client(s)) { c.Connect(); using(var cmd=c.CreateCommand(command)) { cmd.CommandTimeout=TimeSpan.FromSeconds(seconds); string output=cmd.Execute(); if(cmd.ExitStatus!=0) throw new IOException(string.IsNullOrWhiteSpace(cmd.Error)?"SSH 命令未完成。":cmd.Error.Trim()); return output; } }
     }

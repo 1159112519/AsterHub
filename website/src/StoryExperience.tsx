@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
-const media = (name: string) => `./media/asterhub-preview5-final-${name}.webp`;
+const media = (name: string) => `./media/asterhub-preview6-final-${name}.webp`;
 export const chapters = [
   { id:'overview', label:'资源概览', eyebrow:'THE WHOLE PICTURE', title:['先看全局。','再决定关注哪里。'], text:'CPU、GPU、内存、网络与存储，放在同一个工作空间。设备忙在哪里、还有多少余量，不必在多个工具之间来回确认。', points:['点击资源卡片，在当前页面展开详情','底部速览常驻，切换页面仍能看见状态','按设备提供的能力显示数据'], image:'overview', caption:'资源概览 · 同一视野里的五类资源' },
   { id:'gpu', label:'GPU', eyebrow:'EVERY GPU, IN FOCUS', title:['每一张卡。','都值得看清。'], text:'从一张显卡到多卡设备，利用率、显存、温度与功耗一起呈现。选择经典卡片，或用趋势卡片看见变化，风格由你决定。', points:['多卡同时可见，区分忙碌与空闲','展开 GPU 详情，查看完整进程命令','结束进程前确认，并核验目标身份'], image:'eight-gpu', caption:'八卡界面示意 · 经典与趋势两种显示风格' },
@@ -105,7 +105,7 @@ export function StoryExperience() {
 
 const questions=[
  ['哪些设备可以使用？','当前重点是 Windows 桌面客户端，可以监控本机，并通过 SSH 连接远程服务器。没有独立显卡的设备，也可以查看 CPU、内存、网络与存储。不同系统能够提供的具体指标可能不同。'],
- ['Windows 与 Ubuntu 的功能一样吗？','两个平台独立迭代。当前网站的工作台展示对应 Windows 0.3.0 预览版；Ubuntu 保留 0.1.3 版本，页面分别列出下载、版本和支持范围，不代表功能已经同步。'],
+ ['Windows 与 Ubuntu 的功能一样吗？','有所不同。此页面展示 Windows 0.3.0 预览版。Ubuntu 0.1.3 支持资源监测与历史记录，适用于 Ubuntu 22.04 amd64；请在下载区域查看各平台的版本及支持范围。'],
  ['监控记录存在哪里？','资源历史保存在本机。连接远程设备时通过 SSH 获取状态。反馈功能提交你主动填写的内容，不会自动附带终端记录或密码。'],
  ['预览版会覆盖原来的稳定版吗？','Windows 预览版采用独立的安装通道和数据目录，原稳定版仍可下载。两者不自动迁移已保存的凭据；同一通道内升级保留配置与历史。'],
  ['更新需要重新手动安装吗？','预览版中打开“偏好设置 → 检查更新”。发现新版本后，可以下载安装包并校验发布签名、文件大小与散列；确认后程序退出、安装并重新启动。活动终端会话会结束，文件传输进行时会阻止安装。'],
