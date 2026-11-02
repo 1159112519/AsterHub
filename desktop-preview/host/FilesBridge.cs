@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 
 // Each operation owns its SFTP connections; no client is shared across worker threads.
 public sealed class PreviewFilePlan {
- public Server Source,Target; public string TargetRoot,Identity,Id=Guid.NewGuid().ToString("N"); public DateTime Expires=DateTime.UtcNow.AddMinutes(3);
+ public Server Source,Target; public string TargetRoot,SourceId,TargetId,Id=Guid.NewGuid().ToString("N"); public DateTime Expires=DateTime.UtcNow.AddMinutes(3);
  public readonly List<PreviewFileItem> Items=new List<PreviewFileItem>(); public readonly List<string> Names=new List<string>(); public long Bytes; public int Conflicts;
 }
 public sealed class PreviewFileItem {
@@ -76,7 +76,7 @@ public sealed partial class WorkbenchWindow {
  readonly Dictionary<string,PreviewFilePlan> filePlans=new Dictionary<string,PreviewFilePlan>();
  readonly Dictionary<string,PreviewFileJob> fileJobs=new Dictionary<string,PreviewFileJob>();readonly Dictionary<string,Task> fileJobTasks=new Dictionary<string,Task>();bool fileClosing;readonly object fileGate=new object();readonly SemaphoreSlim fileSlots=new SemaphoreSlim(2,2);readonly SemaphoreSlim fileReadSlots=new SemaphoreSlim(2,2);readonly CancellationTokenSource fileLifetime=new CancellationTokenSource();
  static string FileText(Dictionary<string,object> p,string key,string fallback=""){object value;return p.TryGetValue(key,out value)?Convert.ToString(value):fallback;}
- Server FileDevice(Dictionary<string,object> p,string side){if(side=="local")return local.Copy();if(side=="remote")return Requested(p).Copy();throw new ArgumentException("未知文件面板");}
+ Server FileDevice(Dictionary<string,object> p,string side,string endpointKey="endpointId"){var endpoint=FileText(p,endpointKey);if(!string.IsNullOrWhiteSpace(endpoint))return devices.Find(endpoint).Copy();if(side=="local")return local.Copy();if(side=="remote")return Requested(p).Copy();throw new ArgumentException("未知文件面板");}
  async Task<object> FilesRequest(string method,Dictionary<string,object> p){
   lock(fileGate){if(fileClosing&&method!="files.transfers"&&method!="files.cancel")throw new IOException("文件传输正在退出清理，请稍后重试");}
   if(method=="files.transfers"){lock(fileGate)return fileJobs.Values.Reverse().Select(x=>x.View()).ToArray();}
@@ -84,19 +84,19 @@ public sealed partial class WorkbenchWindow {
   if(method=="files.undo"){PreviewFileJob job;Task work;lock(fileGate){if(!fileJobs.TryGetValue(FileText(p,"id"),out job)||!job.CanUndo||job.Status=="running"||job.Status=="queued"||job.Status=="undoing")throw new IOException("此传输没有可撤销的新文件");job.Status="undoing";job.CanUndo=false;work=RunFileUndo(job);fileJobTasks[job.Id]=work;}await work;return job.View();}
   if(method=="files.start"){
    PreviewFilePlan plan;bool overwrite=p.ContainsKey("overwrite")&&Convert.ToBoolean(p["overwrite"]);lock(fileGate){if(!filePlans.TryGetValue(FileText(p,"id"),out plan)||plan.Expires<DateTime.UtcNow)throw new IOException("复制确认已过期，请重新选择文件");if(plan.Conflicts>0&&!overwrite)throw new IOException("请先确认覆盖同名文件");if(fileJobs.Values.Count(x=>x.Status=="queued"||x.Status=="running")>=16)throw new IOException("传输队列已满，请等待现有任务完成");filePlans.Remove(plan.Id);}
-   var current=Requested(p);if(plan.Identity!=FileTools.Key(current))throw new IOException("设备配置已变化，请重新选择文件");var job=new PreviewFileJob{Id=plan.Id,Plan=plan};lock(fileGate){foreach(var key in fileJobs.Where(x=>x.Value.Status!="running"&&x.Value.Status!="queued"&&x.Value.Status!="undoing").Select(x=>x.Key).Take(Math.Max(0,fileJobs.Count-49)).ToArray()){fileJobs.Remove(key);fileJobTasks.Remove(key);}fileJobs.Add(job.Id,job);fileJobTasks[job.Id]=RunFileJob(job,overwrite);}return job.View();
+   if(!SameTerminalConfiguration(plan.Source,devices.Find(plan.SourceId))||!SameTerminalConfiguration(plan.Target,devices.Find(plan.TargetId)))throw new IOException("设备配置已变化，请重新选择文件");var job=new PreviewFileJob{Id=plan.Id,Plan=plan};lock(fileGate){foreach(var key in fileJobs.Where(x=>x.Value.Status!="running"&&x.Value.Status!="queued"&&x.Value.Status!="undoing").Select(x=>x.Key).Take(Math.Max(0,fileJobs.Count-49)).ToArray()){fileJobs.Remove(key);fileJobTasks.Remove(key);}fileJobs.Add(job.Id,job);fileJobTasks[job.Id]=RunFileJob(job,overwrite);}return job.View();
   }
   if(method=="files.pick"){
    string kind=FileText(p,"kind");if(kind=="folder"){using(var dialog=new System.Windows.Forms.FolderBrowserDialog()){dialog.Description="选择本机文件夹";dialog.ShowNewFolderButton=false;var owner=new FileDialogOwner(new System.Windows.Interop.WindowInteropHelper(this).Handle);return dialog.ShowDialog(owner)==System.Windows.Forms.DialogResult.OK?new[]{dialog.SelectedPath}:new string[0];}}
    var picker=new Microsoft.Win32.OpenFileDialog{Title="选择需要复制的本机文件",Multiselect=true,CheckFileExists=true};return picker.ShowDialog(this)==true?picker.FileNames:new string[0];
   }
-  var selected=Requested(p);var side=FileText(p,"side","remote");var server=FileDevice(p,side);
+  var side=FileText(p,"side","remote");var server=FileDevice(p,side,method=="files.prepare"?"sourceDeviceId":"endpointId");
   if(method=="files.list"){
    await fileReadSlots.WaitAsync(fileLifetime.Token);try{return await Task.Run(async()=>{using(var connection=new FileConnection(server)){await connection.Connect(fileLifetime.Token).ConfigureAwait(false);string path=FileText(p,"path");path=string.IsNullOrWhiteSpace(path)?connection.Home:PreviewFileCopy.Normalize(server.IsLocal,path);PreviewFileCopy.SafePath(connection,path);var rows=connection.List(path,fileLifetime.Token);return (object)new{path=path,parent=FileTools.Parent(server.IsLocal,path),isLocal=server.IsLocal,items=rows.Select(x=>new{name=x.Name,path=x.FullPath,directory=x.IsDirectory,link=x.IsLink,size=x.Size,modified=x.Modified.ToString("yyyy-MM-dd HH:mm"),permissions=x.Permissions}).ToArray()};}});}finally{fileReadSlots.Release();}
   }
   if(method=="files.prepare"){
-   var target=FileDevice(p,FileText(p,"targetSide"));object raw;if(!p.TryGetValue("paths",out raw)||!(raw is IEnumerable)||raw is string)throw new IOException("请选择需要复制的项目");var paths=((IEnumerable)raw).Cast<object>().Select(Convert.ToString).ToArray();
-   await fileReadSlots.WaitAsync(fileLifetime.Token);PreviewFilePlan plan;try{plan=await Task.Run(()=>PreviewFileCopy.Prepare(server,target,FileText(p,"targetPath"),paths,fileLifetime.Token));}finally{fileReadSlots.Release();}plan.Identity=FileTools.Key(selected);lock(fileGate){if(fileClosing)throw new OperationCanceledException(fileLifetime.Token);foreach(var key in filePlans.Where(x=>x.Value.Expires<DateTime.UtcNow).Select(x=>x.Key).ToArray())filePlans.Remove(key);if(filePlans.Count>=16)throw new IOException("请先关闭其他复制确认");filePlans.Add(plan.Id,plan);}return new{id=plan.Id,names=plan.Names.ToArray(),files=plan.Items.Count(x=>!x.Directory),folders=plan.Items.Count(x=>x.Directory),bytes=plan.Bytes,conflicts=plan.Conflicts};
+   var target=FileDevice(p,FileText(p,"targetSide"),"targetDeviceId");object raw;if(!p.TryGetValue("paths",out raw)||!(raw is IEnumerable)||raw is string)throw new IOException("请选择需要复制的项目");var paths=((IEnumerable)raw).Cast<object>().Select(Convert.ToString).ToArray();
+   await fileReadSlots.WaitAsync(fileLifetime.Token);PreviewFilePlan plan;try{plan=await Task.Run(()=>PreviewFileCopy.Prepare(server,target,FileText(p,"targetPath"),paths,fileLifetime.Token));}finally{fileReadSlots.Release();}plan.SourceId=PreviewDevices.Id(server);plan.TargetId=PreviewDevices.Id(target);lock(fileGate){if(fileClosing)throw new OperationCanceledException(fileLifetime.Token);foreach(var key in filePlans.Where(x=>x.Value.Expires<DateTime.UtcNow).Select(x=>x.Key).ToArray())filePlans.Remove(key);if(filePlans.Count>=16)throw new IOException("请先关闭其他复制确认");filePlans.Add(plan.Id,plan);}return new{id=plan.Id,names=plan.Names.ToArray(),files=plan.Items.Count(x=>!x.Directory),folders=plan.Items.Count(x=>x.Directory),bytes=plan.Bytes,conflicts=plan.Conflicts};
   }
   throw new InvalidOperationException("未知文件操作");
  }

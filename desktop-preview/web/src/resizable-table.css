@@ -1,0 +1,11 @@
+.resizable-table{table-layout:fixed!important;width:100%;border-collapse:collapse}
+.resizable-table .resizable-column{position:relative;padding-right:18px!important;white-space:nowrap}
+.resizable-table .column-title{overflow:hidden;text-overflow:ellipsis;min-width:0;line-height:22px}
+.resizable-table .column-title>button{max-width:100%}
+.resizable-table td{overflow-wrap:anywhere}
+.column-resize-handle{position:absolute;top:3px;bottom:3px;right:-1px;width:12px;padding:0;border:0;background:transparent;cursor:col-resize;touch-action:none;z-index:2}
+.column-resize-handle::after{content:"";position:absolute;inset:4px 5px;background:color-mix(in srgb,var(--muted) 28%,transparent);border-radius:2px;transition:background .18s cubic-bezier(.2,.7,.2,1)}
+.column-resize-handle:hover::after,.column-resize-handle:focus-visible::after,[data-resizing="true"] .column-resize-handle::after{background:var(--green)}
+.column-resize-handle:focus-visible{outline:2px solid var(--green);outline-offset:-2px;border-radius:4px}
+.resizable-table[data-resizing="true"]{user-select:none;cursor:col-resize}
+.resizable-table .process-identity strong,.resizable-table .aggregate-process-identity strong{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}

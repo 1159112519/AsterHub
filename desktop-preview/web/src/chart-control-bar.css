@@ -1,6 +1,6 @@
 /* Inspector controls share a measured row outside the plot's hover surface. */
 .chart-control-bar{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0;margin:0 0 8px;position:relative;z-index:9}
-.chart-control-bar .themed-select{display:inline-flex;align-items:center;justify-content:space-between;flex:0 1 auto;width:138px;min-width:0;height:34px;min-height:34px;box-sizing:border-box;padding:0 10px;gap:8px;border-radius:11px;font-family:inherit;font-size:13px;line-height:1.4;white-space:nowrap}
+.chart-control-bar .themed-select{display:inline-flex;align-items:center;justify-content:space-between;flex:0 1 auto;width:138px;min-width:0;height:34px;min-height:34px;box-sizing:border-box;padding:0 10px;gap:8px;border-radius:11px;font-family:inherit;font-size:14px;line-height:1.4;white-space:nowrap}
 .chart-control-bar .chart-time-select{margin-left:0}
 .chart-control-bar .themed-select>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chart-controls-external:has(.chart-control-bar:hover) .chart-tooltip,.chart-controls-external:has(.chart-control-bar:focus-within):not(:has(.chart:hover)) .chart-tooltip,body:has(.chart-control-bar [aria-expanded="true"]) .chart-tooltip{visibility:hidden}

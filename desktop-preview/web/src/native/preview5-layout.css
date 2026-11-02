@@ -3,7 +3,7 @@
 .preview5-workbench .native-about-entry{align-items:flex-start}
 .preview5-workbench .native-about-entry>svg{margin-top:2px}
 .preview5-workbench .native-about-entry>span{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;min-width:0}
-.preview5-workbench .native-about-entry small{font-size:11px;line-height:16px;font-weight:400;color:var(--muted);overflow-wrap:anywhere}
+.preview5-workbench .native-about-entry small{font-size:14px;line-height:16px;font-weight:400;color:var(--muted);overflow-wrap:anywhere}
 .preview5-workbench .core-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 .preview5-workbench .core-cell{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;min-width:0;min-height:66px;padding:12px;box-sizing:border-box}
 .preview5-workbench .core-cell span,.preview5-workbench .core-cell strong{position:static;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:18px}
@@ -19,25 +19,25 @@
 .preview5-workbench .preview5-resource-footer .footer-metric:hover{background:color-mix(in srgb,var(--hover) 45%,transparent)}
 .preview5-workbench .preview5-resource-footer .footer-metric:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 .preview5-workbench .preview5-resource-footer .footer-metric-copy{display:flex;grid-column:auto;grid-row:auto;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:0}
-.preview5-workbench .preview5-resource-footer .footer-metric-copy>span:first-child{display:block;color:var(--muted);font-size:12px;line-height:18px;min-height:18px}
+.preview5-workbench .preview5-resource-footer .footer-metric-copy>span:first-child{display:block;color:var(--muted);font-size:14px;line-height:18px;min-height:18px}
 .preview5-workbench .preview5-resource-footer .footer-metric-copy>strong{display:flex;gap:3px;align-items:baseline;align-self:auto;min-height:22px;font-size:17px;font-weight:500;line-height:22px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .preview5-workbench .preview5-resource-footer .footer-metric-copy>strong:before{display:none}
 .preview5-workbench .preview5-resource-footer .number{font-variant-numeric:tabular-nums;letter-spacing:0}
-.preview5-workbench .preview5-resource-footer .number small{font-size:11px;letter-spacing:0}
+.preview5-workbench .preview5-resource-footer .number small{font-size:14px;letter-spacing:0}
 .preview5-workbench .preview5-resource-footer .footer-trend-slot{display:block;width:44px;height:28px;min-width:0}
 .preview5-workbench .preview5-resource-footer .footer-trend-slot .sparkline{display:block;width:100%;height:28px;min-width:0}
 .preview5-workbench .preview5-resource-footer .footer-network{grid-template-columns:18px minmax(0,1fr);gap:8px}
 .preview5-workbench .preview5-resource-footer .footer-network .footer-trend-slot{display:none}
-.preview5-workbench .preview5-resource-footer .footer-network .network-up{display:flex;align-items:baseline;gap:3px;color:var(--muted);font-size:11px;line-height:16px;white-space:nowrap}
-.preview5-workbench .preview5-resource-footer .footer-network .network-up .number small{font-size:10px}
-.preview5-workbench .preview5-resource-footer .rate-arrow{font-size:11px;color:var(--muted)}
+.preview5-workbench .preview5-resource-footer .footer-network .network-up{display:flex;align-items:baseline;gap:3px;color:var(--muted);font-size:14px;line-height:16px;white-space:nowrap}
+.preview5-workbench .preview5-resource-footer .footer-network .network-up .number small{font-size:14px}
+.preview5-workbench .preview5-resource-footer .rate-arrow{font-size:14px;color:var(--muted)}
 .preview5-preferences.native-preferences.modal{height:min(680px,calc(100dvh - 48px));max-height:calc(100dvh - 48px)}
 .preview5-preferences.native-preferences .native-preferences-layout{flex:1 1 auto;height:auto;min-height:0;max-height:none}
 .preview5-preferences.native-preferences .native-preferences-body{height:100%;min-height:0;overflow:auto}
 .preview5-preferences .native-about-version{overflow-wrap:anywhere}
 @media(max-width:1200px){.preview5-workbench .preview5-resource-footer .footer-metric{grid-template-columns:16px minmax(0,1fr) 30px;gap:7px;padding:9px 8px}.preview5-workbench .preview5-resource-footer .footer-trend-slot{width:30px}.preview5-workbench .preview5-resource-footer .footer-network{grid-template-columns:16px minmax(0,1fr)}}
 @media(max-width:1050px){.preview5-workbench .preview5-resource-footer .footer-metric{grid-template-columns:minmax(0,1fr) 24px;gap:5px}.preview5-workbench .preview5-resource-footer .footer-resource-icon{display:none}.preview5-workbench .preview5-resource-footer .footer-trend-slot{width:24px}.preview5-workbench .preview5-resource-footer .footer-network{grid-template-columns:minmax(0,1fr)}.preview5-workbench .preview5-resource-footer .footer-metric-copy>strong{font-size:15px}}
-@media(max-width:900px){.preview5-workbench .resource-footer.preview5-resource-footer{margin:0 8px 8px;gap:2px;padding:4px}.preview5-workbench .preview5-resource-footer .footer-metric{display:grid;grid-template-columns:minmax(0,1fr);padding:8px 5px}.preview5-workbench .preview5-resource-footer .footer-trend-slot{display:none}.preview5-workbench .preview5-resource-footer .footer-metric-copy>strong{font-size:14px}.preview5-workbench .preview5-resource-footer .number small{font-size:10px}.preview5-workbench .preview5-resource-footer .footer-network .footer-metric-copy>strong{font-size:12px}.preview5-workbench .preview5-resource-footer .footer-network .network-up{font-size:10px}}
+@media(max-width:900px){.preview5-workbench .resource-footer.preview5-resource-footer{margin:0 8px 8px;gap:2px;padding:4px}.preview5-workbench .preview5-resource-footer .footer-metric{display:grid;grid-template-columns:minmax(0,1fr);padding:8px 5px}.preview5-workbench .preview5-resource-footer .footer-trend-slot{display:none}.preview5-workbench .preview5-resource-footer .footer-metric-copy>strong{font-size:14px}.preview5-workbench .preview5-resource-footer .number small{font-size:14px}.preview5-workbench .preview5-resource-footer .footer-network .footer-metric-copy>strong{font-size:14px}.preview5-workbench .preview5-resource-footer .footer-network .network-up{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.preview5-workbench .resource-selection-indicator{transition:none!important}}
 :root[data-motion=reduced] .preview5-workbench .resource-selection-indicator{transition:none!important}
 

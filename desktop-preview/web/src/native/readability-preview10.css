@@ -1,0 +1,83 @@
+/* Shared readable UI sizes; controls and digits keep their own hierarchy. */
+:root { --ui-caption:13px; --ui-body:14px; --ui-label:14px; }
+.native-workbench { font-size:14px; }
+.native-workbench .number,.native-workbench .mono { font-variant-numeric:tabular-nums; }
+.native-workbench .number small { font-family:inherit; font-size:14px; letter-spacing:0; }
+.native-workbench .section-title { align-items:center; }
+.native-workbench .cpu-current-reading .number { display:inline-flex;align-items:baseline;gap:5px;font-size:28px;line-height:36px;font-weight:550;letter-spacing:-.6px; }
+.native-workbench .cpu-current-reading .number small { font-size:14px; }
+.about-update-footer,.about-data-path,.about-channel-note,.about-source-note { font-size:14px!important;line-height:1.65!important;overflow-wrap:anywhere; }
+.native-updater { font-size:14px; }
+.native-updater .about-startup-setting .native-setting-check { font-size:14px!important; }
+.about-identity-copy p,.about-link-button small,.about-links .about-external-link small { font-size:14px;line-height:1.6; }
+.native-workbench .sidebar { overflow-x:hidden; }
+.native-device-list { width:100%;min-width:0;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable; }
+.native-device-row { min-width:0;max-width:100%; }
+.native-device-row .device-item { flex:1 1 0;min-width:0;width:0; }
+.native-device-row .device-item>span { min-width:0;flex:1; }
+.native-device-row .device-item strong,.native-device-row .device-item small { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.native-device-edit { flex:0 0 28px; }
+/* Every scrolling surface follows the active theme, including WebView2. */
+.native-workbench *,.modal *,[role="dialog"] * { scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 38%,transparent) transparent; }
+::-webkit-scrollbar { width:8px;height:8px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:color-mix(in srgb,var(--muted) 38%,transparent);border:2px solid transparent;background-clip:padding-box;border-radius:20px; }
+::-webkit-scrollbar-thumb:hover { background-color:color-mix(in srgb,var(--muted) 62%,transparent); }
+::-webkit-scrollbar-corner { background:transparent; }
+::-webkit-scrollbar-button { display:none;width:0;height:0; }
+/* Four hardware readings form one row in a full-size inspector. */
+.gpu-detail.gpu-inspector .detail-stats { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:18px 0; }
+.gpu-detail.gpu-inspector .detail-stats>div { display:block;min-width:0; }
+.gpu-detail.gpu-inspector .detail-stats dt { display:flex;align-items:center;gap:6px;font-size:14px;line-height:22px;white-space:nowrap; }
+.gpu-detail.gpu-inspector .detail-stats dd { margin:9px 0 0;display:flex;align-items:baseline;gap:5px;white-space:nowrap; }
+.gpu-detail.gpu-inspector .detail-stats dd>.number { font-size:24px;line-height:32px; }
+.gpu-detail.gpu-inspector .detail-stats .metric-limit { font-size:14px; }
+/* A single GPU uses grouped supporting metrics instead of stretched label/value rows. */
+.native-workbench .single-gpu-layout .gpu-tile { display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0 28px;align-items:start; }
+.native-workbench .single-gpu-layout .gpu-tile header,.native-workbench .single-gpu-layout .gpu-tile .gpu-model,.native-workbench .single-gpu-layout .gpu-tile .gpu-reading,.native-workbench .single-gpu-layout .gpu-tile>.meter { grid-column:1; }
+.native-workbench .single-gpu-layout .gpu-tile .gpu-card-details { grid-column:2;grid-row:1/5;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 20px;margin:0;padding-left:28px;border-left:1px solid var(--line);align-self:stretch;align-content:center; }
+.native-workbench .single-gpu-layout .gpu-memory-heading { grid-column:1/-1;display:flex;justify-content:space-between; }
+.native-workbench .single-gpu-layout .gpu-card-details>.meter { grid-column:1/-1;margin:-8px 0 0; }
+.native-workbench .single-gpu-layout .gpu-hardware-row { display:flex;flex-direction:column;gap:7px;margin:0;align-items:flex-start; }
+.native-workbench .single-gpu-layout .gpu-hardware-row>span:last-child { text-align:left; }
+.native-workbench .single-gpu-layout .gpu-hardware-row .number { font-size:19px;line-height:28px; }
+.native-workbench .single-gpu-layout .gpu-hardware-row em { font-size:14px; }
+@media(max-width:1100px){
+ .native-workbench .single-gpu-layout .gpu-tile { display:block; }
+ .native-workbench .single-gpu-layout .gpu-tile .gpu-card-details { margin-top:22px;padding:18px 0 0;border-left:0;border-top:1px solid var(--line); }
+}
+@media(max-width:600px){
+ .gpu-detail.gpu-inspector .detail-stats { grid-template-columns:repeat(2,minmax(0,1fr));gap:18px; }
+ .native-workbench .single-gpu-layout .gpu-tile .gpu-card-details { gap:16px 12px; }
+}
+
+/* Digits never participate in sizing the neighboring plot. Percentages and rates
+   reserve their maximum normal readout width, independent of animated text. */
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-reading-row{display:grid;grid-template-columns:88px minmax(0,1fr);gap:10px;align-items:center;}
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-network .footer-reading-row{grid-template-columns:136px minmax(0,1fr);}
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-reading-row>strong{width:100%;min-width:0;font-variant-numeric:tabular-nums;overflow:visible;}
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-trend-slot{display:block;min-width:0;width:100%;max-width:none;}
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-trend-slot .sparkline{width:100%;min-width:0;}
+@media(max-width:1250px){
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-reading-row,
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-network .footer-reading-row{grid-template-columns:minmax(0,1fr);grid-template-rows:28px 28px;gap:4px;height:60px;}
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer{min-height:134px;}
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-reading-row>strong{font-size:18px;}
+}
+
+.native-workbench .sidebar,.native-device-row{user-select:none;-webkit-user-select:none;}
+.native-workbench .sidebar input{user-select:text;-webkit-user-select:text;}
+.native-workbench .native-device-row{position:relative;display:flex;align-items:center;min-height:54px;border-radius:11px;gap:3px;margin:2px 0;}
+.native-workbench .native-device-row .device-item{min-height:54px;padding:8px 9px;gap:11px;border-radius:11px;}
+.native-workbench .native-device-row .device-item strong{font-size:15px;line-height:21px;font-weight:550;}
+.native-workbench .native-device-row .device-item small{font-size:14px;line-height:19px;margin-top:1px;}
+.native-workbench .native-device-row .device-item>svg{width:18px;height:18px;flex:0 0 18px;}
+.native-workbench .native-device-row .device-item .status-dot{width:6px;height:6px;flex:0 0 6px;}
+.native-workbench .native-device-edit{position:absolute;right:5px;width:27px;height:27px;opacity:0;}
+.native-workbench .native-device-row:hover .native-device-edit,.native-workbench .native-device-row:focus-within .native-device-edit{opacity:1;}
+.native-workbench .native-device-row:hover .status-dot,.native-workbench .native-device-row:focus-within .status-dot{visibility:hidden;}
+.native-workbench .native-device-row.device-drag-over::before{content:"";position:absolute;top:0;left:9px;right:9px;height:2px;background:var(--green);border-radius:2px;z-index:2;}
+/* One shared spacing rule for destructive, settings and device dialogs. */
+:root{--dialog-action-gap:12px}
+.dialog-actions{gap:var(--dialog-action-gap)}
+.dialog-actions .button{min-height:40px}

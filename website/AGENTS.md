@@ -37,3 +37,6 @@ Use current preview.7 screenshots. Overview includes host state, CPU/GPU/memory/
 
 ## Preview.9 release 2026-11-02
 Use preview.9 final production screenshots with explicitly labelled synthetic example data. Preserve responsive chapter motion, historical packages and independent stable/Ubuntu channels. Public notes describe user-visible results.
+
+## Preview.10 readability and transfer endpoints 2026-11-02
+Use final preview.10 production screenshots and keep example data labelled. Desktop file panes independently choose endpoints, including server-to-server copying through the running desktop. Typography must be legible and dialog actions spaced consistently. Do not advertise an always-on collection service before it is implemented and verified.
