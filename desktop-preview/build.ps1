@@ -1,9 +1,12 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $previewRoot=$PSScriptRoot
 Push-Location (Join-Path $previewRoot 'web')
 try { & npm.cmd run build; if($LASTEXITCODE -ne 0){throw 'Frontend build failed'} } finally { Pop-Location }
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 $appRoot=Join-Path $previewRoot 'app'
+$brandOutput=Join-Path $appRoot 'resources/brand-icons'
+New-Item -ItemType Directory -Path $brandOutput -Force | Out-Null
+Copy-Item -Path (Join-Path $previewRoot 'host/brand-icons/*') -Destination $brandOutput -Recurse -Force
 & (Join-Path $previewRoot 'scripts/build-backend.ps1') -Root $previewRoot
 $framework=Split-Path $compiler
 $refs=@('System.Windows.Forms.dll','System.Drawing.dll','System.dll','System.Core.dll','System.Web.Extensions.dll','System.Xaml.dll',(Join-Path $framework 'WPF/WindowsBase.dll'),(Join-Path $framework 'WPF/PresentationCore.dll'),(Join-Path $framework 'WPF/PresentationFramework.dll'),(Join-Path $appRoot 'runtime/managed/Microsoft.Web.WebView2.Core.dll'),(Join-Path $appRoot 'runtime/managed/Microsoft.Web.WebView2.Wpf.dll'),(Join-Path $appRoot 'app/modules/AQServer.Core.dll'),(Join-Path $appRoot 'app/modules/AQServer.Storage.dll'),(Join-Path $appRoot 'app/modules/AQServer.Platform.Windows.dll'))

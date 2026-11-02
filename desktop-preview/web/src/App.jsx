@@ -42,7 +42,7 @@ export default function App(){
  return <div className={`app-shell ${sidebar?'sidebar-visible':''}`}>
   {sidebar&&<button className="sidebar-scrim" aria-label="收起侧栏" onClick={()=>setSidebar(false)}/>}
   <aside className="sidebar">
-   <div className="brand"><div className="brand-mark"><BrandMark/></div><div><strong>AsterHub</strong><span>连接设备，看见运行。</span></div><IconButton icon={PanelLeftClose} label="收起侧栏" onClick={()=>setSidebar(false)}/></div>
+   <div className="brand"><div className="brand-mark"><BrandMark/></div><div><strong>AsterHub</strong></div><IconButton icon={PanelLeftClose} label="收起侧栏" onClick={()=>setSidebar(false)}/></div>
    <label className="device-search"><Search size={16}/><input aria-label="搜索设备" placeholder="搜索设备…" value={search} onChange={e=>setSearch(e.target.value)}/><kbd>/</kbd></label>
    <div className="sidebar-section-heading"><span>我的设备</span><IconButton icon={Plus} label="添加设备" onClick={()=>setDialog({type:'add'})}/></div>
    <div className="device-list">{devices.filter(d=>(d.name+d.address).toLowerCase().includes(search.toLowerCase())).map(d=>{const Icon=d.kind==='local'?Monitor:Server;return <button key={d.id} className={`device-item ${d.id===device.id?'selected':''}`} onClick={()=>selectDevice(d.id)}><Icon size={18}/><span><strong>{d.name}</strong><small>{d.kind==='local'?'此电脑':d.address}</small></span><i className="status-dot"/></button>})}{!devices.some(d=>(d.name+d.address).toLowerCase().includes(search.toLowerCase()))&&<p className="sidebar-empty">没有匹配的设备</p>}</div>

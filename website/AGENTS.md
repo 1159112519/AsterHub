@@ -46,3 +46,8 @@ Use final preview.11 production screenshots and keep example data labelled. Desk
 
 ## Preview.12 resource layout and history 2026-11-02
 Use final preview.12 production screenshots and keep example data labelled. Desktop file panes independently choose endpoints, including server-to-server copying through the running desktop. Typography must be legible and dialog actions spaced consistently. Do not advertise an always-on collection service before it is implemented and verified.
+
+## 2026-11-02 Preview.13
+Use selected v9 online-node geometry, night default. Embedded header mark must be transparent (no black app tile). Desktop supports six independently selected icons and five skins. No icon selection changes the skin. Use preview.13 screenshots without the sidebar tagline. Storage space tools remain a separate fixture prototype, not a published desktop feature.
+
+Preserve preview.12 graphite as 经典黑 with its original palette and existing ID. Additional slate 暮蓝 is separate. Icons and skins remain independent.

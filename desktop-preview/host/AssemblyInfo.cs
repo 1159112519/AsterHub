@@ -2,5 +2,5 @@ using System.Reflection;
 [assembly:AssemblyTitle("AsterHub Windows Preview")]
 [assembly:AssemblyProduct("AsterHub")]
 [assembly:AssemblyVersion("0.3.0.0")]
-[assembly:AssemblyFileVersion("0.3.0.12")]
-[assembly:AssemblyInformationalVersion("0.3.0-preview.12")]
+[assembly:AssemblyFileVersion("0.3.0.13")]
+[assembly:AssemblyInformationalVersion("0.3.0-preview.13")]
