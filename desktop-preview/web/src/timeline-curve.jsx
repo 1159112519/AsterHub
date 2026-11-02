@@ -1,13 +1,14 @@
 import React,{useLayoutEffect,useMemo,useRef,useSyncExternalStore} from 'react';
 import {gsap} from 'gsap';
 import {motionOptions,reducedMotion,subscribeReducedMotion} from './motion';
-import {splitTimedPoints,timedPaths,gapLimit} from './time-series';
+import {splitTimedPoints,timedPaths,gapLimit,compactTimedSegments} from './time-series';
 export function TimelineCurve({points,timestamps,domain,color,fill,baseline,live=false,plotWidth,expectedMs,breakBefore=null}){
  const group=useRef(null),previous=useRef(null),displayEnd=useRef(null),preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion);
  const span=domain[1]-domain[0];
  // Hover and snapshot selection do not change geometry. Keep large archived paths stable.
- const paths=useMemo(()=>timedPaths(splitTimedPoints(points,timestamps,breakBefore?Infinity:gapLimit(timestamps,expectedMs),breakBefore),baseline),[points,timestamps,breakBefore,expectedMs,baseline]);
- const signature=paths.stroke+'|'+domain.join(',')+'|'+plotWidth+'|'+baseline;
+ const paths=useMemo(()=>{const segments=splitTimedPoints(points,timestamps,breakBefore?Infinity:gapLimit(timestamps,expectedMs),breakBefore);return timedPaths(!live&&points.length>plotWidth*1.5?compactTimedSegments(segments):segments,baseline)},[points,timestamps,breakBefore,expectedMs,baseline,live,plotWidth]);
+ const signature=domain.join(',')+'|'+plotWidth+'|'+baseline;
+ // Scale interpolation changes path heights without cancelling timeline movement.
  useLayoutEffect(()=>{
   const node=group.current,old=previous.current,end=domain[1],first=timestamps[0];
   const append=live&&old&&old.span===span&&old.width===plotWidth&&end>old.end&&old.end>=first&&timestamps.includes(old.end);

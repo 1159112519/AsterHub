@@ -31,21 +31,22 @@ const HistoryMetricChart=memo(function HistoryMetricChart({archive,metric,onSele
 });
 
 export const HistoryView=memo(function HistoryView({deviceId}){
- const [minutes,setMinutes]=useState(60),[metric,setMetric]=useState('cpu'),[archive,setArchive]=useState(()=>prepareArchive([],60)),[total,setTotal]=useState(0),[current,setCurrent]=useState(null),[index,setIndex]=useState(null),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const generation=useRef(0),request=useRef(0),region=useRef(null),viewport=useRef(null),previous=useRef(null);
+ const [minutes,setMinutes]=useState(60),[metric,setMetric]=useState('cpu'),[archive,setArchive]=useState(()=>prepareArchive([],60)),[total,setTotal]=useState(0),[current,setCurrent]=useState(null),[index,setIndex]=useState(null),[open,setOpen]=useState(false),[reading,setReading]=useState(false),[fullDetails,setFullDetails]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const cache=useRef(new Map());const generation=useRef(0),request=useRef(0),region=useRef(null),viewport=useRef(null),previous=useRef(null);
  const preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion);
  const query=useCallback(async()=>{
-  const seq=++generation.current;request.current++;setBusy(true);setError('');
+  const seq=++generation.current;request.current++;cache.current.clear();setOpen(false);setCurrent(null);setIndex(null);setReading(false);setFullDetails(false);setBusy(true);setError('');
   try{const result=await native.request('history.query',{minutes,deviceId});if(seq!==generation.current)return;
    setArchive(prepareArchive(result.points,minutes));setTotal(result.total??result.points.length);setCurrent(null);setIndex(null);setOpen(false);request.current++;
   }catch(e){if(seq===generation.current)setError(e.message)}finally{if(seq===generation.current)setBusy(false)}
  },[minutes,deviceId]);
  useEffect(()=>{query();return()=>{generation.current++;request.current++}},[query]);
  const choose=useCallback(async(point,i)=>{
-  const seq=++request.current;setError('');try{const value=await native.request('history.read',{key:point.id,deviceId});if(seq!==request.current)return;setCurrent(normalize(value));setIndex(i);setOpen(true)}catch(e){if(seq===request.current)setError(e.message)}
+  const seq=++request.current,key=deviceId+':'+point.id,cached=cache.current.get(key);setError('');setIndex(i);setOpen(true);setFullDetails(false);setCurrent(cached||null);setReading(!cached);if(cached)return;
+  try{const value=await native.request('history.read',{key:point.id,deviceId});if(seq!==request.current)return;const sample=normalize(value);cache.current.set(key,sample);if(cache.current.size>64)cache.current.delete(cache.current.keys().next().value);setCurrent(sample)}catch(e){if(seq===request.current)setError(e.message)}finally{if(seq===request.current)setReading(false)}
  },[deviceId]);
  const close=useCallback((focus=false)=>{setOpen(false);if(focus)region.current?.querySelector('.history-trend-panel:not([aria-hidden="true"]) .chart')?.focus({preventScroll:true})},[]);
- const changeMetric=id=>{if(id===metric)return;request.current++;setMetric(id);setCurrent(null);setIndex(null);setOpen(false)};
+ const changeMetric=id=>{if(id===metric)return;request.current++;setMetric(id);setCurrent(null);setIndex(null);setOpen(false);setReading(false);setFullDetails(false)};
  useEffect(()=>{if(!open)return;const outside=e=>{if(!region.current?.contains(e.target))close()},escape=e=>{if(e.key==='Escape')close(true)};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape)}},[open,close]);
  // Only an explicit metric/range/archive change enters this effect. Live captures,
  // hovering and selecting a snapshot must never restart the history transition.
@@ -55,18 +56,18 @@ export const HistoryView=memo(function HistoryView({deviceId}){
   const tween=gsap.fromTo(node,{opacity:.66,y:3},{opacity:1,y:0,...motionOptions('page'),clearProps:'opacity,transform'});
   return()=>{tween.kill();gsap.set(node,{clearProps:'opacity,transform'})};
  },[metric,archive,preference]);
- const value=current?(metric==='gpu'?gpuAverage(current):current[metric]):null,date=current?new Date(current.time):null;
- const popover=open&&current&&Number.isFinite(value)?<HistoryPeek date={date.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})} time={date.toLocaleTimeString('zh-CN',{hour12:false})} metric={metricLabel(metric)} value={value} rows={current.processes} gpuCount={current.gpus.length} onClose={()=>close(true)} onViewProcesses={()=>{close();document.querySelector('.native-history-processes')?.scrollIntoView({behavior:preference?'instant':'smooth',block:'start'})}}/>:null;
+ const selectedPoint=index==null?null:archive.points[index],value=current?(metric==='gpu'?gpuAverage(current):current[metric]):selectedPoint?.[metric],date=selectedPoint?new Date(selectedPoint.time):null;
+ const popover=open&&date&&Number.isFinite(value)?<HistoryPeek date={date.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})} time={date.toLocaleTimeString('zh-CN',{hour12:false})} metric={metricLabel(metric)} value={value} loading={reading} error={!reading&&!current?error:''} rows={current?.processes||[]} gpuCount={current?.gpus.length||0} onClose={()=>close(true)} onViewProcesses={()=>{setFullDetails(true);close();requestAnimationFrame(()=>document.querySelector('.native-history-processes')?.scrollIntoView({behavior:preference?'instant':'smooth',block:'start'}))}}/>:null;
  return <>
   <div className="page-heading"><div><div className="eyebrow">本地存档</div><h1>历史记录</h1><p>回到一个时间点，查看当时的资源与进程。</p></div><Button onClick={query} disabled={busy}>{busy?'正在读取…':'刷新存档'}</Button></div>
   <div className="history-toolbar"><label className="range-control"><Clock size={17}/><ThemedSelect aria-label="历史时间范围" value={minutes} onChange={e=>setMinutes(Number(e.target.value))}>{[[15,'最近 15 分钟'],[60,'最近 1 小时'],[120,'最近 2 小时'],[1440,'最近 24 小时']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</ThemedSelect></label><span className="history-archive-state"><i className="status-dot"/>{total} 个已存档采样{total>archive.points.length?' · 显示 '+archive.points.length+' 个趋势点':''}</span></div>{error&&<p role="alert" className="native-error">{error}</p>}
   <section className="history-chart" ref={region}>
    <SectionTitle action={<div className="segmented history-metric-tabs" role="group" aria-label="历史资源指标" style={{'--history-selection':metrics.findIndex(([id])=>id===metric)}}><span className="history-metric-selection" aria-hidden="true"/>{metrics.map(([id,label])=><button key={id} type="button" className={metric===id?'active':''} aria-pressed={metric===id} onClick={()=>changeMetric(id)}>{label}</button>)}</div>}>利用率时间线</SectionTitle>
-   <div className="history-trend-viewport" ref={viewport} aria-busy={busy} data-history-metric={metric} data-history-minutes={archive.minutes}>
+   <div className="history-trend-viewport" ref={viewport} aria-busy={busy} inert={busy?'':undefined} data-history-metric={metric} data-history-minutes={archive.minutes}>
     {metrics.map(([id])=><div key={id} className="history-trend-panel" aria-hidden={metric!==id} inert={metric!==id?'':undefined}><HistoryMetricChart archive={archive} metric={id} onSelect={choose} selected={metric===id?index:null} popover={metric===id?popover:null}/></div>)}
    </div>
    <div className="timeline-selection"><div><Clock size={16}/><span>选中时间</span><strong>{date?date.toLocaleString('zh-CN',{hour12:false}):'点击曲线查看完整快照'}</strong></div>{current&&<span>{current.cores.length} 线程 · {current.gpus.length} GPU</span>}</div>
   </section>
-  {current&&<div className="native-history-processes"><ProcessTable device={{gpuCount:current.gpus.length}} processes={current.processes} readonly/><section className="history-memory"><SectionTitle>显存快照</SectionTitle><div className="memory-snapshot-grid">{current.gpus.map(g=><div key={g.id}><header><span>GPU {g.id}</span><strong>{g.used?.toFixed(2)??'—'} / {g.total?.toFixed(2)??'—'} GiB</strong></header>{g.used!=null&&g.total>0&&<Meter value={g.used/g.total*100}/>}</div>)}</div><HardwareInventory sample={current}/></section></div>}
+  {fullDetails&&current&&<div className="native-history-processes"><ProcessTable device={{gpuCount:current.gpus.length}} processes={current.processes} readonly/><section className="history-memory"><SectionTitle>显存快照</SectionTitle><div className="memory-snapshot-grid">{current.gpus.map(g=><div key={g.id}><header><span>GPU {g.id}</span><strong>{g.used?.toFixed(2)??'—'} / {g.total?.toFixed(2)??'—'} GiB</strong></header>{g.used!=null&&g.total>0&&<Meter value={g.used/g.total*100}/>}</div>)}</div><HardwareInventory sample={current}/></section></div>}
  </>;
 });

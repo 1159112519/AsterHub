@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build --outDir ../app/resources/workbench"
+    "build": "vite build --outDir ../app/resources/workbench --emptyOutDir"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",

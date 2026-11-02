@@ -34,3 +34,6 @@ Public download pages and release notes describe available features, user-visibl
 
 ## Preview.7 resource and update interaction 2026-10-30
 Use current preview.7 screenshots. Overview includes host state, CPU/GPU/memory/network/storage and whole-device configuration; the bottom resource strip folds away on overview and remains on other pages. Startup update checking is optional and asks before installing; confirmation downloads, verifies, installs and restarts. Keep stable Windows0.2.1 and Ubuntu0.1.3 independent.
+
+## Preview.9 release 2026-11-02
+Use preview.9 final production screenshots with explicitly labelled synthetic example data. Preserve responsive chapter motion, historical packages and independent stable/Ubuntu channels. Public notes describe user-visible results.

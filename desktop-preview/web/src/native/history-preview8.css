@@ -17,3 +17,9 @@
 }
 html[data-motion="reduced"] .history-metric-selection,html[data-motion="reduced"] .history-metric-tabs button {transition:none!important}
 @media(prefers-reduced-motion:reduce){.history-metric-selection,.history-metric-tabs button {transition:none!important}}
+
+.history-snapshot-loading{min-height:92px;display:flex;align-items:center;padding:12px 0;color:var(--muted);font-size:13px}
+.native-workbench .history-chart .data-area{opacity:.5}
+.native-workbench .history-chart .data-stroke{stroke-width:1.5}
+.history-trend-panel{contain:layout style}
+.chart-selection-popover .history-peek{background:color-mix(in srgb,var(--surface) 96%,var(--text));border-color:color-mix(in srgb,var(--text) 15%,transparent)}

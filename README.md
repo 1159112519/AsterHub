@@ -1,6 +1,6 @@
 # AsterHub
 
-Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工作台公开预览 **0.3.0-preview.8**，稳定版保留 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
+Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工作台公开预览 **0.3.0-preview.9**，稳定版保留 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
 
 - 多核 CPU、多 GPU、内存、网络上下行和分区容量监控，支持没有 GPU 的设备。
 - 已连接设备持续采集，历史保存在本机；切换设备不影响采集。
@@ -8,7 +8,7 @@ Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工�
 - 内嵌终端、双栏文件浏览、复制传输及传输进度。
 - 多主题、迷你置顶窗口、托盘、开机启动及签名更新清单；Windows 支持一键更新并重启。
 - Windows 支持密码、空密码、私钥及 SSH 配置连接；密码可由当前 Windows 账户加密保存。
-- 关于页面可提交问题反馈并获得编号，连接密码、终端内容和历史数据不会自动上传。
+- 设置中的反馈与建议可提交问题并获得编号，连接密码、终端内容和历史数据不会自动上传。
 
 新的 Windows 工作台源码与构建说明见 [desktop-preview/](desktop-preview/README.md)。预览与稳定通道分开更新、独立保存数据。
 
@@ -20,7 +20,7 @@ Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工�
 
 ## 下载
 
-- [Windows 预览版 0.3.0-preview.8](https://github.com/1159112519/AsterHub/releases/tag/v0.3.0-preview.8)
+- [Windows 预览版 0.3.0-preview.9](https://github.com/1159112519/AsterHub/releases/tag/v0.3.0-preview.9)
 - [Windows 稳定版安装包与免安装版](https://github.com/1159112519/AsterHub/releases)
 - [Ubuntu Debian 安装包](https://github.com/1159112519/AsterHub/releases/tag/ubuntu-v0.1.3)
 
@@ -56,4 +56,4 @@ npm run dev
 
 ## 发布状态
 
-Windows v0.3.0-preview.8 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+Windows v0.3.0-preview.9 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
