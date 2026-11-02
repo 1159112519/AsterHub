@@ -11,7 +11,7 @@ import {HistoryPage,SettingsDialog,AddDeviceDialog} from './pages/HistorySetting
 const navigation=[['overview','资源概览',LayoutDashboard],['cpu','CPU',Cpu],['gpu','GPU',Microchip],['memory','内存',MemoryStick],['network','网络',Network],['storage','存储',HardDrive]];
 const workNavigation=[['terminal','终端',Terminal],['files','文件',FolderOpen],['history','历史记录',History]];
 const defaults={theme:'graphite',reduced:false,density:'comfortable',displayStyle:'trend',font:'Cascadia Code',fontSize:14,interval:5,retention:90,tray:true,startup:false};
-function preferences(){try{const p=JSON.parse(localStorage.getItem('aq-prototype-settings'));if(!p||!['graphite','forest','ocean','light'].includes(p.theme))return defaults;return {...defaults,...p,displayStyle:['classic','trend'].includes(p.displayStyle)?p.displayStyle:defaults.displayStyle}}catch{return defaults}}
+function preferences(){try{const p=JSON.parse(localStorage.getItem('aq-prototype-settings'));if(!p||!['graphite','slate','forest','ocean','light'].includes(p.theme))return defaults;return {...defaults,...p,displayStyle:['classic','trend'].includes(p.displayStyle)?p.displayStyle:defaults.displayStyle}}catch{return defaults}}
 const series={cpu:wave(2,32,39,25),gpu:wave(6,32,34,22),memory:wave(8,32,34,3),network:wave(4,32,40,28),storage:wave(1,32,28,14)};
 function makeSession(device,path){return {id:crypto.randomUUID(),deviceId:device.id,name:'bash',path:path||`/home/${device.user}`,output:[]}}
 export default function App(){
