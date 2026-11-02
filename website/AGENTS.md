@@ -43,3 +43,6 @@ Use final preview.10 production screenshots and keep example data labelled. Desk
 
 ## Preview.11 readability and transfer endpoints 2026-11-02
 Use final preview.11 production screenshots and keep example data labelled. Desktop file panes independently choose endpoints, including server-to-server copying through the running desktop. Typography must be legible and dialog actions spaced consistently. Do not advertise an always-on collection service before it is implemented and verified.
+
+## Preview.12 resource layout and history 2026-11-02
+Use final preview.12 production screenshots and keep example data labelled. Desktop file panes independently choose endpoints, including server-to-server copying through the running desktop. Typography must be legible and dialog actions spaced consistently. Do not advertise an always-on collection service before it is implemented and verified.

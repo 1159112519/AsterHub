@@ -10,8 +10,10 @@ export function storageSummary(sample) {
 export function gpuSummary(sample) {
  const gpus=sample?.gpus||[],values=gpus.map(g=>g.util).filter(finite);
  const sum=key=>gpus.length&&gpus.every(g=>finite(g[key]))?gpus.reduce((n,g)=>n+g[key],0):null;
+ const memoryClocks=gpus.map(g=>g.memoryClock).filter(v=>finite(v)&&v>0);
+ const memoryClock=memoryClocks.length===gpus.length&&memoryClocks.length&&Math.max(...memoryClocks)-Math.min(...memoryClocks)<1?memoryClocks[0]:null;
  const clocks=gpus.map(g=>g.clock).filter(v=>finite(v)&&v>0);
- return {count:gpus.length,util:values.length?values.reduce((a,b)=>a+b,0)/values.length:null,used:sum('used'),total:sum('total'),clock:clocks.length?Math.max(...clocks):null};
+ return {memoryClock,count:gpus.length,util:values.length?values.reduce((a,b)=>a+b,0)/values.length:null,used:sum('used'),total:sum('total'),clock:clocks.length?Math.max(...clocks):null};
 }
 export function memorySpec(modules=[]) {
  const valid=v=>v&&!/WMI|原值|未校验|未提供/i.test(v);

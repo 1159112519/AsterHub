@@ -1,1 +1,1 @@
-9278051a8d350e04d5b495d0c651ec845a420b40420f50e5b6190d2a8398a169  AsterHub-Setup-0.3.0-preview.11.exe
+24fafd508ab4b45c5b43842582bc11ba1aa269e436bc1d1fd01097cee641d901  AsterHub-Setup-0.3.0-preview.12.exe

@@ -1,0 +1,21 @@
+/* Real data columns resize; selection controls retain a usable fixed box. */
+.native-workbench .files-table th.selection-column{padding:7px 10px!important;text-align:center;width:44px}
+.native-workbench .files-table th.selection-column .column-title{display:flex;align-items:center;justify-content:center;min-width:20px;overflow:visible}
+.native-workbench .files-table th.selection-column input,.native-workbench .files-table td:first-child input{display:block;width:16px;height:16px;margin:0 auto;accent-color:var(--green)}
+.native-workbench .files-table td:first-child{padding:7px 10px;text-align:center}
+.native-workbench .topbar-left{display:flex;align-items:center;gap:12px;min-height:32px}
+.native-workbench .topbar-left .top-device,.native-workbench .topbar-left .top-page{display:flex;align-items:center;height:28px;min-height:28px;line-height:22px;font-size:15px;font-weight:500;padding:0;margin:0}
+.native-workbench .topbar-left>svg{flex:none;display:block;align-self:center}
+.native-workbench .resource-chart>.section-title{align-items:center;min-height:40px;gap:16px}
+.native-workbench .resource-chart>.section-title h2{margin:0;line-height:28px}
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer{min-height:98px}
+.native-workbench .resource-footer.preview5-resource-footer .footer-aux{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:18px}
+.native-workbench .resource-footer.preview5-resource-footer .footer-memory-clock{margin-left:9px;color:var(--muted)}
+.native-workbench .resource-footer.preview5-resource-footer .footer-metric{justify-content:center}
+
+@media(max-width:1250px){
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-reading-row,.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-network .footer-reading-row{grid-template-rows:26px 18px;gap:3px;height:47px}
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-trend-slot,.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-trend-slot .sparkline{height:18px}
+ .native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-memory-clock{display:none}
+}
+.native-workbench .files-table th.resizable-column{position:sticky;top:0}
