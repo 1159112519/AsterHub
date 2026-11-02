@@ -81,3 +81,9 @@
 :root{--dialog-action-gap:12px}
 .dialog-actions{gap:var(--dialog-action-gap)}
 .dialog-actions .button{min-height:40px}
+/* The strip follows its actual content height; enlarged labels must not be
+   centered and clipped inside the old 65px metric buttons. */
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-metric{height:auto;min-height:0;align-self:stretch;justify-content:flex-start}
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-metric-heading,
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-reading-row,
+.native-workbench.preview5-workbench .resource-footer.preview5-resource-footer .footer-aux{flex-shrink:0}
