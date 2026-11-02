@@ -4,14 +4,14 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
-const media = (name: string) => `./media/asterhub-preview13-final-${name}.webp`;
+const media = (name: string) => `./media/asterhub-preview14-final-${name}.webp`;
 export const chapters = [
   { id:'overview', label:'资源概览', eyebrow:'THE WHOLE PICTURE', title:['先看全局。','再决定关注哪里。'], text:'CPU、GPU、内存、网络与存储，放在同一个工作空间。设备忙在哪里、还有多少余量，不必在多个工具之间来回确认。', points:['点击资源卡片，在当前页面展开详情','离开概览后，底部速览继续显示资源状态','按设备提供的能力显示数据'], image:'overview', caption:'资源概览 · 同一视野里的五类资源' },
   { id:'gpu', label:'GPU', eyebrow:'EVERY GPU, IN FOCUS', title:['每一张卡。','都值得看清。'], text:'从一张显卡到多卡设备，利用率、显存、温度与功耗一起呈现。选择经典卡片，或用趋势卡片看见变化，风格由你决定。', points:['多卡同时可见，区分忙碌与空闲','展开 GPU 详情，查看完整进程命令','结束进程前确认，并核验目标身份'], image:'eight-gpu', caption:'八卡界面示意 · 经典与趋势两种显示风格' },
   { id:'terminal', label:'终端', eyebrow:'FROM INSIGHT TO ACTION', title:['看到了。','就接着做。'], text:'发现需要处理的任务，不必离开工作台。打开本机 PowerShell 或远程 SSH 终端；切换资源页面后，会话继续保留。', points:['多个标签，让任务各自有序','字体、字号与背景随偏好调整','切换页面不会重建终端会话'], image:'terminal', caption:'终端工作空间 · 多个会话，各自继续' },
   { id:'files', label:'文件', eyebrow:'A CLEAR PATH FOR FILES', title:['两端的文件。','放在一起处理。'], text:'左右两栏分别选择本机或服务器，路径可以直接输入，列宽与分栏宽度可以调整。跨服务器传输通过本机中转，源文件留在原处。', points:['本机与服务器、服务器之间均可复制','同名覆盖明确确认，支持取消传输','新建且未改动的副本可有限撤销'], image:'files', caption:'双栏文件 · 路径、选择与复制传输' },
   { id:'network', label:'网络', eyebrow:'FOLLOW THE FLOW', title:['不只看速度。','也看连接。'], text:'上下行吞吐放在同一张图里，按接口切换观察。结合地址、链路与累计计数，分清数据从哪里来、向哪里去。', points:['下载与上传趋势同时比较','按网络接口查看链路和地址信息','底部保留实时上下行速率'], image:'network', caption:'网络监控 · 吞吐趋势与接口信息' },
-  { id:'storage', label:'存储', eyebrow:'ROOM TO KEEP WORKING', title:['空间够不够。','磁盘忙不忙。'], text:'卷容量与物理磁盘活动分开呈现。读取、写入、活动时间和队列长度，让“空间不足”和“磁盘繁忙”有各自的线索。', points:['各存储卷的已用、可用与总容量','物理磁盘读写趋势和当前队列','设备未提供的指标明确显示状态'], image:'storage', caption:'存储监控 · 容量与 I/O 分开看' },
+  { id:'storage', label:'存储', eyebrow:'ROOM TO KEEP WORKING', title:['空间去了哪里。','一眼看清。'], text:'在存储页面打开磁盘空间分析或大文件清理。按面积看文件夹大小，逐层浏览与筛选，再决定如何整理。扫描在后台进行，随时可以离开。', points:['面积图与目录树同步，支持复制和粘贴','文件可移入 AsterHub 回收区并恢复','回收区仍占用空间，不会自动清空'], image:'storage', caption:'磁盘空间分析 · 大小、路径与操作在同一处' },
   { id:'history', label:'历史', eyebrow:'A MOMENT WORTH REVISITING', title:['回到那个时刻。','看看当时发生了什么。'], text:'资源变化持续归档在本机。选择一个时间点，轻量浮层带出当时的状态与进程，把偶发的峰值留作可以回看的线索。', points:['按时间范围浏览本地记录','CPU、GPU 与内存趋势切换','历史进程只读，避免误操作当前任务'], image:'history', caption:'历史记录 · 状态与进程留在同一时刻' },
 ];
 type Viewer = {image:string; caption:string};

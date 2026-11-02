@@ -11,9 +11,9 @@ public sealed partial class WorkbenchWindow {
  sealed class WorkbenchTerminal {
   internal readonly object Gate=new object();
   internal readonly StringBuilder Buffer=new StringBuilder();
-  internal string Id,DeviceId,Name,Kind;internal ITerminalSession Session;
+  internal string Id,DeviceId,Name,Kind,Title;internal long Number;internal ITerminalSession Session;
   internal long Base;internal bool Ended;internal int? ExitCode;
-  internal object View(){lock(Gate)return new{id=Id,deviceId=DeviceId,name=Name,kind=Kind,state=Ended?"exited":"running",exitCode=ExitCode};}
+  internal object View(){lock(Gate)return new{id=Id,deviceId=DeviceId,name=Name,kind=Kind,title=Title,number=Number,state=Ended?"exited":"running",exitCode=ExitCode};}
   internal Task Append(string text){lock(Gate){Buffer.Append(text);if(Buffer.Length>1048576){int remove=Buffer.Length-1048576;Buffer.Remove(0,remove);Base+=remove;}}return Task.FromResult(true);}
   internal object Read(long offset){lock(Gate){long end=Base+Buffer.Length;bool truncated=offset<Base;if(offset>end)offset=end;offset=Math.Max(offset,Base);int count=(int)Math.Min(49152,end-offset);string text=Buffer.ToString((int)(offset-Base),count);return new{data=text,next=offset+count,@base=Base,truncated=truncated,state=Ended?"exited":"running",exitCode=ExitCode};}}
  }
@@ -21,7 +21,7 @@ public sealed partial class WorkbenchWindow {
  readonly Dictionary<string,WorkbenchTerminal> terminalSessions=new Dictionary<string,WorkbenchTerminal>();
  readonly Dictionary<Task,string> terminalCreations=new Dictionary<Task,string>();
  readonly Dictionary<string,long> terminalDeviceVersions=new Dictionary<string,long>();
- bool terminalClosing;
+ bool terminalClosing;long terminalSequence;
  static bool SameTerminalConfiguration(Server a,Server b){return a.IsLocal==b.IsLocal&&a.Name==b.Name&&a.Host==b.Host&&a.User==b.User&&a.Port==b.Port&&a.KeyPath==b.KeyPath&&a.AuthMode==b.AuthMode&&a.ProtectedPassword==b.ProtectedPassword&&a.Password==b.Password;}
  static string TerminalText(Dictionary<string,object> p,string key,string fallback=""){object value;return p.TryGetValue(key,out value)?Convert.ToString(value,CultureInfo.InvariantCulture):fallback;}
  static int TerminalSize(Dictionary<string,object> p,string key,int fallback,int max){int value;return int.TryParse(TerminalText(p,key),out value)?Math.Max(2,Math.Min(max,value)):fallback;}
@@ -49,7 +49,7 @@ public sealed partial class WorkbenchWindow {
      long liveVersion;terminalDeviceVersions.TryGetValue(deviceId,out liveVersion);
      var live=devices.Find(deviceId);
      if(version!=liveVersion||!SameTerminalConfiguration(server,live))throw new InvalidOperationException("设备连接配置已变更，请重新打开终端");
-     terminalSessions.Add(entry.Id,entry);owned.Start();result=entry.View();
+     entry.Number=++terminalSequence;entry.Title=entry.Kind+" "+entry.Number.ToString(CultureInfo.InvariantCulture);terminalSessions.Add(entry.Id,entry);owned.Start();result=entry.View();
     }
    }catch(Exception error){failure=error;}
    if(failure!=null){
@@ -67,6 +67,10 @@ public sealed partial class WorkbenchWindow {
   if(method=="terminal.close"){await Task.Run(delegate{current.Session.Dispose();});return true;}
   // Reject arbitrary host/credential injection: only a configured device can own a session.
   devices.Find(current.DeviceId);
+  if(method=="terminal.rename"){
+   string title=TerminalText(p,"title").Trim();if(title.Length<1||title.Length>64||title.Any(char.IsControl))throw new ArgumentException("名称需要 1 至 64 个可见字符");
+   lock(terminalGate){if(terminalSessions.Values.Any(x=>x.Id!=id&&string.Equals(x.Title,title,StringComparison.OrdinalIgnoreCase)))throw new ArgumentException("此名称已被其他终端使用");lock(current.Gate)current.Title=title;return current.View();}
+  }
   if(method=="terminal.read"){long offset;if(!long.TryParse(TerminalText(p,"offset","0"),out offset)||offset<0)throw new ArgumentException("终端读取位置无效");return current.Read(offset);}
   if(method=="terminal.write"){
    string data=TerminalText(p,"data");if(data.Length>4096)throw new ArgumentException("终端单次输入过长");lock(current.Gate){if(current.Ended)throw new InvalidOperationException("终端已退出，请新建标签");}

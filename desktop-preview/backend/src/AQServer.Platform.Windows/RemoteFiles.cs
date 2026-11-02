@@ -31,7 +31,7 @@ public static class FileTools {
  public static List<FileEntry> Sort(IEnumerable<FileEntry> x){var l=x.ToList();l.Sort((a,b)=>a.IsDirectory!=b.IsDirectory?(a.IsDirectory?-1:1):Natural(a.Name,b.Name));return l;}
 }
 public sealed class FileConnection : IDisposable {
- public readonly Server Device; SftpClient client; readonly List<PrivateKeyFile> keys=new List<PrivateKeyFile>(); public string Home{get;private set;}
+ public readonly Server Device; SftpClient client; readonly List<PrivateKeyFile> keys=new List<PrivateKeyFile>(); public string Home{get;private set;} public bool Connected{get{return Device.IsLocal||client!=null&&client.IsConnected;}}
  public FileConnection(Server s){Device=s.Copy();}
  static string Arg(string s){return "\""+(s??"").Replace("\\","\\").Replace("\"","\\\"")+"\"";}
  static string Run(string exe,string args){using(var p=new Process{StartInfo=new ProcessStartInfo(exe,args){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=Encoding.UTF8}}){p.Start();var output=p.StandardOutput.ReadToEndAsync();var err=p.StandardError.ReadToEndAsync();if(!p.WaitForExit(10000)){try{p.Kill();}catch{}throw new IOException("读取 OpenSSH 配置超时");}if(p.ExitCode!=0&&!(exe=="ssh-keygen.exe"&&p.ExitCode==1))throw new IOException("无法读取 OpenSSH 配置；请检查 SSH 安装及配置。");return output.Result;}}
@@ -45,7 +45,8 @@ public sealed class FileConnection : IDisposable {
  if(accepted.Count==0)throw new IOException("此主机尚未验证。请先在集成终端用 ssh 连接并核对指纹；文件面板不会自动信任新主机。");
  var ci=new ConnectionInfo(host,port,user,auth.ToArray()){Timeout=TimeSpan.FromSeconds(12)};client=new SftpClient(ci);client.BufferSize=131072;client.OperationTimeout=TimeSpan.FromSeconds(30);client.HostKeyReceived+=(o,e)=>{string presented=Convert.ToBase64String(e.HostKey);e.CanTrust=accepted.Contains(presented)&&!revoked.Contains(presented);};await client.ConnectAsync(token).ConfigureAwait(false);Home=client.WorkingDirectory;
  },token).ConfigureAwait(false);}
- public List<FileEntry> List(string path,CancellationToken token){token.ThrowIfCancellationRequested();var result=new List<FileEntry>();if(Device.IsLocal){foreach(var item in new DirectoryInfo(path).EnumerateFileSystemInfos()){token.ThrowIfCancellationRequested();bool dir=(item.Attributes&FileAttributes.Directory)!=0;result.Add(new FileEntry{Name=item.Name,FullPath=item.FullName,IsDirectory=dir,IsLink=(item.Attributes&FileAttributes.ReparsePoint)!=0,Size=dir?0:((FileInfo)item).Length,Modified=item.LastWriteTime,Permissions=(item.Attributes&FileAttributes.ReadOnly)!=0?"只读":"读写"});}}else{foreach(var item in client.ListDirectory(path)){token.ThrowIfCancellationRequested();if(item.Name=="."||item.Name=="..")continue;result.Add(new FileEntry{Name=item.Name,FullPath=item.FullName,IsDirectory=item.IsDirectory,IsLink=item.IsSymbolicLink,Size=item.Length,Modified=item.LastWriteTime,Permissions=PermissionText(item.Attributes)});}}return FileTools.Sort(result);}
+ public IEnumerable<FileEntry> Enumerate(string path,CancellationToken token){token.ThrowIfCancellationRequested();if(Device.IsLocal){foreach(var item in new DirectoryInfo(path).EnumerateFileSystemInfos()){token.ThrowIfCancellationRequested();bool dir=(item.Attributes&FileAttributes.Directory)!=0;yield return new FileEntry{Name=item.Name,FullPath=item.FullName,IsDirectory=dir,IsLink=(item.Attributes&FileAttributes.ReparsePoint)!=0,Size=dir?0:((FileInfo)item).Length,Modified=item.LastWriteTime,Permissions=(item.Attributes&FileAttributes.ReadOnly)!=0?"只读":"读写"};}}else{foreach(var item in client.ListDirectory(path)){token.ThrowIfCancellationRequested();if(item.Name=="."||item.Name=="..")continue;yield return new FileEntry{Name=item.Name,FullPath=item.FullName,IsDirectory=item.IsDirectory,IsLink=item.IsSymbolicLink,Size=item.Length,Modified=item.LastWriteTime,Permissions=PermissionText(item.Attributes)};}}}
+ public List<FileEntry> List(string path,CancellationToken token){return FileTools.Sort(Enumerate(path,token).ToList());}
  static string PermissionText(Renci.SshNet.Sftp.SftpFileAttributes a){return (a.OwnerCanRead?"r":"-")+(a.OwnerCanWrite?"w":"-")+(a.OwnerCanExecute?"x":"-")+(a.GroupCanRead?"r":"-")+(a.GroupCanWrite?"w":"-")+(a.GroupCanExecute?"x":"-")+(a.OthersCanRead?"r":"-")+(a.OthersCanWrite?"w":"-")+(a.OthersCanExecute?"x":"-");}
  public bool IsDirectory(string path){return Device.IsLocal?Directory.Exists(path):client.GetAttributes(path).IsDirectory;}
  public bool IsLink(string path){return Device.IsLocal?(File.GetAttributes(path)&FileAttributes.ReparsePoint)!=0:client.GetAttributes(path).IsSymbolicLink;}
@@ -66,6 +67,7 @@ public sealed class FileConnection : IDisposable {
  catch{try{Commit(owned,path,false);}catch{throw new IOException("文件已保留在 "+owned+"；原路径发生变化，请手动检查。");}throw;}
  }
  public void RemoveOwnTestDirectory(string path){if(!path.StartsWith(Home.TrimEnd('/' )+"/.aqserver-test-"))throw new IOException("仅允许清理本测试目录");client.DeleteDirectory(path);}
+ public void MoveRecoverable(string source,string target){if(Exists(target))throw new IOException("恢复目标已存在，原文件会保留");if(Device.IsLocal){if(Directory.Exists(source))Directory.Move(source,target);else File.Move(source,target);}else client.RenameFile(source,target);}
  public void Dispose(){if(client!=null){client.Dispose();client=null;}foreach(var k in keys)k.Dispose();keys.Clear();}
 }
 

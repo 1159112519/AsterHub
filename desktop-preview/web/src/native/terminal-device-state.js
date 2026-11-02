@@ -3,12 +3,12 @@
 export function createTerminalDeviceState({request,render,dispose,prepare=()=>{},onChange=()=>{}}){
  const records=new Map(),devices=new Map(),closed=new Set(),rendering=new Map();
  // No inventory has arrived yet. A missing startup snapshot is not device removal.
- let knownDevices=null,viewDevice=null,viewActive=false;
+ let knownDevices=null,viewDevice=null,viewActive=false,sequence=0;const order=[];
  const hasDevice=deviceId=>knownDevices===null||knownDevices.has(deviceId);
  function state(deviceId){if(!devices.has(deviceId))devices.set(deviceId,{selectedId:null,pending:0,error:'',restored:false,restorePromise:null,createPromise:null,ensurePromise:null});return devices.get(deviceId)}
  // State identity also invalidates an old operation if the same ID is added again.
  const current=(deviceId,owner)=>hasDevice(deviceId)&&devices.get(deviceId)===owner;
- const tabs=deviceId=>[...records.values()].filter(record=>record.deviceId===deviceId&&!record.stopped);
+ const tabs=deviceId=>[...records.values()].filter(record=>record.deviceId===deviceId&&!record.stopped).sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
  function selected(deviceId){const s=state(deviceId),record=records.get(s.selectedId);return record?.deviceId===deviceId&&!record.stopped?record:tabs(deviceId).at(-1)}
  function release(record){if(!record.stopped)dispose(record)}
  function updateDevices(ids){
@@ -28,7 +28,7 @@ export function createTerminalDeviceState({request,render,dispose,prepare=()=>{}
   if(records.has(meta.id))return records.get(meta.id);
   const existing=rendering.get(meta.id);if(existing?.owner===owner)return existing.promise;
   const entry={owner};
-  entry.promise=(async()=>{const record=await render(meta,settings,()=>current(meta.deviceId,owner)&&!closed.has(meta.id));if(!record)return;if(!current(meta.deviceId,owner)||closed.has(meta.id)){release(record);return}records.set(meta.id,record);if(!selected(meta.deviceId)||!owner.selectedId)owner.selectedId=meta.id;onChange();return record})().finally(()=>{if(rendering.get(meta.id)===entry)rendering.delete(meta.id)});
+  entry.promise=(async()=>{const record=await render(meta,settings,()=>current(meta.deviceId,owner)&&!closed.has(meta.id));if(!record)return;if(!current(meta.deviceId,owner)||closed.has(meta.id)){release(record);return}sequence=Math.max(sequence,Number(meta.number)||0);record.title=meta.title||`${meta.kind||"终端"} ${++sequence}`;records.set(meta.id,record);if(!order.includes(meta.id))order.push(meta.id);if(!selected(meta.deviceId)||!owner.selectedId)owner.selectedId=meta.id;onChange();return record})().finally(()=>{if(rendering.get(meta.id)===entry)rendering.delete(meta.id)});
   rendering.set(meta.id,entry);return entry.promise;
  }
  function restore(deviceId,settings,owner){
@@ -52,7 +52,9 @@ export function createTerminalDeviceState({request,render,dispose,prepare=()=>{}
   const owner=state(record.deviceId);record.closing=true;closed.add(record.id);
   try{return await run(record.deviceId,async()=>{await request('terminal.close',{id:record.id});release(record);records.delete(record.id);if(current(record.deviceId,owner)){if(owner.selectedId===record.id)owner.selectedId=tabs(record.deviceId).at(-1)?.id||null;onChange()}},owner)}catch(error){closed.delete(record.id);throw error}finally{record.closing=false}
  }
- return {records,tabs,selected,state,ensure,create,close,select,setError,updateDevices,hasDevice,
+ async function rename(record,title){const meta=await request('terminal.rename',{id:record.id,title});if(!record.stopped){record.title=meta.title;onChange()}return meta}
+ function reorder(deviceId,sourceId,targetId){const source=records.get(sourceId),target=records.get(targetId);if(source?.deviceId!==deviceId||target?.deviceId!==deviceId||sourceId===targetId)return false;const from=order.indexOf(sourceId);if(from<0)return false;order.splice(from,1);order.splice(order.indexOf(targetId),0,sourceId);onChange();return true}
+ return {records,tabs,selected,rename,reorder,state,ensure,create,close,select,setError,updateDevices,hasDevice,
   setView(deviceId,active){viewDevice=deviceId;viewActive=active},
   isInputOwner(record){return viewActive&&hasDevice(viewDevice)&&record.deviceId===viewDevice&&selected(viewDevice)===record&&!record.stopped&&!record.closing},
  };

@@ -51,3 +51,6 @@ Use final preview.12 production screenshots and keep example data labelled. Desk
 Use selected v9 online-node geometry, night default. Embedded header mark must be transparent (no black app tile). Desktop supports six independently selected icons and five skins. No icon selection changes the skin. Use preview.13 screenshots without the sidebar tagline. Storage space tools remain a separate fixture prototype, not a published desktop feature.
 
 Preserve preview.12 graphite as 经典黑 with its original palette and existing ID. Additional slate 暮蓝 is separate. Icons and skins remain independent.
+
+## Windows preview.14
+Current Windows version0.3.0-preview.14. Storage analysis and large-file tools now operate on real files in Windows desktop; website illustrations remain explicitly labelled synthetic data. Scan is background/cancellable. AsterHub recovery area uses space and is never auto-emptied. Preserve Ubuntu0.1.3 and stable0.2.1. Use preview14 images, with storage analysis page reflecting the accepted HTML typography and softened coloured tiles.
