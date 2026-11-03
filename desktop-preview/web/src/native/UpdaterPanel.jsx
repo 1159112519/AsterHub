@@ -29,7 +29,6 @@ export function UpdatesPanel({currentVersion}){
    <ReleaseLink href={repositoryUrl} label="GitHub 项目"><Github size={17}/><span>GitHub<small>项目与发布记录</small></span></ReleaseLink>
   </div>
   {release?.available&&release.notes&&<details className="native-updater-notes"><summary>查看 {release.latest} 更新说明</summary><p>{release.notes}</p></details>}
-  <p className="about-font-notice">中文字体使用 HarmonyOS Sans SC。</p>
   <p className="about-install-help">官方 Windows 预览通道 · 下载校验后自动安装并重启</p>
   {recent&&<RecentUpdates currentVersion={version} onClose={()=>setRecent(false)}/>}
  </section>

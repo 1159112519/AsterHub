@@ -88,7 +88,7 @@ public sealed partial class WorkbenchWindow:Window {
    switch(method){
     case "app.openExternal":case "clipboard.write":case "clipboard.read":result=await DesktopRequest(method,p);break;
     case "app.uiReady":web.Visibility=Visibility.Visible;if(launch!=null){var grid=launch.Parent as System.Windows.Controls.Grid;if(grid!=null)grid.Children.Remove(launch);launch=null;}result=new{ready=true,elapsedMs=launchClock.ElapsedMilliseconds};break;
-    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 20",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
+    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 21",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
     case "devices.list":result=DeviceList();break;
     case "devices.select":devices.Select(Convert.ToString(p["id"]));result=DeviceList();break;
     case "devices.save":var saved=devices.Save(p);string savedId=PreviewDevices.Id(saved);Tuple<ConnectionResult,DateTime> tested;if(draftProbes.TryGetValue(ProbeIdentity(saved),out tested)){probes[savedId]=tested.Item1;probeTimes[savedId]=tested.Item2;}else{probes.Remove(savedId);probeTimes.Remove(savedId);}capture.Configure(devices.All(),interval);result=devices.Public(saved);Send(new{type="devices",value=DeviceList()});break;
