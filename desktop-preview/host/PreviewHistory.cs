@@ -4,7 +4,7 @@ public static class PreviewHistory {
  // Preserve actual acquisition gaps even after retaining only representative points.
  public static HashSet<long> Gaps(List<ArchivePoint> input,List<ArchivePoint> displayed){
   var selected=new HashSet<long>(displayed.Select(p=>p.T));var result=new HashSet<long>();ArchivePoint previous=null;bool pending=false;
-  foreach(var p in input){if(previous!=null&&((p.T-previous.T)>TimeSpan.FromSeconds(Math.Max(15,Math.Max(p.Interval,previous.Interval)*3)).Ticks||!string.IsNullOrEmpty(previous.Error)||!string.IsNullOrEmpty(p.Error)))pending=true;
+  foreach(var p in input){if(p.GapBefore||(previous!=null&&((!(previous.RemoteSummary&&p.RemoteSummary)&&(p.T-previous.T)>TimeSpan.FromSeconds(Math.Max(15,Math.Max(p.Interval,previous.Interval)*3)).Ticks)||!string.IsNullOrEmpty(previous.Error)||!string.IsNullOrEmpty(p.Error))))pending=true;
    if(selected.Contains(p.T)){if(pending)result.Add(p.T);pending=false;}previous=p;
   }return result;
  }

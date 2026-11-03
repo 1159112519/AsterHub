@@ -8,6 +8,7 @@
   --control-padding-y: 9px; --control-padding-x: 14px; --control-gap: 7px;
   --radius-control: 10px; --radius-icon-control: 8px;
   --tool-launcher-height: 96px;
+  --shadow-popover: 0 8px 24px #00000033;
   --shadow-tool-hover: 0 5px 14px #0000000d;
   --dialog-body-padding: 24px; --dialog-body-gap: 16px;
   --file-control-height: 37px; --file-control-radius: 9px;

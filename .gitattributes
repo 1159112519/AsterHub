@@ -5,3 +5,7 @@
 *.exe -text
 *.ico -text
 *.webp -text
+
+agent/linux/*.py text eol=lf
+agent/linux/*.sh text eol=lf
+agent/linux/*.service text eol=lf

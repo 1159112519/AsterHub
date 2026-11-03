@@ -1,0 +1,17 @@
+/* Keep a named device selector in collapsed navigation. */
+.native-workbench.app-shell{transition:grid-template-columns var(--motion-tool,.38s) var(--ease)}
+.native-workbench .sidebar .brand{position:relative;gap:10px;padding-right:28px}
+.native-workbench .brand>.sidebar-collapse-toggle{display:flex;position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:30px;height:32px;margin:0;color:var(--muted)}
+.native-workbench.sidebar-collapsed{grid-template-columns:84px minmax(0,1fr)}
+.native-workbench.sidebar-collapsed>.sidebar{padding:22px 10px 12px;overflow:visible;min-width:0;transform:none;position:relative;width:auto}
+.sidebar-collapsed .sidebar .brand{padding:0;margin-bottom:18px;min-height:65px;justify-content:center;align-items:flex-start}
+.sidebar-collapsed .sidebar-brand-name{display:none}.sidebar-collapsed .brand>.sidebar-collapse-toggle{top:auto;bottom:-6px;right:17px;transform:none}
+.sidebar-collapsed .sidebar .sidebar-section-label{font-size:0;margin:12px 10px 8px;height:1px;padding:0;background:var(--line-soft)}
+.sidebar-collapsed .sidebar .nav-item{justify-content:center;padding:12px;gap:0;min-height:46px;position:relative}
+.sidebar-collapsed .sidebar .nav-item>span{display:none}.sidebar-collapsed .sidebar .nav-item>svg{width:21px;height:21px;margin:0;flex:none}
+.sidebar-collapsed .sidebar-bottom{padding-top:12px}.collapsed-device>button{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;padding:10px 2px;border-radius:12px;color:var(--text);font-size:14px;background:var(--surface2)}
+.collapsed-device>button>span{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.collapsed-device>button>svg:last-child{display:none}
+.sidebar-device-popover{position:fixed;left:92px;top:94px;width:280px;max-height:calc(100vh - 130px);overflow:auto;padding:18px 12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-popover);z-index:150;animation:device-picker-in var(--motion-exit,.18s) var(--ease)}
+@keyframes device-picker-in{from{opacity:0;transform:translateX(-5px) scale(.98)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.native-workbench.app-shell{transition:none}.sidebar-device-popover{animation:none}}
+html[data-motion=reduced] .native-workbench.app-shell{transition:none}

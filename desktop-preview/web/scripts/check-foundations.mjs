@@ -10,4 +10,8 @@ const css=await fs.readFile(path.join(root,'foundation/ui.css'),'utf8');
 if(/#[0-9a-f]{3,8}\b/i.test(css))errors.push('Shared controls must use skin semantics');
 const buttons=await fs.readFile(path.join(root,'foundation/ui.jsx'),'utf8');
 if(!buttons.includes('aria-busy')||!buttons.includes('button-content'))errors.push('Shared action contract missing');
+const terminal=await fs.readFile(path.join(root,'native/TerminalPage.jsx'),'utf8');
+if(/<Modal\b/.test(terminal))errors.push('Terminal forms must use the shared FormDialog body/footer contract');
+if(/navigator\.clipboard/.test(terminal))errors.push('Terminal clipboard must use the native desktop clipboard contract');
+if(/cloneNode\(true\)/.test(storage))errors.push('Storage directory motion must not clone the full directory DOM');
 if(errors.length){console.error(errors.join('\n'));process.exitCode=1}else console.log('Foundation adoption checks passed (migrated surfaces only).');

@@ -38,6 +38,7 @@
     <Compile Include="ConnectionProbe.cs" />
     <Compile Include="ConPtySession.cs" />
     <Compile Include="HardwareInventory.cs" />
+    <Compile Include="RemoteRecorderTransport.cs" />
     <Compile Include="ProcessMetadata.cs" /><Compile Include="Local.cs" />
     <Compile Include="LocalGpu.cs" />
     <Compile Include="ProcessActions.cs" />

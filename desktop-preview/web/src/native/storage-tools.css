@@ -126,7 +126,7 @@
 .storage-tools .storage-action-divider{flex:none;height:18px;margin:0 4px}
 
 /* Translucent colour lives in the surface only; labels stay fully opaque. */
-.storage-tools{--storage-tile-base:color-mix(in srgb,var(--surface) 86%,white)}
+.storage-tools{--storage-tile-base:color-mix(in srgb,var(--surface) 81%,white)}
 .storage-tools .color-blue{--tile:#a6c7f2;--tile-edge:#a6c7f2}
 .storage-tools .color-purple{--tile:#cab5e4;--tile-edge:#cab5e4}
 .storage-tools .color-green{--tile:#a7cbb9;--tile-edge:#a7cbb9}
@@ -137,3 +137,5 @@
 .storage-tools .storage-tile{background:color-mix(in srgb,var(--tile) 24%,var(--storage-tile-base));border-color:color-mix(in srgb,var(--tile-edge) 23%,transparent);color:var(--text)}
 .storage-tools .storage-tile:hover{background:color-mix(in srgb,var(--tile) 31%,var(--storage-tile-base));border-color:color-mix(in srgb,var(--tile-edge) 55%,transparent)}
 .storage-tools .storage-tile.selected{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+
+.storage-path-picker{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}.storage-path-picker header,.storage-path-picker footer{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2)}.storage-path-picker header>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.storage-path-picker footer{justify-content:flex-end}.storage-path-folders{max-height:250px;overflow:auto;padding:6px}.storage-path-folders>button{display:flex;align-items:center;gap:10px;padding:11px 12px;width:100%;border:0;border-radius:8px;background:none;color:var(--text);font:inherit;text-align:left}.storage-path-folders>button:hover{background:var(--hover)}.storage-path-folders>button>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.storage-path-folders>p{padding:12px;color:var(--muted)}.storage-recycle-list>div{gap:12px}.storage-recycle-list>div>div{flex:1;min-width:0}.storage-map-old{contain:strict;box-shadow:none!important}

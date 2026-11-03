@@ -1,6 +1,6 @@
 # AsterHub 常驻采集服务方案
 
-状态：设计与实现清单，尚未实现或部署。先发布本轮 Windows 修复，Ubuntu 桌面和 Windows 远程服务器适配保持暂停。
+状态（2026-11-03）：Linux 独立采集服务 0.1.0 已实现并部署到已授权云服务器；Windows 桌面已接入读取。Ubuntu 桌面和 Windows 远程服务器适配保持暂停。完整 24 小时稳定性仍需实际运行时间验证。
 
 ## 目标和边界
 
@@ -29,3 +29,13 @@ Linux 首期采用 systemd、专属低权限账户、独立配置 `/etc/asterhub
 5. 再在明确选定的云服务器部署，记录版本/散列，做真实时间跨度的持续运行验证。
 
 服务运行或一张截图不能代表已通过 24 小时验收。Windows Service 平台适配另排，不以 Ubuntu 测试代替 Windows。
+
+## 本轮落地与维护边界
+
+- 源码 `agent/linux/asterhub_agent.py`；systemd 单元 `agent/linux/asterhub-agent.service`。Python 标准库实现，不安装额外第三方依赖。
+- 二进制目录 `/opt/asterhub-agent/` 为 root 所有；服务账户 `asterhub-agent`，数据 `/var/lib/asterhub-agent/records.sqlite3`，默认每 5 秒采样，30 天及 1 GiB 上限。
+- 无 HTTP/TCP 监听；桌面通过已保存并验证的 SSH 连接调用固定只读查询命令。命令不接受任意路径或 shell 片段。
+- SQLite WAL 独立写入，记录压缩保存；摘要有界且保留峰值和真实间断；按实际时间读取详细快照。记录包含可见 GPU 计算进程，不包含凭据、终端内容或业务文件内容。
+- 客户端历史页合并本机已存档数据与主机记录，避免同时采样的重复点；未安装或不可达时回退已有本地历史，不伪造记录。
+- 其他 SSH 账户必须已有该数据目录的读取权限；本轮仅部署已授权云服务器，不代表所有添加的设备自动获得系统服务。Windows 常驻服务还未实现。
+- 停止/升级只操作 `asterhub-agent.service`；卸载服务默认保留数据。禁止将卸载与清除历史合并。

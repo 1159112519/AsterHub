@@ -1,0 +1,28 @@
+[Unit]
+Description=AsterHub continuous resource recorder
+After=local-fs.target
+
+[Service]
+Type=simple
+User=asterhub-agent
+Group=asterhub-agent
+ExecStart=/usr/bin/python3 /opt/asterhub-agent/asterhub_agent.py run --interval 5
+Restart=on-failure
+RestartSec=5
+StateDirectory=asterhub-agent
+StateDirectoryMode=0750
+UMask=0027
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ReadWritePaths=/var/lib/asterhub-agent
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryMax=192M
+CPUQuota=10%
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
