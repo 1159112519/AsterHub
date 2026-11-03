@@ -5,4 +5,4 @@
 官网使用 React、Lucide、Inter、Playfair Display。字体与客户端运行库许可证同时发布在网站 /licenses/ 下；开发工具及间接依赖版本由 package-lock.json 锁定，其许可在 npm 包中保存。应用自身源码版权归项目所有者；没有据此授予第三方组件之外的开源许可。
 
 
-Windows 预览工作台中文使用 HarmonyOS Sans SC，字体著作权 Huawei Device Co., Ltd.（2021）。原始 Regular、Medium、Bold字体随安装包内置，不修改字形，不依赖系统安装或联网下载；英文与数字保留Inter。许可随程序在 licenses/HarmonyOS-Sans-LICENSE.txt 与 resources/workbench/fonts/HarmonyOS-Sans-LICENSE.txt 中分发，关于页显示字体使用说明。
+Windows 预览工作台中文使用 HarmonyOS Sans SC，字体著作权 Huawei Device Co., Ltd.（2021）。原始 Regular、Medium、Bold字体随安装包内置，不修改字形，不依赖系统安装或联网下载；英文与数字保留Inter。许可随程序在 licenses/HarmonyOS-Sans-LICENSE.txt 与 resources/workbench/fonts/HarmonyOS-Sans-LICENSE.txt 中分发，字体使用说明保留在第三方组件文档中。

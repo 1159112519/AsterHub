@@ -11,7 +11,7 @@ public sealed partial class WorkbenchWindow {
   }
   if(method=="updates.download"){
    if(updateBusy)throw new InvalidOperationException("正在检查或下载，请稍候");if(checkedRelease==null||AppUpdates.CompareVersions(checkedRelease.version,AppUpdates.DisplayVersion)<=0)throw new InvalidOperationException("请先检查是否有可用的新版本");updateBusy=true;
-   try{downloadedUpdate=await AppUpdates.DownloadTo(checkedRelease,new Progress<double>(v=>Send(new{type="update-progress",value=v})),CancellationToken.None,System.IO.Path.Combine(WorkbenchHost.DataRoot,"Updates"));return new{ready=true,version=checkedRelease.version};}catch(Exception ex){throw new InvalidOperationException(AppUpdates.FriendlyError(ex));}finally{updateBusy=false;}
+   try{downloadedUpdate=await AppUpdates.DownloadTo(checkedRelease,new Progress<double>(v=>Send(new{type="update-progress",value=v})),CancellationToken.None,System.IO.Path.Combine(WorkbenchHost.DataRoot,"Updates"));return new{ready=true,version=checkedRelease.version};}catch(Exception ex){throw new InvalidOperationException(ex is System.Net.WebException && UpdateDownload.IsRecoverable(ex) ? "下载暂时中断，已完成的部分会保留，重试即可继续下载。" : AppUpdates.FriendlyError(ex));}finally{updateBusy=false;}
   }
   if(method=="updates.install"){
    if(WorkbenchHost.SmokeRoot!=null)throw new InvalidOperationException("隔离验证实例不修改安装。更新安装由独立安装验证覆盖");

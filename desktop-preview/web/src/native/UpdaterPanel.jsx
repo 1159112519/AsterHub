@@ -12,7 +12,7 @@ export function UpdatesPanel({currentVersion}){
  useEffect(()=>{let alive=true;native.request('updates.preferences').then(value=>alive&&setAutomatic(value.checkOnStartup)).catch(e=>alive&&setError(e.message));const unsubscribe=native.subscribe(setProgress,'update-progress');return()=>{alive=false;unsubscribe()}},[]);
  async function setStartup(enabled){setSaving(true);setError('');try{const value=await native.request('updates.preferences.save',{checkOnStartup:enabled});setAutomatic(value.checkOnStartup)}catch(e){setError(e.message)}finally{setSaving(false)}}
  async function check(){setBusy('check');setError('');setRelease(null);setReady(false);setConfirming(false);try{setRelease(await native.request('updates.check',{},35000))}catch(e){setError(e.message)}finally{setBusy('')}}
- async function update(){setConfirming(false);setError('');try{if(!ready){setBusy('download');setProgress(0);await native.request('updates.download',{},600000);setReady(true)}setBusy('install');await native.request('updates.install',{},30000)}catch(e){setError(e.message)}finally{setBusy('')}}
+ async function update(){setConfirming(false);setError('');try{if(!ready){setBusy('download');setProgress(0);await native.request('updates.download',{},31*60*1000);setReady(true)}setBusy('install');await native.request('updates.install',{},30000)}catch(e){setError(e.message)}finally{setBusy('')}}
  const version=currentVersion||release?.current;
  const status=busy==='check'?'正在检查官方更新…':release?(release.available?'发现新版本 '+release.latest:'当前已是最新版本'):'';
  const StatusIcon=busy==='check'?RefreshCw:release&&!release.available?CheckCircle2:Download;
