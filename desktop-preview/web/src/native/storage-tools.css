@@ -81,7 +81,7 @@
 .storage-tools .storage-folder-list .storage-tree-folder small{font-size:14px;margin-left:auto;flex:none;font-weight:400}
 .storage-tree-more,.storage-tree-loading{font-size:14px;color:var(--muted);padding:12px}
 .storage-tools .storage-tile{transition:background .2s cubic-bezier(.22,1,.36,1),border-color .2s cubic-bezier(.22,1,.36,1);box-shadow:none}
-.storage-tools .storage-tile-content{font-family:"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI",sans-serif;font-weight:400;line-height:1.35}
+.storage-tools .storage-tile-content{font-family:var(--font-interface);font-weight:400;line-height:1.35}
 .storage-tools .storage-tile-name{font-weight:400;letter-spacing:0;line-height:1.35}
 .storage-tools .storage-tile-value{font-weight:400;line-height:1.3;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:0}
 .storage-tools .storage-map-old{pointer-events:none;z-index:2}
@@ -112,7 +112,7 @@
 .storage-tools .storage-file-actions .button{background:transparent;border-color:transparent;font-weight:400;padding:7px 8px;gap:8px;border-radius:8px}.storage-tools .storage-heading-actions .button{gap:8px;font-weight:400}.storage-tools .storage-tool-heading .button{display:inline-flex;align-items:center}
 
 /* The approved HTML is the typography authority. Keep this scoped to its storage tools. */
-.storage-tools{font-family:"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI",sans-serif;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.storage-tools{font-family:var(--font-interface);font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
 .storage-tools .storage-tool-heading h1{font-size:24px;font-weight:600;line-height:1.4;letter-spacing:-.4px;margin-bottom:0}
 .storage-tools .storage-tool-heading>div>span{display:block;margin-top:6px}
 .storage-tools .storage-tile-content{font-family:inherit;font-weight:400}

@@ -1,7 +1,7 @@
 @font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
 /* Preserve the approved appearance. Components consume roles, not page guesses. */
 :root {
-  --font-interface: Inter,"Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  --font-interface: Inter,"HarmonyOS Sans SC","Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
   --font-files: var(--font-interface);
   --numeric-font: var(--font-interface);
   --text-control: 14px;

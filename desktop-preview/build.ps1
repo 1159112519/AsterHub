@@ -7,6 +7,8 @@ $appRoot=Join-Path $previewRoot 'app'
 $fontOutput=Join-Path $appRoot 'resources/fonts'
 New-Item -ItemType Directory -Path $fontOutput -Force | Out-Null
 Copy-Item -Path (Join-Path $previewRoot 'host/fonts/*') -Destination $fontOutput -Force
+New-Item -ItemType Directory -Path (Join-Path $appRoot 'licenses') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $previewRoot 'web/public/fonts/HarmonyOS-Sans-LICENSE.txt') -Destination (Join-Path $appRoot 'licenses/HarmonyOS-Sans-LICENSE.txt') -Force
 $brandOutput=Join-Path $appRoot 'resources/brand-icons'
 New-Item -ItemType Directory -Path $brandOutput -Force | Out-Null
 Copy-Item -Path (Join-Path $previewRoot 'host/brand-icons/*') -Destination $brandOutput -Recurse -Force

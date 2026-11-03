@@ -77,3 +77,5 @@
 .about-link-button small,.about-links .about-external-link small{font-size:14px;line-height:18px}
 .about-external-link[data-unavailable="true"]{opacity:.65}
 .about-external-link[data-unavailable="true"] a{cursor:not-allowed}
+
+.about-font-notice{font:400 14px/1.6 var(--font-interface);color:var(--muted);margin:18px 0 0}
