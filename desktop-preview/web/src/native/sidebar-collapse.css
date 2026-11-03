@@ -5,11 +5,11 @@
 .native-workbench.sidebar-collapsed{grid-template-columns:84px minmax(0,1fr)}
 .native-workbench.sidebar-collapsed>.sidebar{padding:22px 12px 12px;overflow:visible;min-width:0;transform:none;position:relative;width:auto}
 .native-workbench.sidebar-collapsed>.sidebar::before{transform:scaleX(var(--sidebar-collapsed-ratio))}
-/* The absolute toggle is excluded from brand centering and keeps the same top in both states. */
-.native-workbench .sidebar .brand{position:relative;gap:10px;height:36px;min-height:36px;padding:0;margin-bottom:18px;justify-content:center;align-items:center;flex:none}
+/* Reserve the toggle column before centering identity. The toggle stays vertically anchored. */
+.native-workbench .sidebar .brand{position:relative;gap:10px;height:36px;min-height:36px;padding:0 32px 0 0;margin-bottom:18px;justify-content:center;align-items:center;flex:none}
 .native-workbench .brand>.sidebar-collapse-toggle{display:flex;position:absolute;right:-10px;top:2px;bottom:auto;transform:none;width:28px;height:32px;margin:0;color:var(--muted);z-index:2}
 .native-workbench .sidebar .sidebar-brand-name{opacity:1;white-space:nowrap;flex:none;transition:opacity var(--motion-exit,.18s) var(--ease,cubic-bezier(.22,1,.36,1))}
-.native-workbench.sidebar-collapsed .sidebar .brand{justify-content:flex-start}
+.native-workbench.sidebar-collapsed .sidebar .brand{justify-content:flex-start;padding:0}
 .native-workbench.sidebar-collapsed .sidebar .brand-mark{width:32px;flex:0 0 32px}
 .native-workbench.sidebar-collapsed .sidebar-brand-name{position:absolute;left:80px;opacity:0;pointer-events:none}
 .native-workbench.sidebar-collapsed .brand>.sidebar-collapse-toggle{top:2px;bottom:auto;right:-4px;transform:none}

@@ -1,22 +1,27 @@
 import {gsap} from 'gsap';
-import {motion, motionOptions, reducedMotion} from '../motion';
+import {reducedMotion} from '../motion';
 
-// A single owned timeline preserves source geometry and releases its clone.
-export function animateDirectoryTransition({content, stage, pending, onComplete}) {
-  const {clone, rect, direction} = pending;
-  let timeline, released = false;
-  function release() {
-    if (released) return; released = true; clone.remove();
-    gsap.set(content, {clearProps: 'transform,opacity,willChange'});
+// Own exactly one clock. Geometry moves; text is never transformed or raster-scaled.
+export function animateDirectoryTransition({content, stage, pending, outgoing, incoming, onComplete}) {
+ let animation=null,released=false;
+ const width=Math.max(1,stage?.clientWidth||1),height=Math.max(1,stage?.clientHeight||1),phase={value:0};
+ const clamp=gsap.utils.clamp(0,1),ease=gsap.parseEase('power3.inOut'),cross=pending.direction==='across';
+ function release(){if(released)return;released=true;if(content){content.style.filter='';for(const tile of content.querySelectorAll('[data-tile]'))tile.style.visibility='';}}
+ if(reducedMotion()){release();onComplete?.();return {cancel:release};}
+ function surface(element,entry,p,visible){
+  if(!element||!entry)return;const r=entry.rect;
+  Object.assign(element.style,{visibility:visible?'visible':'hidden',left:r.x*(1-p)+'px',top:r.y*(1-p)+'px',width:r.width+(width-r.width)*p+'px',height:r.height+(height-r.height)*p+'px',borderRadius:Math.min(22,Math.min(r.width,r.height)*.2)*(1-p)+18*p+'px'});
+  element.style.setProperty('--storage-lift',String(Math.sin(Math.PI*p)));
+  const face=element.querySelector('.storage-portal-face'),body=element.querySelector('.storage-portal-content');
+  if(face)face.style.opacity=String(1-clamp((p-.18)/.36));if(body)body.style.opacity=String(clamp((p-.30)/.40));
+ }
+ function paint(){
+  const t=phase.value,out=1-ease(clamp(t/(cross?.60:1))),next=ease(clamp(cross?(t-.40)/.60:t));
+  surface(outgoing,pending.before,out,!cross||t<.60);surface(incoming,pending.after,next,!cross||t>=.40);
+  if(content){content.style.filter=`brightness(${1-.08*Math.max(pending.before?out:0,pending.after?next:0)})`;
+   for(const tile of content.querySelectorAll('[data-tile]'))tile.style.visibility=(pending.before?.sourceId===tile.dataset.tile&&(!cross||t<.60))||(pending.after?.sourceId===tile.dataset.tile&&(!cross||t>=.40))?'hidden':'visible';
   }
-  if (reducedMotion()) { release(); onComplete?.(); return {cancel: release}; }
-  const width = Math.max(1, stage?.clientWidth || 1), height = Math.max(1, stage?.clientHeight || 1);
-  // Only one flat surface is animated. Transforming a cloned directory tree
-  // creates enormous raster layers for small source tiles in large directories.
-  const sx=Math.max(.05,rect.width/width),sy=Math.max(.05,rect.height/height);
-  gsap.set(clone,{position:'absolute',left:0,top:0,width,height,borderRadius:12,pointerEvents:'none',transformOrigin:'0 0',x:direction==='in'?rect.x:0,y:direction==='in'?rect.y:0,scaleX:direction==='in'?sx:1,scaleY:direction==='in'?sy:1,opacity:1,willChange:'transform,opacity'});
-  gsap.set(content,{transformOrigin:`${rect.x+rect.width/2}px ${rect.y+rect.height/2}px`,scale:direction==='in'?.94:1.04,opacity:0,willChange:'transform,opacity'});
-  timeline=gsap.timeline({defaults:motionOptions('drill',{ease:motion.ease.drill}),onComplete(){release();timeline=null;onComplete?.()}});
-  timeline.to(clone,{x:direction==='in'?0:rect.x,y:direction==='in'?0:rect.y,scaleX:direction==='in'?1:sx,scaleY:direction==='in'?1:sy,opacity:0},0).to(content,{scale:1,opacity:1},.06);
-  return {cancel(){timeline?.kill();timeline=null;release()}};
+ }
+ paint();animation=gsap.to(phase,{value:1,duration:pending.duration||.52,ease:'none',onUpdate:paint,onComplete(){release();animation=null;onComplete?.();}});
+ return {cancel(){animation?.kill();animation=null;release();}};
 }

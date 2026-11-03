@@ -5,6 +5,8 @@ public static class LocalLightCaptureTests {
  public static int Main(){try{
   var got=new List<LocalLightReading>();int index=0;using(var reader=new LocalLightCapture(x=>got.Add(x),500,()=>Counts(++index),false)){
    reader.RequestRefresh();reader.RequestRefresh();Check(got.Count==2,"manual requests collect");Check(!got[0].Cpu.HasValue,"first CPU needs a baseline");Check(got[1].Cpu==50,"CPU uses counter delta rather than a WMI query");Check(got[1].TotalBytes==16000000000,"memory is direct bytes");Check(reader.LastSuccessful==got[1],"last good retained");
+   reader.SetInterval(2000);reader.RequestRefresh();Check(reader.Latest.IntervalMs==2000,"change interval retains collector and cadence metadata");Check(reader.Latest.Cpu==50,"change interval retains CPU counter baseline");Check(reader.Latest.Sequence==3,"change interval retains monotonic sequence");
+   bool refused=false;try{reader.SetInterval(5);}catch(ArgumentOutOfRangeException){refused=true;}Check(refused,"invalid interval rejected");
   }
   int active=0,max=0,calls=0;using(var reader=new LocalLightCapture(x=>Interlocked.Increment(ref calls),500,()=>{int n=Interlocked.Increment(ref active);Interlocked.Exchange(ref max,Math.Max(n,max));Thread.Sleep(80);Interlocked.Decrement(ref active);return Counts(1);},false)){
    Parallel.For(0,16,i=>reader.RequestRefresh());Check(max==1,"single flight");Check(calls==1,"overlapping callers skipped");Check(reader.Skipped>=1,"skip diagnostics");

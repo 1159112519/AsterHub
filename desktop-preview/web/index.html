@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head><script>try{document.documentElement.dataset.theme=globalThis.__ASTER_THEME||JSON.parse(localStorage.getItem("asterhub-preview-appearance")||"{}").theme||"graphite"}catch{document.documentElement.dataset.theme="graphite"}</script><style>html,body,#root{margin:0;min-height:100%;background:#1c201f;color:#e5eae5}html[data-theme="light"],html[data-theme="light"] body,html[data-theme="light"] #root{background:#f4f5f9;color:#26352d}html[data-theme="forest"],html[data-theme="forest"] body,html[data-theme="forest"] #root{background:#19241f}html[data-theme="ocean"],html[data-theme="ocean"] body,html[data-theme="ocean"] #root{background:#1a2330}html[data-theme="slate"],html[data-theme="slate"] body,html[data-theme="slate"] #root{background:#1b1e26}#root:empty::before{content:'AsterHub';position:fixed;inset:0;display:grid;place-items:center;font:500 24px 'Segoe UI',sans-serif;letter-spacing:.02em;opacity:.65}</style>
+  <head>
     <meta charset="UTF-8" /><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-src 'none'" />
+    <link rel="stylesheet" href="/startup.css"/><script src="/startup.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AsterHub · 资源工作台</title>
   <link rel="icon" type="image/svg+xml" href="/asterhub.svg"/>
 </head>
   <body>
-    <div id="root"></div>
+    <div id="launch-shell" role="status" aria-label="正在载入 AsterHub"><div class="launch-center"><div class="launch-identity"><img id="launch-icon" src="/brand-icons/01/preview.png" width="56" height="56" alt=""/><strong>AsterHub</strong></div><div class="launch-dots"><i></i><i></i><i></i></div></div></div><div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

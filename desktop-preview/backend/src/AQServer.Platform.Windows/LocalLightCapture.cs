@@ -16,12 +16,16 @@ public sealed class LocalLightCapture : IDisposable {
  [DllImport("kernel32.dll",SetLastError=true)]static extern bool GlobalMemoryStatusEx(ref MemoryState state);
  [DllImport("kernel32.dll",SetLastError=true)]static extern bool GetSystemTimes(out ulong idle,out ulong kernel,out ulong user);
  [DllImport("kernel32.dll")]static extern ushort GetActiveProcessorGroupCount();
- readonly Action<LocalLightReading> publish;readonly Func<LocalLightCounters> read;readonly int intervalMs;readonly Timer timer;readonly object stoppedGate=new object();LocalLightCounters previous;
+ readonly Action<LocalLightReading> publish;readonly Func<LocalLightCounters> read;volatile int intervalMs;readonly Timer timer;readonly object stoppedGate=new object();LocalLightCounters previous;
  volatile LocalLightReading latest,good;int busy,stopping,skipped;long sequence;
  public LocalLightReading Latest{get{return latest;}}public LocalLightReading LastSuccessful{get{return good;}}public int Skipped{get{return Volatile.Read(ref skipped);}}
  public LocalLightCapture(Action<LocalLightReading> callback,int milliseconds=500,Func<LocalLightCounters> provider=null,bool start=true){
   if(milliseconds<250||milliseconds>10000)throw new ArgumentOutOfRangeException("milliseconds");publish=callback;read=provider??ReadWindows;intervalMs=milliseconds;
   if(start)timer=new Timer(delegate{RequestRefresh();},null,0,milliseconds);
+ }
+ public void SetInterval(int milliseconds){
+  if(milliseconds<250||milliseconds>10000)throw new ArgumentOutOfRangeException("milliseconds");
+  lock(stoppedGate){if(Volatile.Read(ref stopping)!=0||intervalMs==milliseconds)return;intervalMs=milliseconds;if(timer!=null)timer.Change(milliseconds,milliseconds);}
  }
  static LocalLightCounters ReadWindows(){
   var memory=new MemoryState();memory.Length=(uint)Marshal.SizeOf(typeof(MemoryState));ulong idle,kernel,user;
@@ -51,7 +55,7 @@ public sealed class LocalLightCapture : IDisposable {
   }finally{Interlocked.Exchange(ref busy,0);lock(stoppedGate)Monitor.PulseAll(stoppedGate);}
  }
  public void Dispose(){
-  if(Interlocked.Exchange(ref stopping,1)!=0)return;if(timer!=null)timer.Dispose();
-  lock(stoppedGate){var until=DateTime.UtcNow.AddSeconds(5);while(Volatile.Read(ref busy)!=0&&DateTime.UtcNow<until)Monitor.Wait(stoppedGate,50);}
+  if(Interlocked.Exchange(ref stopping,1)!=0)return;
+  lock(stoppedGate){if(timer!=null)timer.Dispose();var until=DateTime.UtcNow.AddSeconds(5);while(Volatile.Read(ref busy)!=0&&DateTime.UtcNow<until)Monitor.Wait(stoppedGate,50);}
  }
 }

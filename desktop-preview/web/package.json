@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node ../scripts/generate-recent-updates.mjs && vite build --outDir ../app/resources/workbench --emptyOutDir",
-    "test:foundation": "node --test src/foundation/*.test.mjs src/native/bridge.test.mjs src/native/light-telemetry.test.mjs src/native/terminal-device-state.test.mjs src/native/storage-device-state.test.mjs ../scripts/recent-updates.test.mjs",
+    "test:foundation": "node --test src/appearance/*.test.mjs src/foundation/*.test.mjs src/native/bridge.test.mjs src/native/light-telemetry.test.mjs src/native/terminal-device-state.test.mjs src/native/storage-device-state.test.mjs src/native/memory-scope.test.mjs ../scripts/recent-updates.test.mjs",
     "check:foundation": "node scripts/check-foundations.mjs"
   },
   "dependencies": {

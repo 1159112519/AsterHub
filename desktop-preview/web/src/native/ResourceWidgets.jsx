@@ -19,7 +19,7 @@ import {inspectorHorizontalPosition} from '../floating-placement';
 export function ByteValue({value,rate=false}){if(!Number.isFinite(value))return <span className="number">—</span>;let n=value,i=0;const units=['B','KiB','MiB','GiB','TiB'];while(Math.abs(n)>=1024&&i<4){n/=1024;i++}return <NumberValue key={i} value={n} decimals={i?1:0} suffix={' '+units[i]+(rate?'/s':'')}/>}
 const icons={cpu:Cpu,memory:MemoryStick,gpu:Microchip,network:Network,storage:HardDrive};
 const names={cpu:'CPU',memory:'内存',gpu:'GPU',network:'网络',storage:'存储'};
-const colors={cpu:'var(--blue)',memory:'var(--purple)',gpu:'var(--green)',network:'var(--amber)',storage:'var(--blue)'};
+const colors={cpu:'var(--blue)',memory:'var(--purple)',gpu:'var(--chart-gpu,var(--green))',network:'var(--amber)',storage:'var(--blue)'};
 function CardBody({id,sample,detail=false}) {
  const h=sample.hardware||{},stale=sample.light?.stale??sample.stale;
  if(id==='cpu')return <><p className="overview-model" title={h.CpuModel}>{h.CpuModel||'处理器信息正在读取'}</p><div className="overview-primary"><NumberValue value={sample.cpu} decimals={1} suffix="%" stale={stale}/></div><Meter value={sample.cpu??0} color={colors.cpu}/><div className="overview-card-note">{h.PhysicalCores??'—'} 核 · {h.SystemThreads??(sample.cores.length||'—')} 线程</div>{detail&&<div className="overview-card-note cpu-current-frequency">当前速度 · <FrequencyValue value={sample.cpuFrequencyMHz}/></div>}<div className="overview-core-strip" aria-label="逻辑处理器占用分布">{sample.cores.map(c=><i key={c.Index} title={'CPU '+c.Index+' · '+c.Util.toFixed(1)+'%'} style={{backgroundColor:'color-mix(in srgb,var(--blue) '+Math.max(12,c.Util)+'%,var(--surface2))',opacity:.55+Math.max(0,Math.min(100,c.Util))*.0045}}/>)}</div></>;

@@ -3,7 +3,7 @@ export const devices = [
  {id:'local',name:'本机',address:'Windows 11 · 此电脑',user:'lenovo',group:'我的设备',os:'Windows 11 Pro',gpuCount:1,cores:16,ram:32,latency:0,kind:'local',cpu:'AMD Ryzen 7 7840HS'},
  {id:'web',name:'web-node',address:'192.0.2.24',user:'developer',group:'开发环境',os:'Ubuntu 24.04 LTS',gpuCount:0,cores:8,ram:16,latency:62,kind:'server',cpu:'AMD EPYC · 8 vCPU'},
 ];
-export const colors={cpu:'var(--blue)',gpu:'var(--green)',memory:'var(--purple)',network:'var(--amber)',storage:'var(--muted)'};
+export const colors={cpu:'var(--blue)',gpu:'var(--chart-gpu,var(--green))',memory:'var(--purple)',network:'var(--amber)',storage:'var(--muted)'};
 export function wave(seed=1,n=66,base=40,amp=16){return Array.from({length:n},(_,i)=>Math.max(2,Math.min(99,base+Math.sin(i*.33+seed)*amp*.45+Math.sin(i*.89+seed*3)*amp*.22+Math.cos(i*1.77+seed)*amp*.16+Math.sin(i*.1)*amp*.25)));}
 export const baseSeries=[{name:'CPU',color:colors.cpu,values:wave(2,66,37,24)},{name:'GPU',color:colors.gpu,values:wave(6,66,51,32)},{name:'内存',color:colors.memory,values:wave(8,66,34,3)}];
 export const gpuFixture=Array.from({length:8},(_,i)=>({id:i,name:'GeForce RTX 4090',util:[98,73,99,2,0,0,0,0][i],used:[21.03,21.03,22.52,.12,.02,.02,.02,.02][i],total:48,temp:[78,68,66,34,33,35,36,32][i],power:[309,291,303,24,21,23,35,20][i],fan:[100,100,100,64,64,64,64,64][i],series:wave(i,38,i<3?[86,61,91][i]:3,i<3?20:3)}));

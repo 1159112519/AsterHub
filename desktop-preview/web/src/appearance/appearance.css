@@ -1,0 +1,15 @@
+/* Approved HTML typography; terminal/code content keeps its own user-selected font. */
+.native-workbench{font-family:var(--font-interface);font-synthesis:none}
+.native-workbench .number,.native-workbench .axis-label,.native-workbench .storage-tools,.native-workbench .storage-tile-name,.native-workbench .storage-tile-value{font-family:var(--font-interface)}
+.native-workbench .storage-tile-name{font-weight:550}
+.native-workbench .storage-tile-value{font-weight:600}
+.native-workbench .memory-area-option strong{font-size:15px;font-weight:550}
+.native-workbench .memory-process-name strong{font-size:14px;font-weight:500}
+.appearance-mode-fields{display:flex;gap:24px;align-items:end;flex-wrap:wrap;margin:16px 0 24px}
+.appearance-mode-fields>.field{min-width:160px}
+.appearance-mode-fields .native-setting-check{padding-bottom:10px}
+.skin-choice[style] .skin-miniature{background:var(--skin-bg)}
+.skin-choice[style] .skin-miniature>i{background:var(--skin-sidebar)}
+.skin-choice[style] .skin-miniature>span>b{background:var(--skin-surface);border-color:var(--skin-accent)}
+.brand-icon-choice{position:relative;flex-direction:column;height:auto!important;min-height:84px;padding:10px 10px 7px!important;gap:5px}
+.brand-icon-number{display:block;font-size:14px;color:var(--muted);line-height:18px;font-weight:500}

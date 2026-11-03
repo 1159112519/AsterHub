@@ -1,4 +1,4 @@
-param([string]$Root)
+﻿param([string]$Root)
 $ErrorActionPreference='Stop'
 $framework=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319'
 $modules=@{}
@@ -6,6 +6,7 @@ foreach($name in @('AQServer.Core','AQServer.Storage','AQServer.Platform.Windows
  $folder=Join-Path $Root ('backend/src/'+$name)
  [xml]$definition=Get-Content -LiteralPath (Join-Path $folder ($name+'.csproj')) -Raw
  $out=Join-Path $Root ('app/app/modules/'+$name+'.dll')
+ New-Item -ItemType Directory -Path (Split-Path -Parent $out) -Force | Out-Null
  $argsBuild=@('/nologo','/target:library','/platform:x64','/optimize+',('/out:'+$out))
  foreach($reference in $definition.SelectNodes("//*[local-name()='Reference']")){
   $refName=[string]$reference.Include

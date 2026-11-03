@@ -4,6 +4,9 @@ Push-Location (Join-Path $previewRoot 'web')
 try { & npm.cmd run build; if($LASTEXITCODE -ne 0){throw 'Frontend build failed'} } finally { Pop-Location }
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 $appRoot=Join-Path $previewRoot 'app'
+$fontOutput=Join-Path $appRoot 'resources/fonts'
+New-Item -ItemType Directory -Path $fontOutput -Force | Out-Null
+Copy-Item -Path (Join-Path $previewRoot 'host/fonts/*') -Destination $fontOutput -Force
 $brandOutput=Join-Path $appRoot 'resources/brand-icons'
 New-Item -ItemType Directory -Path $brandOutput -Force | Out-Null
 Copy-Item -Path (Join-Path $previewRoot 'host/brand-icons/*') -Destination $brandOutput -Recurse -Force

@@ -28,12 +28,12 @@ export function resourceChartSamples(fullSamples=[],lightSamples=[],metric){
  if(!fast.length)return fullSamples;
  const older=fullSamples.filter(p=>p.time<fast[0].time),points=new Map();
  for(const point of older)points.set(point.time,point);
- let previous=older.reduce((last,point)=>!last||point.time>last.time?point:last,null);
- for(const point of fast){
-  // A mixed full/light chart must not infer the fast gap limit from old slow samples.
-  const intervalMs=finite(point.interval)&&point.interval>0?point.interval*1000:500;
-  const interrupted=previous&&point.time-previous.time>intervalMs*3;
-  points.set(point.time,interrupted?{...point,gapBefore:true}:point);previous=point;
- }
- return [...points.values()].sort((a,b)=>a.time-b.time);
+ for(const point of fast)points.set(point.time,point);
+ const merged=[...points.values()].sort((a,b)=>a.time-b.time);
+ return merged.map((point,index)=>{
+  if(!index)return point;const previous=merged[index-1];
+  // Each edge uses both acquisition clocks, including older retained full data.
+  const cadence=p=>finite(p.interval)&&p.interval>0?p.interval*1000:3000;
+  return point.time-previous.time>Math.max(cadence(previous),cadence(point))*3?{...point,gapBefore:true}:point;
+ });
 }

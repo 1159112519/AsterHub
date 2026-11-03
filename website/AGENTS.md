@@ -54,3 +54,6 @@ Preserve preview.12 graphite as 经典黑 with its original palette and existing
 
 ## Windows preview.14
 Current Windows version0.3.0-preview.14. Storage analysis and large-file tools now operate on real files in Windows desktop; website illustrations remain explicitly labelled synthetic data. Scan is background/cancellable. AsterHub recovery area uses space and is never auto-emptied. Preserve Ubuntu0.1.3 and stable0.2.1. Use preview14 images, with storage analysis page reflecting the accepted HTML typography and softened coloured tiles.
+
+## Windows preview.19
+Current Windows preview0.3.0-preview.19. Use the approved numbered01 icon for website branding and storage preview19 illustration (synthetic data). Nine skins/icons are independently selectable; preserve classic graphite. Windows local memory maintenance is available; automatic policies default off and run only while AsterHub runs. Do not imply Linux cleanup support. Keep stable0.2.1 and Ubuntu0.1.3 unchanged.

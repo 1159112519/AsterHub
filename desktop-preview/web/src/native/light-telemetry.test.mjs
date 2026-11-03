@@ -61,6 +61,10 @@ test('light interruptions use their own cadence even when older full samples dom
  const {resourceChartSamples}=await load();const full=Array.from({length:20},(_,i)=>({time:i*3000,cpu:10,interval:3}));
  const fast=[{time:60000,cpu:20,memory:30,interval:.5},{time:60520,cpu:21,memory:31,interval:.5},{time:62520,cpu:22,memory:32,interval:.5,error:'retained diagnostic'},{time:63020,cpu:23,memory:33,interval:.5,gapBefore:true}];
  const rows=resourceChartSamples(full,fast,'cpu'),recent=rows.slice(-4);
- assert.equal(recent[0].gapBefore,true);assert.equal(recent[1].gapBefore,undefined);assert.equal(recent[2].gapBefore,true);assert.equal(recent[2].error,'retained diagnostic');assert.equal(recent[3].gapBefore,true);
+ assert.equal(recent[0].gapBefore,undefined);assert.equal(recent[1].gapBefore,undefined);assert.equal(recent[2].gapBefore,true);assert.equal(recent[2].error,'retained diagnostic');assert.equal(recent[3].gapBefore,true);
  assert.equal(fast[2].gapBefore,undefined);assert.equal(resourceChartSamples(full,fast,'gpu'),full);
 });
+
+test('continuous mixed cadence keeps a single segment while outages and explicit failures remain gaps',async()=>{const{resourceChartSamples}=await load();const full=[{time:0,cpu:10,interval:3},{time:3000,cpu:12,interval:3}],fast=[{time:5900,cpu:15,interval:.5},{time:6400,cpu:16,interval:.5}];let rows=resourceChartSamples(full,fast,'cpu');assert(rows.every(p=>!p.gapBefore));rows=resourceChartSamples(full,[{time:20000,cpu:15,interval:.5}],'cpu');assert.equal(rows.at(-1).gapBefore,true);rows=resourceChartSamples(full,[{time:5900,cpu:15,interval:.5,gapBefore:true}],'cpu');assert.equal(rows.at(-1).gapBefore,true);rows=resourceChartSamples([],[{time:1000,cpu:10,interval:.5},{time:2900,cpu:11,interval:2}],'cpu');assert.equal(rows.at(-1).gapBefore,undefined)});
+
+test('old and recent real outages both remain gaps after merging sampling clocks',async()=>{const{resourceChartSamples}=await load(),rows=resourceChartSamples([{time:0,cpu:10,interval:3},{time:30000,cpu:12,interval:3}],[{time:32900,cpu:15,interval:.5},{time:34900,cpu:16,interval:.5}],'cpu');assert.equal(rows[1].gapBefore,true);assert.equal(rows[2].gapBefore,undefined);assert.equal(rows[3].gapBefore,true)});

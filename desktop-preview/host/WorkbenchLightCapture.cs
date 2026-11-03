@@ -3,7 +3,7 @@ using System.Threading;
 
 public sealed partial class WorkbenchWindow {
  LocalLightCapture localLightCapture;volatile LocalLightReading localLightLatest;int localLightDispatchPending;
- void StartLocalLightCapture(){localLightCapture=new LocalLightCapture(ReceiveLocalLight,500);}
+ void StartLocalLightCapture(){localLightCapture=new LocalLightCapture(ReceiveLocalLight,preferences.localIntervalMs);}
  object LocalLightSnapshot(){
   var reading=localLightLatest;if(reading==null)return null;
   return new{deviceId="local",source="windows-light",sequence=reading.Sequence,time=Milliseconds(reading.TimeUtc),intervalMs=reading.IntervalMs,durationMs=reading.DurationMs,cpuSupported=reading.CpuSupported,cpu=reading.Cpu.HasValue?(object)reading.Cpu.Value:null,totalBytes=string.IsNullOrEmpty(reading.Error)?(object)reading.TotalBytes:null,availableBytes=string.IsNullOrEmpty(reading.Error)?(object)reading.AvailableBytes:null,error=reading.Error??""};

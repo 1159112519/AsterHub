@@ -1,7 +1,9 @@
+@font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
 /* Preserve the approved appearance. Components consume roles, not page guesses. */
 :root {
-  --font-interface: Inter,"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI","PingFang SC",sans-serif;
-  --font-files: "Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI",sans-serif;
+  --font-interface: Inter,"Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  --font-files: var(--font-interface);
+  --numeric-font: var(--font-interface);
   --text-control: 14px;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
   --control-icon: 16px; --control-icon-button: 18px; --control-icon-box: 32px;
