@@ -17,7 +17,9 @@ public sealed partial class WorkbenchWindow {
  static string StorageEndpoint(Server server){return StorageSnapshot.EndpointFor(server);}
  void CacheStorageSnapshot(string deviceId,StorageSnapshot snapshot){lock(storageGate){storageSnapshots[deviceId]=snapshot;foreach(var old in storageSnapshots.Keys.Where(x=>x!=deviceId).Take(Math.Max(0,storageSnapshots.Count-3)).ToArray()){storageSnapshots.Remove(old);StorageScanJob job;if(storageScans.TryGetValue(old,out job)&&job.Work!=null&&job.Work.IsCompleted)storageScans.Remove(old);}}}
  object[] StorageDirectoryRoots(Server server,string home,string current){
-  if(server.IsLocal){var roots=new List<object>();foreach(var drive in DriveInfo.GetDrives()){try{if(drive.IsReady)roots.Add(new{name=drive.Name.TrimEnd('\\'),path=drive.RootDirectory.FullName});}catch(IOException){}catch(UnauthorizedAccessException){}}return roots.ToArray();}
+  if(server.IsLocal){var roots=new List<object>();foreach(var drive in DriveInfo.GetDrives()){try{var drivePath=drive.RootDirectory.FullName;var type=drive.DriveType;string label="";long? total=null,used=null;bool available=true;
+   if(type!=DriveType.Network){available=drive.IsReady;if(available){label=drive.VolumeLabel;total=drive.TotalSize;used=Math.Max(0,drive.TotalSize-drive.TotalFreeSpace);}}
+   roots.Add(new{name=drive.Name.TrimEnd('\\'),path=drivePath,label=label,kind=type.ToString(),totalBytes=total,usedBytes=used,available=available});}catch(IOException){}catch(UnauthorizedAccessException){}}return roots.ToArray();}
   if(StoragePaths.WindowsSftp(home))return new[]{home,current}.Select(x=>StoragePaths.Resolve(false,home,x)).Where(x=>System.Text.RegularExpressions.Regex.IsMatch(x,@"^/[A-Za-z]:/")).Select(x=>x.Substring(0,4)).Distinct(StringComparer.OrdinalIgnoreCase).Select(x=>(object)new{name=x.Substring(1,2),path=x}).ToArray();
   return new object[]{new{name="远端根目录",path="/"}};
  }
@@ -25,6 +27,9 @@ public sealed partial class WorkbenchWindow {
   if(method=="storage.jobs"){lock(storageGate)return storageScans.Values.Select(x=>x.View()).ToArray();}
   var server=devices.Find(FileText(p,"deviceId",devices.Selected)).Copy();string deviceId=PreviewDevices.Id(server);
   lock(storageGate)if(storageClosing)throw new IOException("存储任务正在退出");
+  if(method=="storage.locations") {
+   await fileReadSlots.WaitAsync(fileLifetime.Token);try{return await Task.Run(async()=>{using(var c=new FileConnection(server)){await c.Connect(fileLifetime.Token).ConfigureAwait(false);return (object)new{deviceId=deviceId,isLocal=server.IsLocal,home=c.Home,pathStyle=StoragePaths.Style(server.IsLocal,c.Home),roots=StorageDirectoryRoots(server,c.Home,FileText(p,"path",c.Home))};}});}finally{fileReadSlots.Release();}
+  }
   if(method=="storage.directories") {
    await fileReadSlots.WaitAsync(fileLifetime.Token);try{return await Task.Run(async()=>{using(var c=new FileConnection(server)){await c.Connect(fileLifetime.Token).ConfigureAwait(false);string path=FileText(p,"path");path=StoragePaths.Resolve(server.IsLocal,c.Home,path);PreviewFileCopy.SafePath(c,path);int offset;int.TryParse(FileText(p,"offset","0"),out offset);offset=Math.Max(0,Math.Min(100000,offset));var rows=c.Enumerate(path,fileLifetime.Token).Where(x=>x.IsDirectory&&!x.IsLink).Skip(offset).Take(201).ToArray();return (object)new{path=path,parent=FileTools.Parent(server.IsLocal,path),offset=offset,more=rows.Length>200,pathStyle=StoragePaths.Style(server.IsLocal,c.Home),roots=StorageDirectoryRoots(server,c.Home,path),items=rows.Take(200).Select(x=>new{name=x.Name,path=x.FullPath}).ToArray()};}});}finally{fileReadSlots.Release();}
   }

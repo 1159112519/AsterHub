@@ -88,7 +88,7 @@ public sealed partial class WorkbenchWindow:Window {
    switch(method){
     case "app.openExternal":case "clipboard.write":case "clipboard.read":result=await DesktopRequest(method,p);break;
     case "app.uiReady":web.Visibility=Visibility.Visible;if(launch!=null){var grid=launch.Parent as System.Windows.Controls.Grid;if(grid!=null)grid.Children.Remove(launch);launch=null;}result=new{ready=true,elapsedMs=launchClock.ElapsedMilliseconds};break;
-    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 19",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
+    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 20",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
     case "devices.list":result=DeviceList();break;
     case "devices.select":devices.Select(Convert.ToString(p["id"]));result=DeviceList();break;
     case "devices.save":var saved=devices.Save(p);string savedId=PreviewDevices.Id(saved);Tuple<ConnectionResult,DateTime> tested;if(draftProbes.TryGetValue(ProbeIdentity(saved),out tested)){probes[savedId]=tested.Item1;probeTimes[savedId]=tested.Item2;}else{probes.Remove(savedId);probeTimes.Remove(savedId);}capture.Configure(devices.All(),interval);result=devices.Public(saved);Send(new{type="devices",value=DeviceList()});break;
@@ -106,10 +106,12 @@ public sealed partial class WorkbenchWindow:Window {
     case "process.inspect":result=await InspectProcess(p);break;
     case "process.terminate":result=await EndProcess(p);break;
     case "process.cancel":result=CancelProcess(p);break;
+    case "updates.startup.state":result=StartupUpdatePromptState();break;
+    case "updates.startup.answer":result=AnswerStartupUpdate(p);break;
     case "updates.preferences":case "updates.preferences.save":result=UpdatePreferenceRequest(method,p);break;
     case "updates.check":case "updates.download":case "updates.install":case "feedback.submit":result=await ServiceRequest(method,p);break;
     case "terminal.rename":case "terminal.list":case "terminal.create":case "terminal.read":case "terminal.write":case "terminal.resize":case "terminal.close":result=await TerminalRequest(method,p);break;
-    case "storage.directories":case "storage.trash.delete":case "storage.jobs":case "storage.scan":case "storage.control":case "storage.status":case "storage.query":case "storage.copy":case "storage.trash":case "storage.trash.list":case "storage.trash.restore":result=await StorageRequest(method,p);break;
+    case "storage.locations":case "storage.directories":case "storage.trash.delete":case "storage.jobs":case "storage.scan":case "storage.control":case "storage.status":case "storage.query":case "storage.copy":case "storage.trash":case "storage.trash.list":case "storage.trash.restore":result=await StorageRequest(method,p);break;
     case "files.list":case "files.prepare":case "files.start":case "files.transfers":case "files.cancel":case "files.undo":case "files.pick":result=await FilesRequest(method,p);break;
     case "snapshot.light":result=Requested(p).IsLocal?LocalLightSnapshot():null;break;
     case "snapshot.latest":var requested=Requested(p);var newest=capture.Latest(requested);result=newest==null?null:Snapshot(newest.Metrics,newest.TimeUtc,requested);break;

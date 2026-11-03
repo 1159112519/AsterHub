@@ -15,3 +15,6 @@
   --dialog-body-padding: 24px; --dialog-body-gap: 16px;
   --file-control-height: 37px; --file-control-radius: 9px;
 }
+
+/* Semantic utilization meters get progressively deeper without abrupt color bands. */
+.motion-meter>span:last-child{background:linear-gradient(90deg,color-mix(in srgb,var(--meter-color) var(--meter-start,30%),transparent),color-mix(in srgb,var(--meter-color) var(--meter-end,50%),transparent))}.motion-meter>.meter-echo{background:color-mix(in srgb,var(--meter-color) 23%,transparent)}

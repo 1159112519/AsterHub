@@ -1,3 +1,4 @@
+import {StartupUpdatePrompt} from './StartupUpdatePrompt';
 import {resolveAppearance,applyAppearance,nativeAppearance} from '../appearance/resolve-appearance';
 import {NumericUpdateProvider} from '../components';
 import {MemoryWorkspace} from './MemoryTools';
@@ -97,6 +98,7 @@ export default function NativeApp(){
  {inspect&&sample&&<ResourceInspector deviceId={session.selected} key={inspect.id} {...inspect} sample={sample} samples={samples} lightSamples={lightSamples} onClose={()=>setInspect(null)} onEndProcess={session.stale?null:p=>setEnding({process:p,deviceId:session.selected})} confirmationOpen={!!ending}/>}
  {ending&&<EndProcessDialog {...ending} onClose={()=>setEnding(null)}/>}
  {deviceDialog&&<DeviceDialog device={deviceDialog.id?deviceDialog:null} onClose={()=>setDeviceDialog(null)} onSaved={session.refresh}/>}
+ <StartupUpdatePrompt/>
  {dialog&&<Preferences settings={settings} info={info} initialTab={settingsTab} onClose={()=>setDialog(false)} onApplied={(next,interval,desktop)=>{setSettings(next);setDesktopPrefs(desktop);setInfo(s=>({...s,interval}))}}/>}
 
  </div></NumericUpdateProvider>;

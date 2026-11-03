@@ -13,3 +13,9 @@
 .skin-choice[style] .skin-miniature>span>b{background:var(--skin-surface);border-color:var(--skin-accent)}
 .brand-icon-choice{position:relative;flex-direction:column;height:auto!important;min-height:84px;padding:10px 10px 7px!important;gap:5px}
 .brand-icon-number{display:block;font-size:14px;color:var(--muted);line-height:18px;font-weight:500}
+
+/* Preview-only choices: no visible names or numbers. */
+.skin-choice{position:relative;min-height:76px;padding:10px}.skin-choice>span.skin-miniature:last-child,.skin-choice>span.skin-miniature{display:flex;margin:0;height:54px}.skin-selected-check{position:absolute;top:5px;right:5px;color:var(--green);background:var(--surface);border-radius:50%;padding:2px;box-sizing:content-box}.skin-choice[style] .skin-miniature>span>b:first-child{background:var(--skin-accent)}
+.brand-icon-choice{min-height:78px;padding:14px 10px!important;justify-content:center;gap:0}.brand-icon-choice img{width:46px;height:46px}
+
+.skin-choice>.skin-miniature{align-items:stretch;justify-content:flex-start}.skin-miniature>span{min-height:40px}

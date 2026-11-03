@@ -15,3 +15,5 @@ test('an already aborted request is never sent to the host',async()=>{const t=tr
 test('dispose rejects all pending operations and is idempotent',async()=>{const t=transport(),c=createClient(t);const a=c.request('a'),b=c.request('b');c.dispose();c.dispose();await Promise.all([assert.rejects(a,/关闭/),assert.rejects(b,/关闭/)]);assert.equal(c.diagnostics().pending,0)});
 
 test('light capture notifications use a separate channel from full capture and device-list events',()=>{const t=transport(),c=createClient(t);let full=0,light=0;c.subscribe(()=>full++);c.subscribe(()=>light++,'capture-light');t.reply({type:'capture-light',value:{deviceId:'local'}});assert.equal(light,1);assert.equal(full,0);c.dispose()});
+
+test('startup update prompts are isolated from snapshots and stop after unsubscribe',()=>{const t=transport(),c=createClient(t);let prompts=0,captures=0;c.subscribe(()=>captures++);const off=c.subscribe(value=>{assert.equal(value.state,'offer');prompts++},'startup-update');t.reply({type:'startup-update',value:{state:'offer'}});off();t.reply({type:'startup-update',value:{state:'offer'}});assert.equal(prompts,1);assert.equal(captures,0);c.dispose()});

@@ -57,3 +57,6 @@ Current Windows version0.3.0-preview.14. Storage analysis and large-file tools n
 
 ## Windows preview.19
 Current Windows preview0.3.0-preview.19. Use the approved numbered01 icon for website branding and storage preview19 illustration (synthetic data). Nine skins/icons are independently selectable; preserve classic graphite. Windows local memory maintenance is available; automatic policies default off and run only while AsterHub runs. Do not imply Linux cleanup support. Keep stable0.2.1 and Ubuntu0.1.3 unchanged.
+
+## Windows preview.20
+Current preview0.3.0-preview.20 fixes real disk/folder scope selection, cache impact feedback, label-free icon/skin previews, circular tray states and themed startup update prompts. Keep stable0.2.1 and Ubuntu0.1.3 independent. Storage preview19 illustration remains synthetic; it does not show current native path selection.

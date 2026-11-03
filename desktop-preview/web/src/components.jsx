@@ -29,9 +29,9 @@ function AnimatedNumber({value,decimals=0,suffix='',className='',state='ready'})
 export function Meter({value,color='var(--green)',label}){
  const preference=useMotionPreference(),fill=useRef(null),echo=useRef(null),followers=useRef([]),positions=useRef(null),ratio=Math.max(0,Math.min(Number.isFinite(value)?value:0,100))/100;
  if(!positions.current)positions.current=[ratio,ratio];
- useLayoutEffect(()=>{followers.current=[fill.current,echo.current].map((node,i)=>{const paint=next=>{positions.current[i]=next;node.style.transform=`scaleX(${next})`};paint(positions.current[i]);return createValueFollower(positions.current[i],paint,{epsilon:.0001,tau:i?.23:.17})});return()=>{followers.current.forEach(f=>f.dispose());followers.current=[]}},[]);
+ useLayoutEffect(()=>{followers.current=[fill.current,echo.current].map((node,i)=>{const paint=next=>{positions.current[i]=next;node.style.transform=`scaleX(${next})`;if(i===0){node.style.setProperty("--meter-start",(25+next*32)+"%");node.style.setProperty("--meter-end",(40+next*50)+"%")}};paint(positions.current[i]);return createValueFollower(positions.current[i],paint,{epsilon:.0001,tau:i?.23:.17})});return()=>{followers.current.forEach(f=>f.dispose());followers.current=[]}},[]);
  useLayoutEffect(()=>{followers.current.forEach(f=>f.target(ratio,{immediate:preference}))},[ratio,preference]);
- return <div className="meter motion-meter" aria-label={label} role="meter" aria-valuenow={Number.isFinite(value)?value:undefined} aria-valuemin={0} aria-valuemax={100}><span ref={echo} className="meter-echo" style={{background:color}}/><span ref={fill} style={{background:color}}/></div>
+ return <div className="meter motion-meter" style={{"--meter-color":color}} aria-label={label} role="meter" aria-valuenow={Number.isFinite(value)?value:undefined} aria-valuemin={0} aria-valuemax={100}><span ref={echo} className="meter-echo"/><span ref={fill}/></div>
 }
 // Store the displayed Bezier control points, not the last requested samples.
 // Subdivision matches topology exactly, without changing the visible curve.
