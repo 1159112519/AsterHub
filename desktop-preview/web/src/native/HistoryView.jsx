@@ -1,3 +1,5 @@
+import {BoundedCache} from '../foundation/bounded-cache.js';
+import {createRequestScope} from '../foundation/request-scope.js';
 import React,{memo,useCallback,useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {Clock} from 'lucide-react';
 import {gsap} from 'gsap';
@@ -32,21 +34,21 @@ const HistoryMetricChart=memo(function HistoryMetricChart({archive,metric,onSele
 
 export const HistoryView=memo(function HistoryView({deviceId}){
  const [minutes,setMinutes]=useState(60),[metric,setMetric]=useState('cpu'),[archive,setArchive]=useState(()=>prepareArchive([],60)),[total,setTotal]=useState(0),[current,setCurrent]=useState(null),[index,setIndex]=useState(null),[open,setOpen]=useState(false),[reading,setReading]=useState(false),[fullDetails,setFullDetails]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const cache=useRef(new Map());const generation=useRef(0),request=useRef(0),region=useRef(null),viewport=useRef(null),previous=useRef(null);
+ const cache=useRef(null),requests=useRef(null);if(!cache.current)cache.current=new BoundedCache({maxEntries:64});if(!requests.current)requests.current=createRequestScope();const generation=useRef(0),request=useRef(0),region=useRef(null),viewport=useRef(null),previous=useRef(null);
  const preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion);
  const query=useCallback(async()=>{
-  const seq=++generation.current;request.current++;cache.current.clear();setOpen(false);setCurrent(null);setIndex(null);setReading(false);setFullDetails(false);setBusy(true);setError('');
-  try{const result=await native.request('history.query',{minutes,deviceId});if(seq!==generation.current)return;
+  const seq=++generation.current,ticket=requests.current.begin('range');requests.current.cancel('detail');request.current++;cache.current.clear();setOpen(false);setCurrent(null);setIndex(null);setReading(false);setFullDetails(false);setBusy(true);setError('');
+  try{const result=await native.request('history.query',{minutes,deviceId},{signal:ticket.signal});if(seq!==generation.current||!ticket.isCurrent())return;
    setArchive(prepareArchive(result.points,minutes));setTotal(result.total??result.points.length);setCurrent(null);setIndex(null);setOpen(false);request.current++;
-  }catch(e){if(seq===generation.current)setError(e.message)}finally{if(seq===generation.current)setBusy(false)}
+  }catch(e){if(seq===generation.current&&e.name!=='AbortError')setError(e.message)}finally{if(seq===generation.current&&ticket.isCurrent())setBusy(false);ticket.finish()}
  },[minutes,deviceId]);
- useEffect(()=>{query();return()=>{generation.current++;request.current++}},[query]);
+ useEffect(()=>{query();return()=>{generation.current++;request.current++;requests.current.cancelAll();cache.current.clear()}},[query]);
  const choose=useCallback(async(point,i)=>{
-  const seq=++request.current,key=deviceId+':'+point.id,cached=cache.current.get(key);setError('');setIndex(i);setOpen(true);setFullDetails(false);setCurrent(cached||null);setReading(!cached);if(cached)return;
-  try{const value=await native.request('history.read',{key:point.id,deviceId});if(seq!==request.current)return;const sample=normalize(value);cache.current.set(key,sample);if(cache.current.size>64)cache.current.delete(cache.current.keys().next().value);setCurrent(sample)}catch(e){if(seq===request.current)setError(e.message)}finally{if(seq===request.current)setReading(false)}
+  const ticket=requests.current.begin('detail'),seq=++request.current,key=deviceId+':'+point.id,cached=cache.current.get(key);setError('');setIndex(i);setOpen(true);setFullDetails(false);setCurrent(cached||null);setReading(!cached);if(cached){ticket.finish();return}
+  try{const value=await native.request('history.read',{key:point.id,deviceId},{signal:ticket.signal});if(seq!==request.current||!ticket.isCurrent())return;const sample=normalize(value);cache.current.set(key,sample);setCurrent(sample)}catch(e){if(seq===request.current&&e.name!=='AbortError')setError(e.message)}finally{if(seq===request.current&&ticket.isCurrent())setReading(false);ticket.finish()}
  },[deviceId]);
  const close=useCallback((focus=false)=>{setOpen(false);if(focus)region.current?.querySelector('.history-trend-panel:not([aria-hidden="true"]) .chart')?.focus({preventScroll:true})},[]);
- const changeMetric=id=>{if(id===metric)return;request.current++;setMetric(id);setCurrent(null);setIndex(null);setOpen(false);setReading(false);setFullDetails(false)};
+ const changeMetric=id=>{if(id===metric)return;requests.current.cancel('detail');request.current++;setMetric(id);setCurrent(null);setIndex(null);setOpen(false);setReading(false);setFullDetails(false)};
  useEffect(()=>{if(!open)return;const outside=e=>{if(!region.current?.contains(e.target))close()},escape=e=>{if(e.key==='Escape')close(true)};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape)}},[open,close]);
  // Only an explicit metric/range/archive change enters this effect. Live captures,
  // hovering and selecting a snapshot must never restart the history transition.

@@ -1,7 +1,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./native/NativeApp.jsx";
+import "./foundation/tokens.css";
 import "./styles.css";
+import "./foundation/ui.css";
 import "./refinements.css";
 import "./native/native.css";
 import "./motion-preview5.css";

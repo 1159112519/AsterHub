@@ -1,25 +1,20 @@
-import React,{useLayoutEffect,useRef,useState} from 'react';
+import React,{useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {gsap} from 'gsap';
-import {motion,motionOptions,reducedMotion} from './motion';
+import {motion,motionOptions,reducedMotion,subscribeReducedMotion} from './motion';
 
 // One retained surface: interrupted exits resume in place, never stack another copy.
 // The outer layer owns position; the inner layer owns presence. Their tweens cannot conflict.
 export function MotionSurface({open,position,changeKey,children,className='',style={},...props}){
- const [present,setPresent]=useState(open),[preference,setPreference]=useState(reducedMotion);
+ const [present,setPresent]=useState(open),preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion);
  const frame=useRef(null),surface=useRef(null),content=useRef(null),last=useRef(null),snapshot=useRef(children),phase=useRef('closed');
  if(open)snapshot.current=children;
- useLayoutEffect(()=>{
-  const media=matchMedia('(prefers-reduced-motion: reduce)'),update=()=>setPreference(reducedMotion());
-  const observer=new MutationObserver(update);observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion']});media.addEventListener('change',update);
-  return()=>{observer.disconnect();media.removeEventListener('change',update)};
- },[]);
  useLayoutEffect(()=>{
   if(open&&!present){setPresent(true);return}
   if(!present)return;
   const outer=frame.current,el=surface.current,body=content.current;
   const previous=last.current,was=phase.current;let alive=true;const tweens=[];
   const setPhase=value=>{phase.current=value;outer.dataset.motionState=value};
-  const finish=()=>{if(!alive)return;setPhase('closed');last.current=null;setPresent(false)};
+  const finish=()=>{if(!alive)return;setPhase('closed');last.current=null;snapshot.current=null;setPresent(false)};
   const options=kind=>({...motionOptions(kind),duration:preference?0:motion.duration[kind]});
   if(!open){
    setPhase('exiting');tweens.push(gsap.to(el,{opacity:0,scale:motion.amplitude.surfaceScale,...options('exit'),ease:motion.ease.leave,onComplete:finish}));

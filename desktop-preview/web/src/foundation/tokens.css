@@ -1,0 +1,14 @@
+/* Preserve the approved appearance. Components consume roles, not page guesses. */
+:root {
+  --font-interface: Inter,"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI","PingFang SC",sans-serif;
+  --font-files: "Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI",sans-serif;
+  --text-control: 14px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+  --control-icon: 16px; --control-icon-button: 18px; --control-icon-box: 32px;
+  --control-padding-y: 9px; --control-padding-x: 14px; --control-gap: 7px;
+  --radius-control: 10px; --radius-icon-control: 8px;
+  --tool-launcher-height: 96px;
+  --shadow-tool-hover: 0 5px 14px #0000000d;
+  --dialog-body-padding: 24px; --dialog-body-gap: 16px;
+  --file-control-height: 37px; --file-control-radius: 9px;
+}

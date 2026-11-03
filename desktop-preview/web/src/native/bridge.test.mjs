@@ -7,3 +7,9 @@ test('missing host fails rather than providing fixture data',async()=>{const c=c
 test('native error propagates without replacing current snapshot',async()=>{const t=transport(),c=createClient(t),p=c.request('history.read');t.reply({id:t.out[0].id,ok:false,error:'记录已不可用'});await assert.rejects(p,/不可用/);c.dispose()});
 
 test('device-list events cannot be interpreted as capture snapshots',()=>{const t=transport(),c=createClient(t);let captures=0,devices=0;c.subscribe(()=>captures++);const off=c.subscribe(()=>devices++,'devices');t.reply({type:'devices',value:{items:[]}});assert.equal(captures,0);assert.equal(devices,1);off();t.reply({type:'devices',value:{items:[]}});assert.equal(devices,1);c.dispose()});
+
+
+test('disposed client cannot create new requests or retain new subscribers',async()=>{const t=transport(),c=createClient(t);c.dispose();await assert.rejects(c.request('late'),/关闭/);c.subscribe(()=>{});assert.equal(t.out.length,0);assert.deepEqual(c.diagnostics(),{pending:0,subscribers:0,disposed:true})});
+test('aborting a wait clears its slot and ignores the late native reply',async()=>{const t=transport(),c=createClient(t),a=new AbortController();const waiting=c.request('history.query',{}, {signal:a.signal,timeout:5000});a.abort();await assert.rejects(waiting,{name:'AbortError'});assert.equal(c.diagnostics().pending,0);t.reply({id:t.out[0].id,ok:true,result:'late'});c.dispose()});
+test('an already aborted request is never sent to the host',async()=>{const t=transport(),c=createClient(t),a=new AbortController();a.abort();await assert.rejects(c.request('storage.query',{}, {signal:a.signal}),{name:'AbortError'});assert.equal(t.out.length,0);c.dispose()});
+test('dispose rejects all pending operations and is idempotent',async()=>{const t=transport(),c=createClient(t);const a=c.request('a'),b=c.request('b');c.dispose();c.dispose();await Promise.all([assert.rejects(a,/关闭/),assert.rejects(b,/关闭/)]);assert.equal(c.diagnostics().pending,0)});

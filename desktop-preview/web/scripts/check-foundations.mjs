@@ -1,0 +1,13 @@
+import fs from 'node:fs/promises';import path from 'node:path';import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../src');const errors=[];
+const storage=await fs.readFile(path.join(root,'native/StorageTools.jsx'),'utf8');
+if(/gsap\.(?:to|fromTo|timeline)\(/.test(storage))errors.push('Storage navigation must use the shared semantic motion owner');
+const surface=await fs.readFile(path.join(root,'motion-surface.jsx'),'utf8');
+if(/new MutationObserver|matchMedia\(/.test(surface))errors.push('MotionSurface must share the motion preference watcher');
+const directory=await fs.readFile(path.join(root,'foundation/directory-motion.js'),'utf8');
+if(/duration\s*:\s*[.\d]/.test(directory))errors.push('Directory timing belongs to the central motion contract');
+const css=await fs.readFile(path.join(root,'foundation/ui.css'),'utf8');
+if(/#[0-9a-f]{3,8}\b/i.test(css))errors.push('Shared controls must use skin semantics');
+const buttons=await fs.readFile(path.join(root,'foundation/ui.jsx'),'utf8');
+if(!buttons.includes('aria-busy')||!buttons.includes('button-content'))errors.push('Shared action contract missing');
+if(errors.length){console.error(errors.join('\n'));process.exitCode=1}else console.log('Foundation adoption checks passed (migrated surfaces only).');

@@ -1,4 +1,4 @@
-import {isKnownProcessName} from '../processes';
+import {isKnownProcessName} from '../processes.js';
 export const number=value=>{if(value===null||value===undefined||value===''||String(value).trim()==='—')return null;const match=String(value).match(/-?\d+(?:\.\d+)?/);return match?Number(match[0]):null};
 export const percent=value=>value==null?'—':value.toFixed(1)+'%';
 export function bytes(value,rate=false){if(value==null||!Number.isFinite(value))return '—';let n=value,i=0;const units=['B','KiB','MiB','GiB','TiB'];while(n>=1024&&i<4){n/=1024;i++}return n.toFixed(i?1:0)+' '+units[i]+(rate?'/s':'')}

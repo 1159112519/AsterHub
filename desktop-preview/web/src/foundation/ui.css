@@ -1,0 +1,26 @@
+.button-content {display:inline-flex;align-items:center;justify-content:center;gap:inherit;min-width:0}
+.button-content>svg,.button>svg {flex:none;display:block}
+.foundation-toolbar {display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3);min-width:0}
+.foundation-toolbar[data-align="end"] {justify-content:flex-end}
+.foundation-spinner {animation:foundation-spin .9s linear infinite}
+@keyframes foundation-spin {to {transform:rotate(360deg)}}
+:root[data-motion="reduced"] .foundation-spinner {animation:none}
+@media (prefers-reduced-motion:reduce) {.foundation-spinner{animation:none}}
+
+.foundation-monitoring{min-width:0}
+.foundation-tools{display:grid;gap:var(--space-4);min-width:0}
+.foundation-tools>h2{font-size:18px;font-weight:500;line-height:1.4;margin:0}
+.foundation-tool-view{display:flex;flex-direction:column;gap:var(--space-6);min-width:0;transform-origin:50% 0}
+.foundation-tool-launcher{transition:background var(--motion-surface,.28s) var(--ease),border-color var(--motion-surface,.28s) var(--ease),box-shadow var(--motion-surface,.28s) var(--ease),transform var(--motion-surface,.28s) var(--ease)}
+.foundation-tool-launcher:hover{background:var(--surface2);border-color:var(--line);box-shadow:var(--shadow-tool-hover);transform:translateY(-2px)}
+.foundation-tool-launcher:active{transform:translateY(0) scale(.996)}
+.foundation-tool-launcher:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.foundation-tool-arrow{margin-left:auto;color:var(--muted);font-size:24px;transition:transform var(--motion-surface,.28s) var(--ease)}
+.foundation-tool-launcher:hover .foundation-tool-arrow{transform:translateX(3px)}
+.modal[data-layout="form"] .foundation-dialog-body{display:grid;gap:var(--dialog-body-gap);padding:var(--dialog-body-padding);font-size:14px;line-height:1.6;min-width:0}
+.foundation-dialog-body>.field,.foundation-dialog-body>p{margin:0}
+.foundation-dialog-body>.button{justify-self:start}
+.modal[data-layout="form"]>.dialog-actions{gap:var(--space-3);padding:16px var(--dialog-body-padding)}
+:root[data-motion="reduced"] .foundation-tool-launcher,:root[data-motion="reduced"] .foundation-tool-arrow{transition:none;transform:none}
+@media(prefers-reduced-motion:reduce){.foundation-tool-launcher,.foundation-tool-arrow{transition:none!important;transform:none!important}}
+@media(max-width:760px){.modal[data-layout="form"]{--dialog-body-padding:20px}}

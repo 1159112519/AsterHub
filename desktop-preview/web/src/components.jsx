@@ -1,3 +1,5 @@
+import {measurementState} from './foundation/measurement.js';
+import './foundation/ui.css';
 import {createPortal} from 'react-dom';
 import {ThemedSelect} from './themed-select';
 import {getChartScale,setChartScale,subscribeChartScale,percentageMaximum,percentageTicks} from './chart-scale';
@@ -10,14 +12,15 @@ import React,{useEffect,useState,useRef,useMemo,useLayoutEffect,useSyncExternalS
 import {gsap} from 'gsap';
 import {X,ChevronDown,ArrowUpRight,MoreHorizontal} from 'lucide-react';
 import {minutesLabel} from './data';
-export function IconButton({icon:Icon,label,onClick,className='',...props}){return <button type="button" aria-label={label} title={label} className={`icon-button ${className}`} onClick={onClick} {...props}><Icon size={18}/></button>}
-export function Button({children,icon:Icon,tone='',className='',...props}){return <button type="button" className={`button ${tone} ${className}`} {...props}>{Icon&&<Icon size={16}/>}<span>{children}</span></button>}
-export function NumberValue(props){return Number.isFinite(props.value)?<AnimatedNumber {...props}/>:<span className={`number ${props.className||''}`}>—</span>}
+export {Button,IconButton} from './foundation/ui';
+import {Button,IconButton,DialogContent} from './foundation/ui';
+import {useDismissableLayer} from './foundation/overlay';
+export function NumberValue({supported=true,stale=false,...props}){const state=measurementState(props.value,{supported,stale});return state==='ready'||state==='stale'?<AnimatedNumber {...props} state={state}/>:<span data-value-state={state} className={`number ${props.className||''}`}>—</span>}
 function useMotionPreference(){return useSyncExternalStore(subscribeReducedMotion,reducedMotion)}
-function AnimatedNumber({value,decimals=0,suffix='',className=''}){
+function AnimatedNumber({value,decimals=0,suffix='',className='',state='ready'}){
  const preference=useMotionPreference(),ref=useRef(null),current=useRef(value),initialText=useRef(value.toFixed(decimals));
  useLayoutEffect(()=>{if(preference){current.current=value;if(ref.current)ref.current.textContent=value.toFixed(decimals);return}const obj={v:current.current};if(ref.current)ref.current.textContent=obj.v.toFixed(decimals);const t=gsap.to(obj,{v:value,...motionOptions('value'),ease:'power2.inOut',onUpdate(){current.current=obj.v;if(ref.current)ref.current.textContent=obj.v.toFixed(decimals)}});return()=>t.kill()},[value,decimals,preference]);
- return <span className={`number ${className}`}><span ref={ref}>{initialText.current}</span>{suffix&&<small>{suffix}</small>}</span>
+ return <span data-value-state={state} className={`number ${className}`}><span ref={ref}>{initialText.current}</span>{suffix&&<small>{suffix}</small>}</span>
 }
 export function Meter({value,color='var(--green)',label}){
  const preference=useMotionPreference(),fill=useRef(null),echo=useRef(null),mounted=useRef(false),positions=useRef([0,0]),ratio=Math.max(0,Math.min(Number.isFinite(value)?value:0,100))/100;
@@ -111,8 +114,13 @@ export function Chart({series,height=220,onSelect,selected=null,compact=false,st
 }
 export function SectionTitle({children,meta,action}){return <div className="section-title"><div><h2>{children}</h2>{meta&&<span className="section-meta">{meta}</span>}</div>{action}</div>}
 export function Empty({icon:Icon,title,description,action}){return <div className="empty-state"><div className="empty-icon"><Icon size={28}/></div><h3>{title}</h3><p>{description}</p>{action}</div>}
-export function Modal({title,children,onClose,wide=false,className=''}){const ref=useRef(null);useEffect(()=>{const previous=document.activeElement;const handler=e=>{if(e.key==='Escape')onClose();if(e.key==='Tab'&&ref.current){const all=[...ref.current.querySelectorAll('button:not(:disabled),input,select,textarea,[tabindex="0"]')].filter(x=>x.offsetParent!==null);if(!all.length)return;const first=all[0],last=all.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};document.addEventListener('keydown',handler);ref.current?.querySelector('button,input')?.focus();return ()=>{document.removeEventListener('keydown',handler);previous?.focus()}},[]);return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className={`modal ${wide?'wide':''} ${className}`} ref={ref} role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><IconButton icon={X} label="关闭窗口" onClick={onClose}/></header>{children}</section></div>}
-export function Dropdown({label,children,icon:Icon=ChevronDown,className=''}){const [open,setOpen]=useState(false),ref=useRef(null);useEffect(()=>{function close(e){if(!ref.current?.contains(e.target)||e.key==='Escape')setOpen(false)}document.addEventListener('pointerdown',close);document.addEventListener('keydown',close);return ()=>{document.removeEventListener('pointerdown',close);document.removeEventListener('keydown',close)}},[]);return <div className={`dropdown ${className}`} ref={ref}><button className={label?'button quiet':'icon-button'} aria-label={label||'更多操作'} aria-haspopup="menu" aria-expanded={open} onClick={()=>setOpen(!open)}>{label&&<span>{label}</span>}<Icon size={label?15:18}/></button>{open&&<div className="dropdown-menu" role="menu" onClick={()=>setOpen(false)}>{children}</div>}</div>}
+export function Modal({title,children,onClose,wide=false,className='',layout='custom'}){const ref=useRef(null);const layer=useDismissableLayer({refs:[ref],onDismiss:onClose});useEffect(()=>{const previous=document.activeElement;const handler=e=>{if(e.defaultPrevented||document.activeElement?.closest('[role="dialog"]')!==ref.current)return;if(e.key==='Tab'&&ref.current){const all=[...ref.current.querySelectorAll('button:not(:disabled),input,select,textarea,[tabindex="0"]')].filter(x=>x.offsetParent!==null);if(!all.length)return;const first=all[0],last=all.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};document.addEventListener('keydown',handler);ref.current?.querySelector('button,input')?.focus();return ()=>{document.removeEventListener('keydown',handler);previous?.focus()}},[]);return <div className="modal-backdrop"><section className={`modal ${wide?'wide':''} ${className}`} ref={ref} role="dialog" data-layout={layout} aria-modal="true" aria-label={title}><header><h2>{title}</h2><IconButton icon={X} label="关闭窗口" onClick={onClose}/></header>{layout==='form'?<DialogContent>{children}</DialogContent>:children}</section></div>}
+export function FormDialog(props){return <Modal {...props} layout="form"/>}
+export function Dropdown({label,children,icon:Icon=ChevronDown,className=''}){
+ const [open,setOpen]=useState(false),ref=useRef(null);
+ useDismissableLayer({open,refs:[ref],onDismiss:()=>setOpen(false)});
+ return <div className={`dropdown ${className}`} ref={ref}><button type="button" className={label?'button quiet':'icon-button'} aria-label={label||'更多操作'} aria-haspopup="menu" aria-expanded={open} onClick={()=>setOpen(!open)}>{label&&<span>{label}</span>}<Icon size={label?15:18}/></button>{open&&<div className="dropdown-menu" role="menu" onClick={()=>setOpen(false)}>{children}</div>}</div>;
+}
 
 
 function AxisControl({axisMode,clearHover,inHeading=false}){return <div className={'chart-axis-control'+(inHeading?' in-heading':'')} onPointerEnter={clearHover} onFocusCapture={clearHover} onClick={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()}><ThemedSelect aria-label="曲线纵轴范围" value={axisMode} onChange={e=>setChartScale(e.target.value)}><option value="auto">自动范围</option><option value="full">固定 0–100%</option></ThemedSelect></div>}

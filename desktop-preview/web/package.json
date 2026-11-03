@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build --outDir ../app/resources/workbench --emptyOutDir"
+    "build": "vite build --outDir ../app/resources/workbench --emptyOutDir",
+    "test:foundation": "node --test src/foundation/*.test.mjs src/native/bridge.test.mjs src/native/terminal-device-state.test.mjs",
+    "check:foundation": "node scripts/check-foundations.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",

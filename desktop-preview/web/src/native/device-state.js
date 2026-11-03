@@ -1,5 +1,5 @@
 // Transport state must never be interpreted as hardware discovery.
-import {normalize} from './telemetry';
+import {normalize} from './telemetry.js';
 export function emptySample(deviceId){return {deviceId,time:null,cpu:null,memory:null,memUsed:null,memTotal:null,cores:[],gpus:[],processes:[],volumes:[],hardware:null,network:null,storage:null,unavailable:true}}
 export function connectionMessage(text=''){
  if(/MaxStart|identification string/i.test(text))return '服务器暂时无法接受新的 SSH 连接，正在稍后重试。';

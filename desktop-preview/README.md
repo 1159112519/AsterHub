@@ -1,6 +1,6 @@
 # AsterHub Windows 工作台预览
 
-当前候选版本 **0.3.0-preview.12**。这是 Windows WPF + WebView2 迁移候选，与 `desktop/` 稳定版并行；Ubuntu 保持独立版本。
+当前候选版本 **0.3.0-preview.15**。这是 Windows WPF + WebView2 迁移候选，与 `desktop/` 稳定版并行；Ubuntu 保持独立版本。
 
 ## 模块
 
@@ -30,3 +30,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1
 原生终端复用 ConPTY/SSH；当前实际交互回归覆盖本机 PowerShell，SSH 需在目标服务器验证。双栏内部拖放为复制，支持文件和文件夹；Windows 外部拖入无法安全取得完整路径时使用文件/文件夹选择器。撤销仅删除本次新建且未变化的文件，不恢复已覆盖文件。
 
 检查更新使用发行方维护的固定预览地址，验证 RSA 签名、安装包长度与 SHA256；下载确认后退出程序、安装并重新启动。活动传输应先完成或取消。反馈仅提交用户填写内容和版本平台信息。
+
+## 基础框架维护
+
+页面布局与交互按 [产品基础框架](../docs/architecture/ASTERHUB-FOUNDATIONS.md) 和 [功能接入流程](../docs/architecture/FEATURE-WORKFLOW.md) 执行。公共能力见 `web/src/foundation/README.md`；提交前执行 `npm run test:foundation`、`npm run check:foundation` 及相关实际页面回归。

@@ -9,3 +9,7 @@ installer/payload-*/
 installer/*result.json
 installer/compiler.log
 AsterHub-Setup-*.exe
+
+# Generated copies of the source brand assets.
+app/resources/workbench/brand-icons/
+app/resources/brand-icons/
