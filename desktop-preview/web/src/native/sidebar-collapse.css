@@ -1,17 +1,31 @@
-/* Keep a named device selector in collapsed navigation. */
-.native-workbench.app-shell{transition:grid-template-columns var(--motion-tool,.38s) var(--ease)}
-.native-workbench .sidebar .brand{position:relative;gap:10px;padding-right:28px}
-.native-workbench .brand>.sidebar-collapse-toggle{display:flex;position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:30px;height:32px;margin:0;color:var(--muted)}
+/* The content grid changes once. Only the sidebar's decorative layer interpolates. */
+.native-workbench.app-shell{--sidebar-expanded-width:230px;--sidebar-collapsed-ratio:.3652173913;transition:none}
+.native-workbench>.sidebar{position:relative;isolation:isolate;background:transparent;border-right:0;padding:22px 12px 12px;transition:none}
+.native-workbench>.sidebar::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--sidebar-expanded-width);background:var(--sidebar);box-shadow:inset -1px 0 var(--line-soft);transform:scaleX(1);transform-origin:left center;transition:transform var(--motion-layout,.28s) var(--ease,cubic-bezier(.22,1,.36,1));pointer-events:none;z-index:-1}
 .native-workbench.sidebar-collapsed{grid-template-columns:84px minmax(0,1fr)}
-.native-workbench.sidebar-collapsed>.sidebar{padding:22px 10px 12px;overflow:visible;min-width:0;transform:none;position:relative;width:auto}
-.sidebar-collapsed .sidebar .brand{padding:0;margin-bottom:18px;min-height:65px;justify-content:center;align-items:flex-start}
-.sidebar-collapsed .sidebar-brand-name{display:none}.sidebar-collapsed .brand>.sidebar-collapse-toggle{top:auto;bottom:-6px;right:17px;transform:none}
+.native-workbench.sidebar-collapsed>.sidebar{padding:22px 12px 12px;overflow:visible;min-width:0;transform:none;position:relative;width:auto}
+.native-workbench.sidebar-collapsed>.sidebar::before{transform:scaleX(var(--sidebar-collapsed-ratio))}
+/* The absolute toggle is excluded from brand centering and keeps the same top in both states. */
+.native-workbench .sidebar .brand{position:relative;gap:10px;height:36px;min-height:36px;padding:0;margin-bottom:18px;justify-content:center;align-items:center;flex:none}
+.native-workbench .brand>.sidebar-collapse-toggle{display:flex;position:absolute;right:-10px;top:2px;bottom:auto;transform:none;width:28px;height:32px;margin:0;color:var(--muted);z-index:2}
+.native-workbench .sidebar .sidebar-brand-name{opacity:1;white-space:nowrap;flex:none;transition:opacity var(--motion-exit,.18s) var(--ease,cubic-bezier(.22,1,.36,1))}
+.native-workbench.sidebar-collapsed .sidebar .brand{justify-content:flex-start}
+.native-workbench.sidebar-collapsed .sidebar .brand-mark{width:32px;flex:0 0 32px}
+.native-workbench.sidebar-collapsed .sidebar-brand-name{position:absolute;left:80px;opacity:0;pointer-events:none}
+.native-workbench.sidebar-collapsed .brand>.sidebar-collapse-toggle{top:2px;bottom:auto;right:-4px;transform:none}
+.native-workbench .sidebar .nav-item{position:relative}
+.native-workbench .sidebar .nav-item>span{width:calc(var(--sidebar-expanded-width) - 76px);white-space:nowrap;opacity:1;transition:opacity var(--motion-exit,.18s) var(--ease,cubic-bezier(.22,1,.36,1))}
 .sidebar-collapsed .sidebar .sidebar-section-label{font-size:0;margin:12px 10px 8px;height:1px;padding:0;background:var(--line-soft)}
-.sidebar-collapsed .sidebar .nav-item{justify-content:center;padding:12px;gap:0;min-height:46px;position:relative}
-.sidebar-collapsed .sidebar .nav-item>span{display:none}.sidebar-collapsed .sidebar .nav-item>svg{width:21px;height:21px;margin:0;flex:none}
+.sidebar-collapsed .sidebar .nav-item{justify-content:center;padding:12px;gap:0;min-height:46px}
+.native-workbench.sidebar-collapsed .sidebar .nav-item>span{position:absolute;left:42px;opacity:0;pointer-events:none}
+.sidebar-collapsed .sidebar .nav-item>svg{width:21px;height:21px;margin:0;flex:none}
 .sidebar-collapsed .sidebar-bottom{padding-top:12px}.collapsed-device>button{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;padding:10px 2px;border-radius:12px;color:var(--text);font-size:14px;background:var(--surface2)}
-.collapsed-device>button>span{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.collapsed-device>button>svg:last-child{display:none}
+.collapsed-device>button>span{font-size:15px;line-height:21px;font-weight:550;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.collapsed-device>button>svg:last-child{display:none}
 .sidebar-device-popover{position:fixed;left:92px;top:94px;width:280px;max-height:calc(100vh - 130px);overflow:auto;padding:18px 12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-popover);z-index:150;animation:device-picker-in var(--motion-exit,.18s) var(--ease)}
 @keyframes device-picker-in{from{opacity:0;transform:translateX(-5px) scale(.98)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){.native-workbench.app-shell{transition:none}.sidebar-device-popover{animation:none}}
-html[data-motion=reduced] .native-workbench.app-shell{transition:none}
+@media(max-width:1300px){.native-workbench.app-shell{--sidebar-expanded-width:208px;--sidebar-collapsed-ratio:.4038461538}}
+@media(max-width:1100px){.native-workbench.app-shell{--sidebar-expanded-width:210px;--sidebar-collapsed-ratio:.4}}
+@media(max-width:900px){.native-workbench.app-shell{--sidebar-expanded-width:190px;--sidebar-collapsed-ratio:.4421052632}}
+@media(prefers-reduced-motion:reduce){.native-workbench>.sidebar::before,.native-workbench .sidebar .sidebar-brand-name,.native-workbench .sidebar .nav-item>span{transition:none}.sidebar-device-popover{animation:none}}
+html[data-motion=reduced] .native-workbench>.sidebar::before,html[data-motion=reduced] .native-workbench .sidebar .sidebar-brand-name,html[data-motion=reduced] .native-workbench .sidebar .nav-item>span{transition:none}
+html[data-motion=reduced] .sidebar-device-popover{animation:none}

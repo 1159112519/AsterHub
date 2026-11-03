@@ -139,3 +139,13 @@
 .storage-tools .storage-tile.selected{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
 
 .storage-path-picker{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}.storage-path-picker header,.storage-path-picker footer{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2)}.storage-path-picker header>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.storage-path-picker footer{justify-content:flex-end}.storage-path-folders{max-height:250px;overflow:auto;padding:6px}.storage-path-folders>button{display:flex;align-items:center;gap:10px;padding:11px 12px;width:100%;border:0;border-radius:8px;background:none;color:var(--text);font:inherit;text-align:left}.storage-path-folders>button:hover{background:var(--hover)}.storage-path-folders>button>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.storage-path-folders>p{padding:12px;color:var(--muted)}.storage-recycle-list>div{gap:12px}.storage-recycle-list>div>div{flex:1;min-width:0}.storage-map-old{contain:strict;box-shadow:none!important}
+
+/* A restrained splitter preserves the existing tree/map surfaces. */
+.storage-tools .storage-folder-list{width:var(--storage-tree-width,220px);box-sizing:border-box;border-right:0;min-width:0}
+.storage-tree-separator{position:relative;flex:0 0 6px;cursor:col-resize;touch-action:none;user-select:none;outline:none;background:transparent}
+.storage-tree-separator::after{content:"";position:absolute;inset:0 2px;background:var(--line-soft,var(--line));transition:background .15s}
+.storage-tree-separator:hover::after,.storage-tree-separator:focus-visible::after,.storage-tree-separator[data-resizing]::after{background:var(--green)}
+.storage-tree-separator:focus-visible{box-shadow:inset 0 0 0 1px var(--green)}
+.storage-analysis-layout:has(.storage-tree-separator[data-resizing]){user-select:none}
+.storage-tools .storage-tree-narrow>.storage-folder-list,.storage-tools .storage-tree-narrow>.storage-tree-separator{display:none}
+@media(max-width:720px){.storage-tools .storage-tree-separator{display:none}}

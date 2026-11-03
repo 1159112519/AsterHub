@@ -1,3 +1,4 @@
+import {useWorkspaceState} from '../foundation/use-workspace-state.js';
 import {ResizableTable} from '../resizable-table';
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {Folder,File,ArrowUp,ArrowRight,ArrowLeft,RefreshCw,Upload,Download,ListChecks,X,Undo2,FolderOpen,Link2,Check,Loader2} from 'lucide-react';
@@ -9,11 +10,22 @@ const MIME='application/x-asterhub-files';
 const active=s=>s==='queued'||s==='running'||s==='undoing';
 const size=n=>!Number.isFinite(n)?'—':n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KiB':n<1073741824?(n/1048576).toFixed(1)+' MiB':(n/1073741824).toFixed(2)+' GiB';
 const labels={queued:'排队中',running:'正在复制',completed:'已完成',cancelled:'已取消',failed:'失败',undoing:'正在撤销',undone:'已撤销', 'undo-failed':'撤销未全部完成'};
-function usePane(side,deviceId){
- const [listing,setListing]=useState(null),[path,setPath]=useState(''),[selection,setSelection]=useState([]),[error,setError]=useState(''),[loading,setLoading]=useState(false),version=useRef(0);
- const load=useCallback(async next=>{const current=++version.current;setLoading(true);setError('');try{const value=await native.request('files.list',{endpointId:deviceId,side,path:next||''},60000);if(current===version.current){setListing(value);setPath(value.path);setSelection([])}}catch(e){if(current===version.current)setError(e.message)}finally{if(current===version.current)setLoading(false)}},[side,deviceId]);
- useEffect(()=>{setListing(null);setPath('');setSelection([]);load('');return()=>{version.current++}},[load]);
- return {side,deviceId,listing,path,setPath,selection,setSelection,error,loading,load};
+function usePane(side,deviceId,workspaceId,active){
+ const scope=JSON.stringify([workspaceId,side,deviceId]);
+ const [view,setView]=useWorkspaceState(workspaceId,'files-pane:'+side+':'+deviceId,()=>({listing:null,path:''}),{dependencies:[deviceId]});
+ const {listing,path}=view,[selected,setSelected]=useState({scope,items:[]}),[status,setStatus]=useState({scope,error:'',loading:false}),version=useRef(0),controller=useRef(null);
+ const selection=selected.scope===scope?selected.items:[],feedback=status.scope===scope?status:{error:'',loading:false};
+ const setSelection=useCallback(update=>setSelected(old=>{const items=old.scope===scope?old.items:[];return {scope,items:typeof update==='function'?update(items):update}}),[scope]);
+ const setPath=useCallback(path=>setView(v=>({...v,path})),[setView]);
+ const load=useCallback(async next=>{
+  if(!active)return;const current=++version.current;controller.current?.abort();const pending=new AbortController();controller.current=pending;setStatus({scope,error:'',loading:true});
+  try{const value=await native.request('files.list',{endpointId:deviceId,side,path:next||''},{signal:pending.signal,timeout:60000});if(current===version.current){setView({listing:value,path:value.path});setSelection([])}}
+  catch(e){if(current===version.current&&e.name!=='AbortError')setStatus({scope,error:e.message,loading:false})}
+  finally{if(current===version.current){controller.current=null;setStatus(old=>({...old,loading:false}))}}
+ },[side,deviceId,scope,active,setView,setSelection]);
+ // Revalidate the last confirmed directory while leaving its cached listing visible.
+ useEffect(()=>{setSelection([]);if(active)load(listing?.path||path);return()=>{version.current++;controller.current?.abort()}},[load]);
+ return {side,deviceId,listing,path,setPath,selection,setSelection,error:feedback.error,loading:feedback.loading,load};
 }
 function FilePane({pane,label,devices,onDeviceChange,onCopy,onDrop,onChoose,otherLabel}){
  const {listing,path,setPath,selection,setSelection,error,loading,load}=pane,anchor=useRef(null),[over,setOver]=useState(false);
@@ -30,18 +42,20 @@ function FilePane({pane,label,devices,onDeviceChange,onCopy,onDrop,onChoose,othe
   </div><footer className={'files-pane-footer'+(pane.side==='remote'?' mirrored':'')}><span>{selection.length?'Ctrl / Shift 可多选':'双击文件夹进入 · 可拖到另一栏复制'}</span><Button icon={pane.side==='local'?ArrowRight:ArrowLeft} disabled={!selection.length||!listing||loading} onClick={()=>onCopy(pane.side,selection)}>复制到{otherLabel}</Button></footer>
  </section>;
 }
-export function FilesPage({deviceId,devices=[]}){
- const endpoints=devices.map(row=>row.device),[leftId,setLeftId]=useState('local'),[rightId,setRightId]=useState(deviceId),pair=leftId+'|'+rightId;
- const local=usePane('local',leftId),remote=usePane('remote',rightId),[ratio,setRatio]=useState(50),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[plan,setPlan]=useState(null),[jobs,setJobs]=useState([]),[showTransfers,setShowTransfers]=useState(false),container=useRef(null),pendingDevice=useRef(pair),mounted=useRef(true);
- pendingDevice.current=pair;
- useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[]);
+export function FilesPage({deviceId,devices=[],active:pageActive=true}){
+ const [view,setView]=useWorkspaceState(deviceId,'files',()=>({leftId:'local',rightId:deviceId,ratio:50,showTransfers:false}));
+ const {leftId,rightId,ratio,showTransfers}=view,field=(key,value)=>setView(v=>({...v,[key]:typeof value==='function'?value(v[key]):value})),setLeftId=value=>field('leftId',value),setRightId=value=>field('rightId',value),setRatio=value=>field('ratio',value),setShowTransfers=value=>field('showTransfers',value);
+ const endpoints=devices.map(row=>row.device),pair=JSON.stringify([deviceId,leftId,rightId]);
+ const local=usePane('local',leftId,deviceId,pageActive),remote=usePane('remote',rightId,deviceId,pageActive),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[plan,setPlan]=useState(null),[jobs,setJobs]=useState([]),container=useRef(null),pendingDevice=useRef(pair),mounted=useRef(true),planRef=useRef(null);
+ pendingDevice.current=pageActive?pair:null;planRef.current=plan;
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;if(planRef.current)native.request('files.cancel',{id:planRef.current.id}).catch(()=>{})}},[]);
  const poll=useCallback(async()=>{try{const result=await native.request('files.transfers');if(mounted.current)setJobs(result)}catch(e){if(mounted.current)setError(e.message)}},[]);
- useEffect(()=>{let timer,disposed=false;async function tick(){await poll();if(!disposed)timer=setTimeout(tick,1500)}tick();return()=>{disposed=true;clearTimeout(timer)}},[poll]);
- useEffect(()=>{setError('');setNotice('');setPlan(previous=>{if(previous)native.request('files.cancel',{id:previous.id}).catch(()=>{});return null})},[pair]);
+ useEffect(()=>{if(!pageActive)return;let timer,disposed=false;async function tick(){await poll();if(!disposed)timer=setTimeout(tick,1500)}tick();return()=>{disposed=true;clearTimeout(timer)}},[poll,pageActive]);
+ useEffect(()=>{setError('');setNotice('');setPlan(previous=>{if(previous)native.request('files.cancel',{id:previous.id}).catch(()=>{});return null})},[pair,pageActive]);
  useEffect(()=>{if(!endpoints.length)return;if(!endpoints.some(d=>d.id===leftId))setLeftId(endpoints[0].id);if(!endpoints.some(d=>d.id===rightId))setRightId(endpoints[0].id)},[devices,leftId,rightId]);
  const panes={local,remote};
  const prepare=async(side,paths,targetPath,targetSide=side==='local'?'remote':'local')=>{if(busy)return;const chosenPair=pair;setBusy(true);setError('');setNotice('');try{const destination=targetPath||panes[targetSide].listing?.path;if(!destination)throw new Error('请等待目标文件夹加载完成');const prepared=await native.request('files.prepare',{sourceDeviceId:panes[side].deviceId,targetDeviceId:panes[targetSide].deviceId,side,paths,targetSide,targetPath:destination},90000);if(!mounted.current||chosenPair!==pendingDevice.current){await native.request('files.cancel',{id:prepared.id});return}setPlan({...prepared,pair:chosenPair,sourceLabel:endpoints.find(d=>d.id===panes[side].deviceId)?.name,targetLabel:endpoints.find(d=>d.id===panes[targetSide].deviceId)?.name,relay:panes[side].deviceId!=='local'&&panes[targetSide].deviceId!=='local',targetPath:destination})}catch(e){if(mounted.current)setError(e.message)}finally{if(mounted.current)setBusy(false)}};
- async function choose(kind,action){setError('');try{const paths=await native.request('files.pick',{kind},3600000);if(!paths.length)return;if(action==='navigate')local.load(paths[0]);else if(action==='download')await prepare('remote',remote.selection,paths[0],'local');else await prepare('local',paths,null,'remote')}catch(e){setError(e.message)}}
+ async function choose(kind,action){const chosenPair=pair;setError('');try{const paths=await native.request('files.pick',{kind},3600000);if(!mounted.current||chosenPair!==pendingDevice.current||!paths.length)return;if(action==='navigate')local.load(paths[0]);else if(action==='download')await prepare('remote',remote.selection,paths[0],'local');else await prepare('local',paths,null,'remote')}catch(e){setError(e.message)}}
  async function start(){if(!plan)return;setBusy(true);try{await native.request('files.start',{id:plan.id,overwrite:plan.conflicts>0});setPlan(null);setShowTransfers(true);await poll()}catch(e){setError(e.message);setPlan(null)}finally{setBusy(false)}}
  function cancelPlan(){if(busy)return;native.request('files.cancel',{id:plan.id}).catch(()=>{});setPlan(null)}
  async function jobAction(method,id){try{setError('');await native.request(method,{id},90000);await poll();local.load(local.listing?.path);remote.load(remote.listing?.path)}catch(e){setError(e.message);await poll()}}

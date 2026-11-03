@@ -1,0 +1,15 @@
+/* Clip only the beginning; keep the exact path order, filename, PID and actions. */
+.process-executable-path,
+.gpu-inspector .inspector-table-scroll td:first-child>strong.process-executable-path,
+.aggregate-process-identity>strong.process-executable-path,
+.history-peek-process-main>strong.process-executable-path,
+.process-name>.process-executable-path{
+ display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+ white-space:nowrap;overflow-wrap:normal;word-break:normal;direction:rtl;text-align:left;
+}
+.process-executable-path>bdi{direction:ltr;unicode-bidi:isolate}
+.process-name{min-width:0}
+.process-name>.process-executable-path{flex:1}
+.process-name>svg{flex-shrink:0}
+.history-peek-process-main>strong.process-executable-path{flex:1}
+.gpu-inspector .inspector-table-scroll table{table-layout:fixed}

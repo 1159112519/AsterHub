@@ -8,6 +8,25 @@ using System.Diagnostics;
 using System.Web.Script.Serialization;
 using System.IO.Compression;
 
+
+// Storage accepts drive labels only as roots; remote syntax follows the connected SFTP namespace.
+public static class StoragePaths {
+ public static bool WindowsSftp(string home){return System.Text.RegularExpressions.Regex.IsMatch(home??"",@"^/?[A-Za-z]:[/\\]");}
+ public static string Style(bool local,string home){return local?"windows-local":WindowsSftp(home)?"windows-sftp":"sftp";}
+ public static string Resolve(bool local,string home,string input){
+  string path=string.IsNullOrWhiteSpace(input)?home:input;
+  if(local&&System.Text.RegularExpressions.Regex.IsMatch(path,@"^[A-Za-z]:$"))path+="\\";
+  if(!local&&WindowsSftp(home)){
+   if(System.Text.RegularExpressions.Regex.IsMatch(path,@"^[A-Za-z]:$"))path="/"+path+"/";
+   else if(System.Text.RegularExpressions.Regex.IsMatch(path,@"^[A-Za-z]:[/\\]"))path="/"+path.Replace('\\','/');
+   else if(System.Text.RegularExpressions.Regex.IsMatch(path,@"^/[A-Za-z]:[/\\]"))path=path.Replace('\\','/');
+  }
+  string normalized=PreviewFileCopy.Normalize(local,path);
+  // Keep a trailing slash for a Windows drive root in the SFTP namespace.
+  return !local&&System.Text.RegularExpressions.Regex.IsMatch(normalized,@"^/[A-Za-z]:$")?normalized+"/":normalized;
+ }
+}
+
 // Bounded, immutable scan snapshots. UI reads only current children or paginated files.
 public sealed class StorageNode {
  public string Id,Parent,Name,Path;public bool Directory,Removed,Incomplete;public long Bytes;public DateTime Stamp;public int Count;public readonly List<string> Children=new List<string>();
@@ -26,7 +45,7 @@ public sealed class StorageScanJob {
  public string Status="queued",Current="",Error="";public int Enumerated,Skipped;public long Bytes;public Task Work;
  public StorageScanJob(Server device,string root){Device=device.Copy();Result=new StorageSnapshot{Id=Guid.NewGuid().ToString("N"),DeviceId=PreviewDevices.Id(device),Root=root,Endpoint=StorageSnapshot.EndpointFor(device),IsLocal=device.IsLocal,Created=DateTime.UtcNow};}
  public object View(){lock(Gate)return new{id=Result.Id,deviceId=Result.DeviceId,root=Result.Root,status=Status,enumerated=Enumerated,skipped=Skipped,bytes=Bytes,current=Current,seconds=(int)Clock.Elapsed.TotalSeconds,error=Error,partial=Result.Partial};}
- public async Task Run(){try{lock(Gate)Status="enumerating";using(var connection=new FileConnection(Device)){await connection.Connect(Cancel.Token).ConfigureAwait(false);string root=string.IsNullOrWhiteSpace(Result.Root)?connection.Home:PreviewFileCopy.Normalize(Device.IsLocal,Result.Root);PreviewFileCopy.SafePath(connection,root);if(!connection.IsDirectory(root))throw new IOException("请选择可读取的文件夹");Result.Root=root;var top=new StorageNode{Id="0",Name=System.IO.Path.GetFileName(root.TrimEnd('/','\\')),Path=root,Directory=true,Stamp=DateTime.UtcNow};if(string.IsNullOrEmpty(top.Name))top.Name=root;Result.Nodes.Add(top.Id,top);var stack=new Stack<Tuple<StorageNode,int>>();stack.Push(Tuple.Create(top,0));int sequence=0;while(stack.Count>0){Cancel.Token.ThrowIfCancellationRequested();Resume.Wait(Cancel.Token);var next=stack.Pop();var parent=next.Item1;lock(Gate)Current=parent.Path;if(next.Item2>128){parent.Incomplete=true;Skipped++;continue;}
+ public async Task Run(){try{lock(Gate)Status="enumerating";using(var connection=new FileConnection(Device)){await connection.Connect(Cancel.Token).ConfigureAwait(false);string root=StoragePaths.Resolve(Device.IsLocal,connection.Home,Result.Root);PreviewFileCopy.SafePath(connection,root);if(!connection.IsDirectory(root))throw new IOException("请选择可读取的文件夹");Result.Root=root;var top=new StorageNode{Id="0",Name=System.IO.Path.GetFileName(root.TrimEnd('/','\\')),Path=root,Directory=true,Stamp=DateTime.UtcNow};if(string.IsNullOrEmpty(top.Name))top.Name=root;Result.Nodes.Add(top.Id,top);var stack=new Stack<Tuple<StorageNode,int>>();stack.Push(Tuple.Create(top,0));int sequence=0;while(stack.Count>0){Cancel.Token.ThrowIfCancellationRequested();Resume.Wait(Cancel.Token);var next=stack.Pop();var parent=next.Item1;lock(Gate)Current=parent.Path;if(next.Item2>128){parent.Incomplete=true;Skipped++;continue;}
     try{foreach(var entry in connection.Enumerate(parent.Path,Cancel.Token)){Cancel.Token.ThrowIfCancellationRequested();Resume.Wait(Cancel.Token);if(entry.IsLink||Excluded(entry.FullPath,entry.Name)){parent.Incomplete=true;Skipped++;continue;}if(sequence>=120000){Result.Partial=true;parent.Incomplete=true;stack.Clear();break;}var node=new StorageNode{Id=(++sequence).ToString(),Parent=parent.Id,Name=entry.Name,Path=entry.FullPath,Directory=entry.IsDirectory,Bytes=entry.IsDirectory?0:entry.Size,Stamp=entry.Modified.ToUniversalTime()};Result.Nodes.Add(node.Id,node);parent.Children.Add(node.Id);if(node.Directory)stack.Push(Tuple.Create(node,next.Item2+1));lock(Gate){Enumerated++;if(!node.Directory)Bytes+=node.Bytes;}}
     }catch(OperationCanceledException){throw;}catch(Exception){if(parent.Id=="0"||!connection.Connected)throw;parent.Incomplete=true;lock(Gate)Skipped++;}}
    }

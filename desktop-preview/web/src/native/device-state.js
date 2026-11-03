@@ -17,5 +17,5 @@ export function mergeReading(old,raw,now=Date.now()){
  }
  const sample={...next,hardware:next.hardware||previous?.hardware};
  const point={time:next.time,interval:next.interval,cpu:next.cpu,memory:next.memory,network:next.network,storage:next.storage,gpus:next.gpus.map(g=>({id:g.id,util:g.util})),volumes:next.volumes?.map(v=>({Path:v.Path,UsedBytes:v.UsedBytes,AvailableBytes:v.AvailableBytes,TotalBytes:v.TotalBytes,UsedPercent:v.UsedPercent}))};
- return {sample,lastAttempt:raw.time,lastSuccess:raw.time,error:'',stale:false,samples:[...(old?.samples||[]),point].filter(s=>s.time>=now-7320000).slice(-3664)};
+ return {...old,sample,lastAttempt:raw.time,lastSuccess:raw.time,error:'',stale:false,samples:[...(old?.samples||[]),point].filter(s=>s.time>=now-7320000).slice(-3664)};
 }

@@ -1,3 +1,4 @@
+import {createValueFollower} from './foundation/value-follower.js';
 import {measurementState} from './foundation/measurement.js';
 import './foundation/ui.css';
 import {createPortal} from 'react-dom';
@@ -18,13 +19,16 @@ import {useDismissableLayer} from './foundation/overlay';
 export function NumberValue({supported=true,stale=false,...props}){const state=measurementState(props.value,{supported,stale});return state==='ready'||state==='stale'?<AnimatedNumber {...props} state={state}/>:<span data-value-state={state} className={`number ${props.className||''}`}>—</span>}
 function useMotionPreference(){return useSyncExternalStore(subscribeReducedMotion,reducedMotion)}
 function AnimatedNumber({value,decimals=0,suffix='',className='',state='ready'}){
- const preference=useMotionPreference(),ref=useRef(null),current=useRef(value),initialText=useRef(value.toFixed(decimals));
- useLayoutEffect(()=>{if(preference){current.current=value;if(ref.current)ref.current.textContent=value.toFixed(decimals);return}const obj={v:current.current};if(ref.current)ref.current.textContent=obj.v.toFixed(decimals);const t=gsap.to(obj,{v:value,...motionOptions('value'),ease:'power2.inOut',onUpdate(){current.current=obj.v;if(ref.current)ref.current.textContent=obj.v.toFixed(decimals)}});return()=>t.kill()},[value,decimals,preference]);
+ const preference=useMotionPreference(),ref=useRef(null),current=useRef(value),follower=useRef(null),initialText=useRef(value.toFixed(decimals));
+ useLayoutEffect(()=>{const paint=next=>{current.current=next;if(ref.current)ref.current.textContent=next.toFixed(decimals)};paint(current.current);const controller=createValueFollower(current.current,paint,{epsilon:.2*10**-decimals});follower.current=controller;return()=>{controller.dispose();follower.current=null}},[decimals]);
+ useLayoutEffect(()=>{follower.current?.target(value,{immediate:preference})},[value,decimals,preference]);
  return <span data-value-state={state} className={`number ${className}`}><span ref={ref}>{initialText.current}</span>{suffix&&<small>{suffix}</small>}</span>
 }
 export function Meter({value,color='var(--green)',label}){
- const preference=useMotionPreference(),fill=useRef(null),echo=useRef(null),mounted=useRef(false),positions=useRef([0,0]),ratio=Math.max(0,Math.min(Number.isFinite(value)?value:0,100))/100;
- useLayoutEffect(()=>{const nodes=[fill.current,echo.current],paint=(i,v)=>{positions.current[i]=v;nodes[i].style.transform=`scaleX(${v})`};if(!mounted.current||preference){nodes.forEach((_,i)=>paint(i,ratio));mounted.current=true;return}const animations=nodes.map((node,i)=>{const state={v:positions.current[i]};return gsap.to(state,{v:ratio,...motionOptions(i?'meterEcho':'meter'),ease:'power2.inOut',onUpdate(){paint(i,state.v)}})});return()=>animations.forEach(t=>t.kill())},[ratio,preference]);
+ const preference=useMotionPreference(),fill=useRef(null),echo=useRef(null),followers=useRef([]),positions=useRef(null),ratio=Math.max(0,Math.min(Number.isFinite(value)?value:0,100))/100;
+ if(!positions.current)positions.current=[ratio,ratio];
+ useLayoutEffect(()=>{followers.current=[fill.current,echo.current].map((node,i)=>{const paint=next=>{positions.current[i]=next;node.style.transform=`scaleX(${next})`};paint(positions.current[i]);return createValueFollower(positions.current[i],paint,{epsilon:.0001,tau:i?.23:.17})});return()=>{followers.current.forEach(f=>f.dispose());followers.current=[]}},[]);
+ useLayoutEffect(()=>{followers.current.forEach(f=>f.target(ratio,{immediate:preference}))},[ratio,preference]);
  return <div className="meter motion-meter" aria-label={label} role="meter" aria-valuenow={Number.isFinite(value)?value:undefined} aria-valuemin={0} aria-valuemax={100}><span ref={echo} className="meter-echo" style={{background:color}}/><span ref={fill} style={{background:color}}/></div>
 }
 // Store the displayed Bezier control points, not the last requested samples.

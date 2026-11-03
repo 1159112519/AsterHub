@@ -1,3 +1,4 @@
+import {ProcessPath} from './ProcessPath';
 import React from 'react';
 import {Clock,X,ChevronRight,Layers,UserRound} from 'lucide-react';
 import {ScrollSurface} from './scroll-surface';
@@ -10,7 +11,7 @@ export function HistoryPeek({date,time,metric,value,rows,gpuCount,loading=false,
    <div className="history-peek-list-heading"><h3>当时的进程 <span>{rows.length}</span></h3><span>显存</span></div>
    <ScrollSurface className="history-peek-scroll" resetKey={date+time}>
     {rows.length?<ul className="history-peek-processes" aria-label="该时间点的 GPU 进程">{rows.map(p=><li key={p.gpu+':'+p.pid}>
-     <div className="history-peek-process-main"><strong title={p.path||p.name}>{p.name}</strong><span>{p.memory==null?'—':p.memory.toFixed(2)} <small>GiB</small></span></div>
+     <div className="history-peek-process-main"><ProcessPath process={p}/><span>{p.memory==null?'—':p.memory.toFixed(2)} <small>GiB</small></span></div>
      <div className="history-peek-process-meta"><span>GPU {p.gpu}</span><span className="history-peek-user" title={p.userFull||p.user}><UserRound size={11}/><span>{p.user}</span></span><span>PID {p.pid}</span></div>
     </li>)}</ul>:<p className="history-peek-empty">此时没有已识别的 GPU 进程</p>}
    </ScrollSurface>

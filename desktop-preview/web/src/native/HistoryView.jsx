@@ -1,6 +1,8 @@
+import {useWorkspaceState} from '../foundation/use-workspace-state.js';
+import {isWorkspaceResultFresh} from '../foundation/workspace-state.js';
 import {BoundedCache} from '../foundation/bounded-cache.js';
 import {createRequestScope} from '../foundation/request-scope.js';
-import React,{memo,useCallback,useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
+import React,{memo,useCallback,useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore,useMemo} from 'react';
 import {Clock} from 'lucide-react';
 import {gsap} from 'gsap';
 import {Button,Chart,Meter,SectionTitle} from '../components';
@@ -32,18 +34,22 @@ const HistoryMetricChart=memo(function HistoryMetricChart({archive,metric,onSele
  return <Chart series={archive.series[metric]} timestamps={archive.timestamps} height={240} scalable rangeMinutes={archive.minutes} live={false} breakBefore={archive.breakBefore} expectedInterval={archive.interval} onSelect={pick} selected={selected} selectionPopover={popover}/>;
 });
 
-export const HistoryView=memo(function HistoryView({deviceId}){
- const [recorder,setRecorder]=useState(null),[minutes,setMinutes]=useState(60),[metric,setMetric]=useState('cpu'),[archive,setArchive]=useState(()=>prepareArchive([],60)),[total,setTotal]=useState(0),[current,setCurrent]=useState(null),[index,setIndex]=useState(null),[open,setOpen]=useState(false),[reading,setReading]=useState(false),[fullDetails,setFullDetails]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+export const HistoryView=memo(function HistoryView({deviceId}){return <HistoryWorkspace key={deviceId} deviceId={deviceId}/>});
+const HistoryWorkspace=memo(function HistoryWorkspace({deviceId}){
+ const [view,setView]=useWorkspaceState(deviceId,'history',()=>({minutes:60,metric:'cpu',result:null}));
+ const {minutes,metric,result}=view,emptyArchive=useMemo(()=>prepareArchive([],minutes),[minutes]),archive=result?.archive||emptyArchive,total=result?.total||0;
+ const setMinutes=value=>setView(v=>({...v,minutes:value})),setMetric=value=>setView(v=>({...v,metric:value}));
+ const [recorder,setRecorder]=useState(null),[current,setCurrent]=useState(null),[index,setIndex]=useState(null),[open,setOpen]=useState(false),[reading,setReading]=useState(false),[fullDetails,setFullDetails]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const cache=useRef(null),requests=useRef(null);if(!cache.current)cache.current=new BoundedCache({maxEntries:64});if(!requests.current)requests.current=createRequestScope();const generation=useRef(0),request=useRef(0),region=useRef(null),viewport=useRef(null),previous=useRef(null);
  const preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion);
- useEffect(()=>{const controller=new AbortController();setRecorder(null);native.request('recorder.status',{deviceId},{signal:controller.signal,timeout:25000}).then(setRecorder).catch(()=>{});return()=>controller.abort()},[deviceId]);
+ useEffect(()=>{const controller=new AbortController();let alive=true;setRecorder(null);native.request('recorder.status',{deviceId},{signal:controller.signal,timeout:25000}).then(value=>{if(alive)setRecorder(value)}).catch(()=>{});return()=>{alive=false;controller.abort()}},[deviceId]);
  const query=useCallback(async()=>{
   const seq=++generation.current,ticket=requests.current.begin('range');requests.current.cancel('detail');request.current++;cache.current.clear();setOpen(false);setCurrent(null);setIndex(null);setReading(false);setFullDetails(false);setBusy(true);setError('');
   try{const result=await native.request('history.query',{minutes,deviceId},{signal:ticket.signal});if(seq!==generation.current||!ticket.isCurrent())return;
-   setArchive(prepareArchive(result.points,minutes));setTotal(result.total??result.points.length);setCurrent(null);setIndex(null);setOpen(false);request.current++;
+   setView(v=>({...v,result:{key:minutes,fetchedAt:Date.now(),archive:prepareArchive(result.points,minutes),total:result.total??result.points.length}}));setCurrent(null);setIndex(null);setOpen(false);request.current++;
   }catch(e){if(seq===generation.current&&e.name!=='AbortError')setError(e.message)}finally{if(seq===generation.current&&ticket.isCurrent())setBusy(false);ticket.finish()}
- },[minutes,deviceId]);
- useEffect(()=>{query();return()=>{generation.current++;request.current++;requests.current.cancelAll();cache.current.clear()}},[query]);
+ },[minutes,deviceId,setView]);
+ useEffect(()=>{if(!isWorkspaceResultFresh(result,minutes))query();return()=>{generation.current++;request.current++;requests.current.cancelAll();cache.current.clear()}},[query]);
  const choose=useCallback(async(point,i)=>{
   const ticket=requests.current.begin('detail'),seq=++request.current,key=deviceId+':'+point.id,cached=cache.current.get(key);setError('');setIndex(i);setOpen(true);setFullDetails(false);setCurrent(cached||null);setReading(!cached);if(cached){ticket.finish();return}
   try{const value=await native.request('history.read',{key:point.id,deviceId},{signal:ticket.signal});if(seq!==request.current||!ticket.isCurrent())return;const sample=normalize(value);cache.current.set(key,sample);setCurrent(sample)}catch(e){if(seq===request.current&&e.name!=='AbortError')setError(e.message)}finally{if(seq===request.current&&ticket.isCurrent())setReading(false);ticket.finish()}
@@ -63,7 +69,7 @@ export const HistoryView=memo(function HistoryView({deviceId}){
  const popover=open&&date&&Number.isFinite(value)?<HistoryPeek date={date.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})} time={date.toLocaleTimeString('zh-CN',{hour12:false})} metric={metricLabel(metric)} value={value} loading={reading} error={!reading&&!current?error:''} rows={current?.processes||[]} gpuCount={current?.gpus.length||0} onClose={()=>close(true)} onViewProcesses={()=>{setFullDetails(true);close();requestAnimationFrame(()=>document.querySelector('.native-history-processes')?.scrollIntoView({behavior:preference?'instant':'smooth',block:'start'}))}}/>:null;
  return <>
   <div className="page-heading"><div><div className="eyebrow">采样存档</div><h1>历史记录</h1><p>{recorder?.installed?(recorder.healthy?'主机持续记录 · ':'主机记录已暂停 · ')+'最近记录 '+new Date(recorder.lastTime).toLocaleString('zh-CN',{hour12:false}):'回到一个时间点，查看当时的资源与进程。'}</p></div><Button onClick={query} disabled={busy}>{busy?'正在读取…':'刷新存档'}</Button></div>
-  <div className="history-toolbar"><label className="range-control"><Clock size={17}/><ThemedSelect aria-label="历史时间范围" value={minutes} onChange={e=>setMinutes(Number(e.target.value))}>{[[15,'最近 15 分钟'],[60,'最近 1 小时'],[120,'最近 2 小时'],[1440,'最近 24 小时']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</ThemedSelect></label><span className="history-archive-state"><i className="status-dot"/>{total} 个已存档采样{total>archive.points.length?' · 显示 '+archive.points.length+' 个趋势点':''}</span></div>{error&&<p role="alert" className="native-error">{error}</p>}
+  <div className="history-toolbar"><label className="range-control"><Clock size={17}/><ThemedSelect aria-label="历史时间范围" value={minutes} onChange={e=>setMinutes(Number(e.target.value))}>{[[15,'最近 15 分钟'],[60,'最近 1 小时'],[120,'最近 2 小时'],[1440,'最近 24 小时']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</ThemedSelect></label><span className="history-archive-state"><i className="status-dot"/>{total} 个已存档采样{total>archive.points.length?' · 显示 '+archive.points.length+' 个趋势点':''}</span></div>{error&&<p role="alert" className="native-error">{error}{result&&' · 仍显示上次成功读取的趋势'}</p>}
   <section className="history-chart" ref={region}>
    <SectionTitle action={<div className="segmented history-metric-tabs" role="group" aria-label="历史资源指标" style={{'--history-selection':metrics.findIndex(([id])=>id===metric)}}><span className="history-metric-selection" aria-hidden="true"/>{metrics.map(([id,label])=><button key={id} type="button" className={metric===id?'active':''} aria-pressed={metric===id} onClick={()=>changeMetric(id)}>{label}</button>)}</div>}>利用率时间线</SectionTitle>
    <div className="history-trend-viewport" ref={viewport} aria-busy={busy} inert={busy?'':undefined} data-history-metric={metric} data-history-minutes={archive.minutes}>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -50,7 +50,7 @@ public sealed partial class WorkbenchWindow:Window {
   SetWebBackground(NativeWindowTheme.Read(WorkbenchHost.DataRoot));web.ZoomFactor=preferences.scale;
   devices=new PreviewDevices(WorkbenchHost.DataRoot);interval=devices.Interval;SshAuthentication.KnownHostsPath=Path.Combine(WorkbenchHost.DataRoot,"known_hosts");
   archive=new ArchiveService(preferences.historyDays,preferences.historyLimitMB,Path.Combine(WorkbenchHost.DataRoot,"History"));
-  var inventory=new PreviewInventory(WorkbenchHost.DataRoot);capture=new DeviceCapture(archive,Receive,inventory.Collect);capture.Configure(devices.All(),interval);
+  var inventory=new PreviewInventory(WorkbenchHost.DataRoot);capture=new DeviceCapture(archive,Receive,inventory.Collect);capture.Configure(devices.All(),interval);StartLocalLightCapture();
   BrandShortcuts.Apply(appliedIconId);
   SourceInitialized+=delegate{NativeWindowTheme.Apply(this,NativeWindowTheme.Read(WorkbenchHost.DataRoot),false);};
   Loaded+=async delegate{desktop=new PreviewDesktop(this,command=>Send(new{type="navigate",value=command}),RequestExit,appliedIconId);desktop.ApplyTheme(NativeWindowTheme.Read(WorkbenchHost.DataRoot));await Initialize();if(WorkbenchHost.StartBackground||preferences.startMinimized)Hide();};
@@ -65,7 +65,7 @@ public sealed partial class WorkbenchWindow:Window {
   core.PermissionRequested+=delegate(object s,CoreWebView2PermissionRequestedEventArgs e){e.State=CoreWebView2PermissionState.Deny;};core.NewWindowRequested+=delegate(object s,CoreWebView2NewWindowRequestedEventArgs e){e.Handled=true;};core.NavigationStarting+=delegate(object s,CoreWebView2NavigationStartingEventArgs e){if(!Trusted(e.Uri))e.Cancel=true;};core.DownloadStarting+=delegate(object s,CoreWebView2DownloadStartingEventArgs e){e.Cancel=true;};
   core.SetVirtualHostNameToFolderMapping("asterhub.local",Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"resources","workbench"),CoreWebView2HostResourceAccessKind.DenyCors);
   core.WebMessageReceived+=Message;core.ProcessFailed+=delegate{ready=false;Content=new TextBlock{Text="界面进程已退出。采样仍在后台运行，请重新启动预览。",Foreground=Brushes.White,Margin=new Thickness(24)};};
-  core.NavigationCompleted+=async delegate(object s,CoreWebView2NavigationCompletedEventArgs e){if(!e.IsSuccess){if(e.WebErrorStatus!=CoreWebView2WebErrorStatus.OperationCanceled)ShowError("界面加载失败："+e.WebErrorStatus);return;}ready=true;foreach(var device in devices.All()){var reading=capture.Latest(device);if(reading!=null)Send(new{type="capture",value=Snapshot(reading.Metrics,reading.TimeUtc,device)});}if(WorkbenchHost.SmokeRoot!=null)await Smoke();else BeginStartupUpdateCheck();};core.Navigate(Origin+"/index.html");
+  core.NavigationCompleted+=async delegate(object s,CoreWebView2NavigationCompletedEventArgs e){if(!e.IsSuccess){if(e.WebErrorStatus!=CoreWebView2WebErrorStatus.OperationCanceled)ShowError("界面加载失败："+e.WebErrorStatus);return;}ready=true;SendLocalLightSnapshot();foreach(var device in devices.All()){var reading=capture.Latest(device);if(reading!=null)Send(new{type="capture",value=Snapshot(reading.Metrics,reading.TimeUtc,device)});}if(WorkbenchHost.SmokeRoot!=null)await Smoke();else BeginStartupUpdateCheck();};core.Navigate(Origin+"/index.html");
  }catch(Exception ex){ShowError("界面初始化失败："+ex.Message);}}
  void ShowError(string text){Content=new TextBlock{Text=text,Foreground=Brushes.White,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(24)};File.WriteAllText(Path.Combine(WorkbenchHost.DataRoot,"startup-error.txt"),text);}
  static object Finite(double value){return double.IsNaN(value)||double.IsInfinity(value)?null:(object)value;}
@@ -84,7 +84,7 @@ public sealed partial class WorkbenchWindow:Window {
    if(e.WebMessageAsJson.Length>16384&&method!="clipboard.write")throw new ArgumentException("请求过长");
    switch(method){
     case "app.openExternal":case "clipboard.write":case "clipboard.read":result=await DesktopRequest(method,p);break;
-    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 17",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
+    case "app.info":result=new{name="AsterHub",version=AppUpdates.DisplayVersion,stage="Windows Preview 18",device=new{id="local",name="本机",host=local.Host,user=local.User},dataRoot=WorkbenchHost.DataRoot,archiveRoot=archive.Store.Root,interval=interval};break;
     case "devices.list":result=DeviceList();break;
     case "devices.select":devices.Select(Convert.ToString(p["id"]));result=DeviceList();break;
     case "devices.save":var saved=devices.Save(p);string savedId=PreviewDevices.Id(saved);Tuple<ConnectionResult,DateTime> tested;if(draftProbes.TryGetValue(ProbeIdentity(saved),out tested)){probes[savedId]=tested.Item1;probeTimes[savedId]=tested.Item2;}else{probes.Remove(savedId);probeTimes.Remove(savedId);}capture.Configure(devices.All(),interval);result=devices.Public(saved);Send(new{type="devices",value=DeviceList()});break;
@@ -106,6 +106,7 @@ public sealed partial class WorkbenchWindow:Window {
     case "terminal.rename":case "terminal.list":case "terminal.create":case "terminal.read":case "terminal.write":case "terminal.resize":case "terminal.close":result=await TerminalRequest(method,p);break;
     case "storage.directories":case "storage.trash.delete":case "storage.jobs":case "storage.scan":case "storage.control":case "storage.status":case "storage.query":case "storage.copy":case "storage.trash":case "storage.trash.list":case "storage.trash.restore":result=await StorageRequest(method,p);break;
     case "files.list":case "files.prepare":case "files.start":case "files.transfers":case "files.cancel":case "files.undo":case "files.pick":result=await FilesRequest(method,p);break;
+    case "snapshot.light":result=Requested(p).IsLocal?LocalLightSnapshot():null;break;
     case "snapshot.latest":var requested=Requested(p);var newest=capture.Latest(requested);result=newest==null?null:Snapshot(newest.Metrics,newest.TimeUtc,requested);break;
     case "recorder.status":result=await RecorderStatus(p);break;
     case "history.query":
@@ -144,5 +145,5 @@ public sealed partial class WorkbenchWindow:Window {
  public void RestoreFromTray(){if(desktop!=null)desktop.Restore();else{Show();Activate();}}
  public void ExitForSession(){RequestExit();}
  void RequestExit(){exitRequested=true;Close();}
- async void ClosingWindow(object sender,System.ComponentModel.CancelEventArgs e){if(shuttingDown)return;if(!exitRequested&&preferences.closeToTray&&desktop!=null&&desktop.Visible){e.Cancel=true;Hide();return;}e.Cancel=true;shuttingDown=true;IsEnabled=false;try{await CleanupStorage();await CleanupFiles();}catch(IOException ex){shuttingDown=false;exitRequested=false;IsEnabled=true;Show();Activate();System.Windows.MessageBox.Show(this,ex.Message,"AsterHub",MessageBoxButton.OK,MessageBoxImage.Information);return;}ClearProcessTargets();await DisposeTerminalSessions();ready=false;await Task.Run(delegate{capture.Dispose();archive.Flush(10000);archive.Dispose();});closed=true;if(restartRequested){try{StartReplacement();}catch(Exception restartError){File.WriteAllText(Path.Combine(WorkbenchHost.DataRoot,"restart-error.txt"),restartError.Message);System.Windows.MessageBox.Show("无法自动重启，请重新打开 AsterHub。图标选择已保存。","AsterHub");}}if(desktop!=null)desktop.Dispose();web.Dispose();Close();}
+ async void ClosingWindow(object sender,System.ComponentModel.CancelEventArgs e){if(shuttingDown)return;if(!exitRequested&&preferences.closeToTray&&desktop!=null&&desktop.Visible){e.Cancel=true;Hide();return;}e.Cancel=true;shuttingDown=true;IsEnabled=false;try{await CleanupStorage();await CleanupFiles();}catch(IOException ex){shuttingDown=false;exitRequested=false;IsEnabled=true;Show();Activate();System.Windows.MessageBox.Show(this,ex.Message,"AsterHub",MessageBoxButton.OK,MessageBoxImage.Information);return;}ClearProcessTargets();await DisposeTerminalSessions();ready=false;await Task.Run(delegate{StopLocalLightCapture();capture.Dispose();archive.Flush(10000);archive.Dispose();});closed=true;if(restartRequested){try{StartReplacement();}catch(Exception restartError){File.WriteAllText(Path.Combine(WorkbenchHost.DataRoot,"restart-error.txt"),restartError.Message);System.Windows.MessageBox.Show("无法自动重启，请重新打开 AsterHub。图标选择已保存。","AsterHub");}}if(desktop!=null)desktop.Dispose();web.Dispose();Close();}
 }

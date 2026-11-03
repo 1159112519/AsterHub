@@ -22,6 +22,12 @@ def number(value):
         return v if math.isfinite(v) else None
     except (ValueError,TypeError):return None
 
+def process_executable(pid,fallback):
+    # Resolve only the executable link, never arguments or process environment.
+    if not str(pid).isascii() or not str(pid).isdigit():return fallback
+    try:return os.readlink('/proc/'+str(pid)+'/exe') or fallback
+    except OSError:return fallback
+
 class Sampler:
     def __init__(self,interval=5):
         self.interval=interval;self.previous=None;self.known_gpus=[];self.boot=text('/proc/sys/kernel/random/boot_id')
@@ -78,7 +84,7 @@ class Sampler:
         for row in run(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory','--format=csv,noheader,nounits']):
             if len(row)!=4 or row[0].strip() not in gpu_ids:continue
             uuid,pid,name,mb=[x.strip() for x in row]
-            processes.append(dict(Gpu=gpu_ids[uuid],Pid=pid,Name=name,Memory=mb,User='—'))
+            processes.append(dict(Gpu=gpu_ids[uuid],Pid=pid,Name=process_executable(pid,name),Memory=mb,User='—'))
             if len(processes)>=256:break
         volumes=[];seen=set()
         for row in text('/proc/mounts').splitlines():
