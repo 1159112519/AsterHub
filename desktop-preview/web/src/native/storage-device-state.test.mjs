@@ -43,3 +43,14 @@ test('tree width stays within accessible bounds and preserves map space',async()
  store.save('A',{treeWidth:340});store.save('B',{treeWidth:185});
  assert.equal(store.read('A').treeWidth,340);assert.equal(store.read('B').treeWidth,185);
 });
+
+test('storage tools persist safe choices across restarts without reviving snapshots or jobs',async()=>{
+ const {createWorkspaceState}=await import('../foundation/workspace-state.js');let json=null;
+ const storage={getItem:()=>json,setItem:(_,value)=>{json=value}},firstCache=createWorkspaceState({storage});
+ const first=createStorageDeviceState({request:async()=>null,workspace:firstCache});
+ first.save('A',{tool:'analysis',path:'C:/models',layout:'list',query:'weights',minimum:200,age:7,treeWidth:320,nodeId:'12',status:{job:{id:'never-restart'}},transfer:{id:'never-replay'}});
+ first.save('B',{tool:'large',path:'/tmp',layout:'map',treeWidth:190});
+ const second=createStorageDeviceState({request:async()=>{throw Error('must not automatically scan')},workspace:createWorkspaceState({storage})});
+ assert.equal(second.read('A').tool,'analysis');assert.equal(second.read('A').path,'C:/models');assert.equal(second.read('A').treeWidth,320);assert.equal(second.read('B').path,'/tmp');
+ assert.equal(second.read('A').status,undefined);assert.equal(second.read('A').transfer,undefined);assert.equal(second.read('A').nodeId,undefined);assert.equal(json.includes('never-restart'),false);
+});

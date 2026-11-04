@@ -17,14 +17,14 @@ function usePane(side,deviceId,workspaceId,active){
  const selection=selected.scope===scope?selected.items:[],feedback=status.scope===scope?status:{error:'',loading:false};
  const setSelection=useCallback(update=>setSelected(old=>{const items=old.scope===scope?old.items:[];return {scope,items:typeof update==='function'?update(items):update}}),[scope]);
  const setPath=useCallback(path=>setView(v=>({...v,path})),[setView]);
- const load=useCallback(async next=>{
+ const load=useCallback(async (next,{preserveDraft=false}={})=>{
   if(!active)return;const current=++version.current;controller.current?.abort();const pending=new AbortController();controller.current=pending;setStatus({scope,error:'',loading:true});
-  try{const value=await native.request('files.list',{endpointId:deviceId,side,path:next||''},{signal:pending.signal,timeout:60000});if(current===version.current){setView({listing:value,path:value.path});setSelection([])}}
+  try{const value=await native.request('files.list',{endpointId:deviceId,side,path:next||''},{signal:pending.signal,timeout:60000});if(current===version.current){setView(view=>({listing:value,path:preserveDraft?(view.path||value.path):value.path}));setSelection([])}}
   catch(e){if(current===version.current&&e.name!=='AbortError')setStatus({scope,error:e.message,loading:false})}
   finally{if(current===version.current){controller.current=null;setStatus(old=>({...old,loading:false}))}}
  },[side,deviceId,scope,active,setView,setSelection]);
  // Revalidate the last confirmed directory while leaving its cached listing visible.
- useEffect(()=>{setSelection([]);if(active)load(listing?.path||path);return()=>{version.current++;controller.current?.abort()}},[load]);
+ useEffect(()=>{setSelection([]);if(active)load(listing?.path||path,{preserveDraft:true});return()=>{version.current++;controller.current?.abort()}},[load]);
  return {side,deviceId,listing,path,setPath,selection,setSelection,error:feedback.error,loading:feedback.loading,load};
 }
 function FilePane({pane,label,devices,onDeviceChange,onCopy,onDrop,onChoose,otherLabel}){

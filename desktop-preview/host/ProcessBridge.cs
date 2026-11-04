@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ public sealed partial class WorkbenchWindow {
  async Task<object> InspectProcess(Dictionary<string,object> p){
   PruneProcessTargets();if(processTargets.Count>=8)throw new InvalidOperationException("请先关闭其他进程确认窗口");
   var server=Requested(p);var reading=capture.Latest(server);string deviceId=PreviewDevices.Id(server),fingerprint=ProbeIdentity(server);
-  if(reading==null||!string.IsNullOrEmpty(reading.Metrics.Error)||(DateTime.UtcNow-reading.TimeUtc).TotalSeconds>Math.Max(15,interval*3))throw new InvalidOperationException("设备状态尚未更新，请等待新的采样后重试");
+  if(reading==null||!string.IsNullOrEmpty(reading.Metrics.Error)||(DateTime.UtcNow-reading.TimeUtc).TotalSeconds>Math.Max(15,reading.Interval*3))throw new InvalidOperationException("设备状态尚未更新，请等待新的采样后重试");
   string pid=Convert.ToString(p["pid"]),gpu=Convert.ToString(p["gpu"]);
   var row=reading.Metrics.Processes.FirstOrDefault(x=>x.Pid==pid&&x.Gpu==gpu);if(row==null)throw new InvalidOperationException("该进程已不在最新 GPU 列表中，请刷新后重试");
   var target=await ProcessActions.InspectAsync(server,row);

@@ -10,7 +10,7 @@ export function createClient(transport, timeout = 12000) {
   const receive = event => {
     if (disposed) return;
     const message = event.data;
-    if (['capture', 'capture-light', 'devices', 'navigate', 'update-progress', 'startup-update'].includes(message?.type)) {
+    if (['capture', 'capture-light', 'devices', 'navigate', 'update-progress', 'update-status', 'startup-update'].includes(message?.type)) {
       for (const entry of [...listeners]) if (entry.type === message.type) entry.fn(message.value);
       return;
     }

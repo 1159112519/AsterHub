@@ -1,10 +1,12 @@
+import {snapSurfacePosition} from './foundation/pixel-alignment';
 import React,{useLayoutEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {gsap} from 'gsap';
 import {motion,motionOptions,reducedMotion,subscribeReducedMotion} from './motion';
 
 // One retained surface: interrupted exits resume in place, never stack another copy.
 // The outer layer owns position; the inner layer owns presence. Their tweens cannot conflict.
-export function MotionSurface({open,position,changeKey,children,className='',style={},...props}){
+export function MotionSurface({open,position:rawPosition,changeKey,children,className='',style={},...props}){
+ const position=snapSurfacePosition(rawPosition,globalThis.devicePixelRatio);
  const [present,setPresent]=useState(open),preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion);
  const frame=useRef(null),surface=useRef(null),content=useRef(null),last=useRef(null),snapshot=useRef(children),phase=useRef('closed');
  if(open)snapshot.current=children;
@@ -22,7 +24,7 @@ export function MotionSurface({open,position,changeKey,children,className='',sty
    setPhase(was==='closed'?'entering':'updating');
    gsap.set(el,{transformOrigin:(position.originX??0)+'px '+(position.originY??0)+'px'});
    if(was==='closed')gsap.set(el,{opacity:0,scale:motion.amplitude.surfaceScale});
-   tweens.push(gsap.to(el,{opacity:1,scale:1,...options('surface'),onComplete:()=>{if(alive)setPhase('open')}}));
+   tweens.push(gsap.to(el,{opacity:1,scale:1,...options('surface'),clearProps:'transform,opacity',onComplete:()=>{if(alive)setPhase('open')}}));
    if(previous){
     const x=previous.left-position.left+Number(gsap.getProperty(outer,'x')||0),y=previous.top-position.top+Number(gsap.getProperty(outer,'y')||0);
     tweens.push(gsap.fromTo(outer,{x,y},{x:0,y:0,...options('layout'),clearProps:'transform'}));

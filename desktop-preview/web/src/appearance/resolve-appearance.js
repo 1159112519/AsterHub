@@ -10,7 +10,7 @@ export const contrast=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min
 function readable(a,b){const dest=luminance(b)>.4?'#172137':'#ffffff';for(let i=0;i<=40;i++){const v=mix(a,dest,i/40);if(contrast(v,b)>=4.5)return v}return dest}
 export function resolveAppearance(settings={},systemDark=true,iconId){
  let id=validTheme(settings.theme),mode=['dark','light','system'].includes(settings.appearanceMode)?settings.appearanceMode:'dark';
- if(id!=='graphite'&&settings.followIcon&&packs.some(p=>p.id===iconId))id=iconId;
+ if(settings.followIcon&&packs.some(p=>p.id===iconId))id=iconId;
  const pack=packs.find(p=>p.id===id);if(!pack)return {id,mode:id==='light'?'light':'dark',tokens:null};
  mode=mode==='system'?(systemDark?'dark':'light'):mode;const base=pack.appearance[mode],light=mode==='light',solid=pack.renderStyle==='solid';
  const surface=solid?base.surface:mix(base.surface,pack.palette.tint,light?.035:.16),bg=solid?base.canvas:mix(base.canvas,pack.palette.tint,light?.055:.18),sidebar=solid?base.sidebar:mix(base.sidebar,pack.palette.tint,light?.06:.12),accent=readable(pack.palette.accent,surface),selected=mix(sidebar,accent,light?.10:.15);

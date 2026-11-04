@@ -14,4 +14,7 @@ const terminal=await fs.readFile(path.join(root,'native/TerminalPage.jsx'),'utf8
 if(/<Modal\b/.test(terminal))errors.push('Terminal forms must use the shared FormDialog body/footer contract');
 if(/navigator\.clipboard/.test(terminal))errors.push('Terminal clipboard must use the native desktop clipboard contract');
 if(/cloneNode\(true\)/.test(storage))errors.push('Storage directory motion must not clone the full directory DOM');
+const updater=await fs.readFile(path.join(root,'native/UpdaterPanel.jsx'),'utf8');
+if(!storage.includes('<TaskNavigationItem')||!updater.includes('<TaskNavigationItem'))errors.push('Background tasks must use TaskNavigationItem; do not concatenate task labels and counts');
+if(!storage.includes('storageTaskFocus.consume')||!storage.includes("setTool('analysis')"))errors.push('Storage task entry must focus the actual scan workspace');
 if(errors.length){console.error(errors.join('\n'));process.exitCode=1}else console.log('Foundation adoption checks passed (migrated surfaces only).');

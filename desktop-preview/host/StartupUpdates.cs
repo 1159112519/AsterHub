@@ -23,19 +23,19 @@ public sealed partial class WorkbenchWindow {
   try{
    // This uses the same signature check, version gate, download hash and installer restart path as Settings.
    await ServiceRequest("updates.check",new Dictionary<string,object>());
-   if(closed||shuttingDown||!StartupUpdatePolicy.ShouldOffer(checkedRelease,AppUpdates.DisplayVersion))return;
-   var offeredRelease=checkedRelease;string version=offeredRelease.version;
+   if(closed||shuttingDown||!StartupUpdatePolicy.ShouldOffer(Updates.Release,AppUpdates.DisplayVersion))return;
+   var offeredRelease=Updates.Release;string version=offeredRelease.version;
    startupToken=Guid.NewGuid().ToString("N");startupAnswer=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);var decision=startupAnswer.Task;
    PublishStartupUpdate(new{token=startupToken,version=version,state="offer"});
    if(!await decision)return;
    confirmed=true;
-   if(!Object.ReferenceEquals(checkedRelease,offeredRelease))throw new InvalidOperationException("版本信息已更新，请在设置中重新检查更新。");
-   PublishStartupUpdate(new{version=version,state="installing"});
+   if(!Object.ReferenceEquals(Updates.Release,offeredRelease))throw new InvalidOperationException("版本信息已更新，请在设置中重新检查更新。");
+   PublishStartupUpdate(null);
    // A manual check cannot swap the release while this dispatcher continuation starts the download.
    await ServiceRequest("updates.download",new Dictionary<string,object>());
-   if(!closed&&!shuttingDown)await ServiceRequest("updates.install",new Dictionary<string,object>());
+
   }catch(Exception error){
-   // A failed background check is silent; once installation is requested, failures must be visible.
+   // Background check errors stay silent; an explicitly requested start failure is visible.
    if(confirmed&&!closed&&!shuttingDown)PublishStartupUpdate(new{state="error",message=error.Message});
   }
  }

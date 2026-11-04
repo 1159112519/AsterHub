@@ -1,10 +1,13 @@
 import {ProcessPath} from './ProcessPath';
-import React from 'react';
+import React,{useLayoutEffect,useRef} from 'react';
+import {alignHistoryPopover} from './native/history-popover-position.js';
 import {Clock,X,ChevronRight,Layers,UserRound} from 'lucide-react';
 import {ScrollSurface} from './scroll-surface';
 export function HistoryPeek({date,time,metric,value,rows,gpuCount,loading=false,error='',onClose,onViewProcesses}){
+ const root=useRef(null);
+ useLayoutEffect(()=>{const frame=root.current?.closest('.chart-selection-popover');if(!frame)return;const align=()=>{if(frame.dataset.motionState==='open')alignHistoryPopover(frame)};const observer=new MutationObserver(align);observer.observe(frame,{attributes:true,attributeFilter:['data-motion-state']});const resize=new ResizeObserver(align);if(frame.offsetParent)resize.observe(frame.offsetParent);align();return()=>{observer.disconnect();resize.disconnect()}},[date,time]);
  const total=rows.reduce((sum,p)=>sum+p.memory,0);
- return <section className="history-peek" aria-label="所选时间快照">
+ return <section ref={root} className="history-peek" aria-label="所选时间快照">
   <header><Clock size={14}/><time>{date} {time}</time><button className="history-peek-close" type="button" aria-label="关闭时间快照" onClick={onClose}><X size={15}/></button></header>
   <div className="history-peek-reading"><span>{metric==='内存'?'内存使用':metric+' 利用率'}</span><strong>{value.toFixed(1)}<small>%</small></strong></div>
   {error?<p role="alert" className="history-peek-empty">这个时间点暂时无法读取，请重新选择。</p>:loading?<div className="history-snapshot-loading" role="status">正在读取这个时间点的进程…</div>:gpuCount>0?<>

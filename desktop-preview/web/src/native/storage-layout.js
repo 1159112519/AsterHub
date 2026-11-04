@@ -17,16 +17,38 @@ export function tileColor(node){
  return colors[hash%colors.length];
 }
 
-// Keep a bounded, stable palette and identical geometry for every spatial layer.
+const MAX_MAP_TILES=64, MIN_MAP_CELL=18;
+const byWeight=(a,b)=>b.bytes-a.bytes||a.id.localeCompare(b.id);
+// Keep the largest tiles. The remainder retains its byte weight and is reachable in the file list.
 export function storageTiles(result,width,height,palettes={}){
- if(!result)return [];
- let items=result.items||[];const key=result.snapshotId+':'+result.node.id;
- let palette=palettes[key];if(!palette){palette={};const tones=['blue','purple','green','amber','teal','slate','rose'];let used=new Set();[...items].sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id)).forEach(n=>{if(used.size===tones.length)used=new Set();let i=tones.indexOf(tileColor(n));while(used.has(tones[i]))i=(i+1)%tones.length;palette[n.id]=tones[i];used.add(tones[i])});palettes[key]=palette;if(Object.keys(palettes).length>32)delete palettes[Object.keys(palettes)[0]];}
- items=items.map(n=>({...n,color:palette[n.id]||tileColor(n)}));
- if(result.total>items.length){const visible=items.slice(0,199);items=[...visible,{id:'other',name:`其他 ${result.total-visible.length} 项`,bytes:Math.max(0,result.bytes-visible.reduce((s,n)=>s+n.bytes,0)),kind:'file',color:'slate',aggregate:true}];}
- return treemap(items,width,height);
+ if(!result||width<=0||height<=0)return [];
+ const available=(result.items||[]).filter(n=>n.bytes>0).sort(byWeight),total=result.total??available.length;
+ const totalBytes=Math.max(result.bytes||0,available.reduce((sum,n)=>sum+n.bytes,0));
+ let items=available.slice(0,total>MAX_MAP_TILES?MAX_MAP_TILES-1:MAX_MAP_TILES),tiles;
+ do {
+  const otherBytes=Math.max(0,totalBytes-items.reduce((sum,n)=>sum+n.bytes,0)),otherCount=Math.max(0,total-items.length);
+  tiles=treemap(otherBytes>0&&otherCount>0?[...items,{id:'other',name:`其他 ${otherCount.toLocaleString('zh-CN')} 项`,bytes:otherBytes,kind:'file',color:'slate',aggregate:true,aggregateCount:otherCount}]:items,width,height);
+  const small=new Set(tiles.filter(n=>!n.aggregate&&Math.min(n.w,n.h)<MIN_MAP_CELL).map(n=>n.id));
+  if(!small.size)break;
+  items=items.filter(n=>!small.has(n.id));
+ }while(items.length||tiles.some(n=>!n.aggregate));
+ const key=result.snapshotId+':'+result.node.id;
+ let palette=palettes[key];
+ if(!palette){palette=Object.create(null);palettes[key]=palette;if(Object.keys(palettes).length>32)delete palettes[Object.keys(palettes)[0]];}
+ const tones=['blue','purple','green','amber','teal','slate','rose'];let used=new Set();
+ return tiles.map(tile=>{
+  if(tile.aggregate)return tile;
+  if(used.size===tones.length)used=new Set();
+  let i=tones.indexOf(palette[tile.id]||tileColor(tile));
+  if(!palette[tile.id]){while(used.has(tones[i]))i=(i+1)%tones.length;palette[tile.id]=tones[i];}
+  used.add(tones[i]);
+  return {...tile,color:tones[i]};
+ });
 }
-export function storageTileRect(tile){return {x:tile.x+3,y:tile.y+3,width:Math.max(0,tile.w-6),height:Math.max(0,tile.h-6)}}
+export function storageTileRect(tile){
+ const gap=Math.max(0,Math.min(3,tile.w*.1,tile.h*.1));
+ return {x:tile.x+gap,y:tile.y+gap,width:Math.max(0,tile.w-gap*2),height:Math.max(0,tile.h-gap*2)};
+}
 export function commonStorageDirectory(from,to){const a=from.crumbs||[],b=to.crumbs||[];let common=null;for(let i=0;i<Math.min(a.length,b.length)&&a[i].id===b[i].id;i++)common=a[i].id;return common;}
 export function planStorageNavigation({from,to,parent,tiles,actualSource}){
  if(!from||!to||from.node.id===to.node.id||!parent)return null;

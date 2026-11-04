@@ -15,7 +15,7 @@ Copy-Item -Path (Join-Path $previewRoot 'host/brand-icons/*') -Destination $bran
 & (Join-Path $previewRoot 'scripts/build-backend.ps1') -Root $previewRoot
 $framework=Split-Path $compiler
 $refs=@('System.Windows.Forms.dll','System.Drawing.dll','System.dll','System.Core.dll','System.Web.Extensions.dll','System.Xaml.dll',(Join-Path $framework 'WPF/WindowsBase.dll'),(Join-Path $framework 'WPF/PresentationCore.dll'),(Join-Path $framework 'WPF/PresentationFramework.dll'),(Join-Path $appRoot 'runtime/managed/Microsoft.Web.WebView2.Core.dll'),(Join-Path $appRoot 'runtime/managed/Microsoft.Web.WebView2.Wpf.dll'),(Join-Path $appRoot 'app/modules/AQServer.Core.dll'),(Join-Path $appRoot 'app/modules/AQServer.Storage.dll'),(Join-Path $appRoot 'app/modules/AQServer.Platform.Windows.dll'))
-$argsBuild=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+(Join-Path $appRoot 'AsterHub.Preview.exe')),('/win32icon:'+(Join-Path $previewRoot 'host/AsterHub.ico')))
+$argsBuild=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+(Join-Path $appRoot 'AsterHub.Preview.exe')),('/win32icon:'+(Join-Path $previewRoot 'host/AsterHub.Process.ico')))
 foreach($reference in $refs){$argsBuild+=('/reference:'+$reference)}
 $argsBuild+=@(Get-ChildItem (Join-Path $previewRoot 'host') -Filter *.cs | ForEach-Object {$_.FullName})
 & $compiler @argsBuild

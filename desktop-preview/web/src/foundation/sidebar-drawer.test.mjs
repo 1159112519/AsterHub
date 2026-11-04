@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {drawerGeometry} from './sidebar-drawer-geometry.js';
+test('drawer clips the old surface to the destination without scaling text',()=>{const g=drawerGeometry(230,84);assert.deepEqual(g,{fromWidth:230,toWidth:84,surfaceWidth:230,mainOffset:146,fromInset:0,toInset:146});assert.equal(drawerGeometry(84,230).mainOffset,-146)});
+test('drawer handles invalid or identical widths without generating bad transforms',()=>{assert.equal(drawerGeometry(84,84).mainOffset,0);assert.equal(drawerGeometry(NaN,84),null);assert.equal(drawerGeometry(84,0),null)});

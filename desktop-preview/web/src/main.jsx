@@ -21,3 +21,5 @@ createRoot(document.getElementById("root")).render(
   </React.StrictMode>,
 );
 import "./appearance/appearance.css";
+
+import './foundation/control-alignment.css';

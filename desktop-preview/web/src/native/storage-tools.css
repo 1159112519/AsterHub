@@ -51,7 +51,7 @@
 .storage-tools .storage-map-stage{flex:1;min-height:250px;position:relative;overflow:hidden;isolation:isolate;border-radius:8px;background:var(--bg)}
 .storage-tools .storage-map-content{position:absolute;inset:0}
 .storage-tools .storage-map-old{pointer-events:none;z-index:2}
-.storage-tools .storage-tile{position:absolute;border-radius:7px;background:color-mix(in srgb,var(--tile) 74%,var(--surface));border:1px solid color-mix(in srgb,var(--tile-edge) 32%,transparent);color:#ecf2fb;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;user-select:none;contain:layout paint}
+.storage-tools .storage-tile{position:absolute;box-sizing:border-box;min-width:0;min-height:0;border-radius:7px;background:color-mix(in srgb,var(--tile) 74%,var(--surface));border:1px solid color-mix(in srgb,var(--tile-edge) 32%,transparent);color:#ecf2fb;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;user-select:none;contain:layout paint}
 .storage-tools .storage-tile:hover{background:color-mix(in srgb,var(--tile) 92%,var(--surface));border-color:var(--tile-edge)}
 .storage-tools .storage-tile.selected{box-shadow:0 0 0 2px var(--accent) inset;border-color:var(--accent)}
 .storage-tools .storage-tile:focus-visible{outline-offset:-3px;outline:2px solid var(--accent)}
@@ -163,11 +163,15 @@
 .storage-tools .storage-tile-content svg{color:var(--tile-edge);opacity:1}
 .storage-tools .storage-tile-name{font-weight:600;line-height:1.3;letter-spacing:0}
 .storage-tools .storage-tile-value{font-weight:600;line-height:1.25;letter-spacing:0;color:var(--muted)}
-.storage-tools .storage-tile.directory:after{content:'';position:absolute;top:0;left:22px;width:30px;height:3px;border-radius:0 0 3px 3px;background:color-mix(in srgb,var(--tile-edge) 55%,transparent);pointer-events:none}
+.storage-tools .storage-tile.directory-mark:after{content:'';position:absolute;top:0;left:22px;width:30px;height:3px;border-radius:0 0 3px 3px;background:color-mix(in srgb,var(--tile-edge) 55%,transparent);pointer-events:none}
 .storage-tile-kind{position:absolute;bottom:16px;left:12px;right:12px;color:var(--muted);font-size:13px;font-weight:400;line-height:20px;pointer-events:none}
 .storage-map-stage.animating .storage-tile{pointer-events:none;transition:none}
 .storage-map-portal{--storage-lift:0;position:absolute;z-index:3;isolation:isolate;overflow:hidden;contain:layout paint;pointer-events:none;box-sizing:border-box;background:var(--surface);border:1px solid color-mix(in srgb,var(--tile-edge) 23%,var(--line));box-shadow:0 calc(3px + 14px * var(--storage-lift)) calc(10px + 26px * var(--storage-lift)) rgba(0,0,0,calc(.08 + .20 * var(--storage-lift))),0 2px 7px rgba(0,0,0,calc(.04 + .10 * var(--storage-lift))),inset 0 1px #ffffff0b}
-.storage-portal-content{position:absolute;inset:-1px;background:var(--surface)}
+.storage-portal-content{position:absolute;top:-1px;left:-1px;contain:strict;will-change:transform,opacity;background:var(--surface)}
+.storage-map-shade{position:absolute;inset:0;z-index:1;opacity:0;background:#000;will-change:opacity;pointer-events:none}
+.storage-tools .storage-tile.micro{border:0;box-shadow:none;background:color-mix(in srgb,var(--tile) 25%,var(--surface));padding:0}
+.storage-tools .storage-map-overflow{display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:32px;border-radius:8px;padding:5px 9px;color:var(--muted);white-space:nowrap}
+.storage-tools .storage-map-overflow:hover:enabled{color:var(--text);background:var(--hover)}
 .storage-portal-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:12px;pointer-events:none;text-align:center;background:linear-gradient(135deg,color-mix(in srgb,var(--tile) 14%,transparent),color-mix(in srgb,var(--tile) 4%,transparent)),var(--surface)}
 .storage-portal-face>svg{color:var(--tile-edge)}
 .storage-portal-face>strong{font-size:var(--portal-name-size);font-weight:600;line-height:1.3;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -194,3 +198,19 @@
 .storage-scan-dialog>header{flex:none}.storage-scan-dialog>.storage-scan-content{overflow:hidden}
 
 .modal.storage-scan-dialog{max-width:none;width:min(700px,calc(100vw - 48px));height:min(630px,calc(100dvh - 48px))}
+/* Registered tint values interpolate; gradients no longer swap in a single frame. */
+@property --storage-tint-top{syntax:'<percentage>';inherits:true;initial-value:14%}
+@property --storage-tint-bottom{syntax:'<percentage>';inherits:true;initial-value:4%}
+.storage-tools .storage-tile,.storage-portal-face{--storage-tint-top:14%;--storage-tint-bottom:4%;background:linear-gradient(135deg,color-mix(in srgb,var(--tile) var(--storage-tint-top),transparent),color-mix(in srgb,var(--tile) var(--storage-tint-bottom),transparent)),var(--surface)}
+.storage-tools .storage-tile{transition:--storage-tint-top .28s cubic-bezier(.22,1,.36,1),--storage-tint-bottom .28s cubic-bezier(.22,1,.36,1),border-color .28s cubic-bezier(.22,1,.36,1),box-shadow .28s cubic-bezier(.22,1,.36,1)}
+.storage-tools .storage-tile:hover{--storage-tint-top:17%;--storage-tint-bottom:6%;background:linear-gradient(135deg,color-mix(in srgb,var(--tile) var(--storage-tint-top),transparent),color-mix(in srgb,var(--tile) var(--storage-tint-bottom),transparent)),var(--surface)}
+.storage-map-stage.animating .storage-tile{transition:none}
+@media(prefers-reduced-motion:reduce){.storage-tools .storage-tile{transition:none}}
+html[data-motion=reduced] .storage-tools .storage-tile{transition:none}
+/* Unknown file count is an activity track with real counts, never a fabricated percentage. */
+.storage-scan-progress{position:relative;padding-bottom:22px;overflow:hidden}
+.storage-scan-progress>.storage-scan-track{position:absolute;display:block;left:14px;right:14px;bottom:9px;height:4px;border-radius:5px;overflow:hidden;background:color-mix(in srgb,var(--green) 9%,transparent)}
+.storage-scan-track>b{display:block;width:35%;height:100%;border-radius:inherit;background:linear-gradient(90deg,color-mix(in srgb,var(--green) 20%,transparent),color-mix(in srgb,var(--green) 60%,transparent));animation:storage-scan-sweep 2.2s cubic-bezier(.4,0,.2,1) infinite}
+.storage-scan-track.paused>b{animation-play-state:paused;opacity:.45}.storage-scan-track.aggregating>b{width:65%;animation-duration:1.5s}
+@keyframes storage-scan-sweep{0%{transform:translateX(-105%)}100%{transform:translateX(390%)}}
+@media(prefers-reduced-motion:reduce){.storage-scan-track>b{animation:none;width:100%;opacity:.5}}

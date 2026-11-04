@@ -77,3 +77,5 @@
 .about-link-button small,.about-links .about-external-link small{font-size:14px;line-height:18px}
 .about-external-link[data-unavailable="true"]{opacity:.65}
 .about-external-link[data-unavailable="true"] a{cursor:not-allowed}
+
+.native-update-task-badge{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--hover,#8899aa0c);color:var(--text);font:inherit;font-size:13px;cursor:pointer;text-align:left}.native-update-task-badge span{min-width:0;overflow-wrap:anywhere}.native-update-task-badge svg{flex-shrink:0}

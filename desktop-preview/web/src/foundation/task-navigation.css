@@ -1,0 +1,6 @@
+.native-workbench .sidebar .foundation-task-navigation{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:46px;padding:10px 12px;border:0;border-radius:12px;background:transparent;color:var(--muted);font:600 15px/24px var(--font-interface);text-align:left;overflow:hidden;cursor:pointer}
+.native-workbench .sidebar .foundation-task-navigation:hover{background:var(--hover);color:var(--text)}
+.native-workbench .sidebar .foundation-task-navigation>.task-navigation-label{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:24px}
+.native-workbench .sidebar .foundation-task-navigation>.task-navigation-detail{display:flex;align-items:center;justify-content:center;flex:none;min-width:24px;height:24px;padding:0 6px;margin:0;border-radius:8px;color:var(--muted);background:color-mix(in srgb,var(--text) 5%,transparent);font:400 12px/24px var(--font-interface);white-space:nowrap}
+.native-workbench.sidebar-collapsed .sidebar .foundation-task-navigation{justify-content:center;gap:0;padding-inline:12px}
+.native-workbench.sidebar-collapsed .sidebar .foundation-task-navigation>:is(.task-navigation-label,.task-navigation-detail){display:none}

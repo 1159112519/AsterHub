@@ -33,6 +33,8 @@
   <ItemGroup>
     <Compile Include="PeripheralCollector.cs" />
     <Compile Include="Capture.cs" />
+    <Compile Include="DeviceSamplingPolicy.cs" />
+    <Compile Include="LocalGpuMetadataCache.cs" />
     <Compile Include="LocalLightCapture.cs" />
     <Compile Include="SshAuthentication.cs" />
     <Compile Include="SshTerminalSession.cs" />

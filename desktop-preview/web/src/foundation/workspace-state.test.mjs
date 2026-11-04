@@ -48,3 +48,75 @@ test('cached history freshness has a finite range-specific TTL while stale resul
  assert.equal(isWorkspaceResultFresh(result,60,30000,999),false);
  assert.deepEqual(result.points,[1,2]);
 });
+
+function storageFixture(){let data=null;return {getItem:()=>data,setItem:(_,value)=>{data=value},removeItem:()=>{data=null},text:()=>data};}
+test('device navigation and safe pane options survive restart independently',()=>{
+ const storage=storageFixture(),first=createWorkspaceState({storage});
+ first.open('A','navigation',()=>({page:'overview'})).setState({page:'storage'});
+ first.open('B','navigation',()=>({page:'overview'})).setState({page:'files'});
+ first.open('A','files',()=>({})).setState({leftId:'B',rightId:'local',ratio:62,showTransfers:true});
+ first.open('A','files-pane:local:B',()=>({listing:null,path:''}),{dependencies:['B']}).setState({path:'/project/A',listing:{password:'do-not-save'}});
+ first.open('A','history',()=>({minutes:60,metric:'cpu',result:null})).setState({minutes:120,metric:'memory',result:{token:'do-not-save'}});
+ const second=createWorkspaceState({storage});
+ assert.equal(second.open('B','navigation',()=>({page:'overview'})).getSnapshot().page,'files');
+ assert.equal(second.open('A','navigation',()=>({page:'overview'})).getSnapshot().page,'storage');
+ assert.deepEqual(second.open('A','files',()=>({})).getSnapshot(),{leftId:'B',rightId:'local',ratio:62,showTransfers:true});
+ assert.deepEqual(second.open('A','files-pane:local:B',()=>({listing:null,path:''}),{dependencies:['B']}).getSnapshot(),{listing:null,path:'/project/A'});
+ assert.deepEqual(second.open('A','history',()=>({minutes:60,metric:'cpu',result:null})).getSnapshot(),{minutes:120,metric:'memory',result:null});
+ assert.equal(storage.text().includes('do-not-save'),false);
+});
+test('restored defaults remain independent and late callbacks remain bound after persistence',()=>{
+ const storage=storageFixture(),first=createWorkspaceState({storage}),a=first.open('A','navigation',()=>({page:'overview'}));
+ a.setState({page:'memory'});const b=first.open('B','navigation',()=>({page:'overview'}));a.setState({page:'network'});
+ assert.equal(b.getSnapshot().page,'overview');
+ const restored=createWorkspaceState({storage});assert.equal(restored.open('A','navigation',()=>({page:'overview'})).getSnapshot().page,'network');
+ assert.equal(restored.open('B','navigation',()=>({page:'overview'})).getSnapshot().page,'overview');
+});
+test('removing an unopened restored device clears dependent persisted panes and endpoint choices',()=>{
+ const storage=storageFixture(),first=createWorkspaceState({storage});
+ first.open('A','files',()=>({})).setState({leftId:'local',rightId:'B',ratio:60,showTransfers:false});
+ first.open('A','files-pane:remote:B',()=>({path:''}),{dependencies:['B']}).setState({path:'/removed'});
+ first.open('B','navigation',()=>({page:'overview'})).setState({page:'storage'});
+ const second=createWorkspaceState({storage});second.retainDevices(['A','local']);
+ const third=createWorkspaceState({storage});
+ assert.equal(third.open('A','files-pane:remote:B',()=>({path:''})).getSnapshot().path,'');
+ assert.equal(third.open('A','files',()=>({leftId:'local',rightId:'A',ratio:50,showTransfers:false})).getSnapshot().rightId,'A');
+ assert.equal(third.open('B','navigation',()=>({page:'overview'})).getSnapshot().page,'overview');
+});
+test('unknown pages, credentials, action tokens and live status never enter persistent storage',()=>{
+ const storage=storageFixture(),cache=createWorkspaceState({storage});
+ cache.open('A','secret',()=>({})).setState({password:'secret-password',token:'secret-token'});
+ cache.open('A','memory-tools',()=>({})).setState({tab:'cleanup',selected:['standby'],confirmation:{token:'secret-token'},policy:null,dirty:false,busy:true});
+ cache.open('A','storage-tools',()=>({})).setState({tool:'analysis',path:'C:/work',layout:'list',query:'model',minimum:100,age:2,treeWidth:240,status:{job:{status:'running'}},transfer:{id:'once'},clipboard:{paths:['secret-password']}});
+ assert.ok(storage.text());assert.equal(storage.text().includes('secret-password'),false);assert.equal(storage.text().includes('secret-token'),false);assert.equal(storage.text().includes('running'),false);assert.equal(storage.text().includes('once'),false);
+ const restored=createWorkspaceState({storage});assert.deepEqual(restored.open('A','memory-tools',()=>({tab:'monitor',selected:null,policy:null,dirty:false})).getSnapshot(),{tab:'cleanup',selected:['standby'],policy:null,dirty:false});
+ assert.equal(restored.open('A','storage-tools',()=>({status:null,transfer:null})).getSnapshot().status,null);
+});
+test('corrupt, unavailable or invalid persisted options fall back safely',()=>{
+ const blocked={getItem(){throw Error('denied')},setItem(){throw Error('full')}};
+ const cache=createWorkspaceState({storage:blocked}),handle=cache.open('A','navigation',()=>({page:'overview'}));handle.setState({page:'files'});assert.equal(handle.getSnapshot().page,'files');
+ const storage=storageFixture(),bad=createWorkspaceState({storage});bad.open('A','navigation',()=>({page:'overview'})).setState({page:'execute-dangerous-command'});
+ assert.equal(createWorkspaceState({storage}).open('A','navigation',()=>({page:'overview'})).getSnapshot().page,'overview');
+});
+
+test('inventory pruning removes endpoint choices even when that endpoint never opened its own workspace',()=>{
+ const storage=storageFixture(),cache=createWorkspaceState({storage});
+ cache.open('A','files',()=>({leftId:'local',rightId:'A'})).setState({leftId:'local',rightId:'never-opened',ratio:55});
+ cache.retainDevices(['A','local']);
+ assert.equal(createWorkspaceState({storage}).open('A','files',()=>({leftId:'local',rightId:'A'})).getSnapshot().rightId,'A');
+});
+
+test('all offered manual memory areas and an unsaved policy remain inert preferences after reload',()=>{
+ const storage=storageFixture(),cache=createWorkspaceState({storage}),selected=['allstandby','workset','filecache','modified','registry','combine'];
+ const policy={enabled:true,threshold:91,durationMinutes:6,cooldownMinutes:45,areas:['standby','registry']};
+ cache.open('local','memory-tools',()=>({})).setState({tab:'policy',selected,policy,dirty:true,token:'not-restorable'});
+ const restored=createWorkspaceState({storage}).open('local','memory-tools',()=>({tab:'monitor',selected:null,policy:null,dirty:false})).getSnapshot();
+ assert.deepEqual(restored,{tab:'policy',selected,policy,dirty:true});assert.equal(storage.text().includes('not-restorable'),false);
+});
+
+test('storage directory navigation is stored as inert metadata rather than a live snapshot',()=>{
+ const storage=storageFixture(),cache=createWorkspaceState({storage});
+ cache.open('A','storage-tools',()=>null).setState({tool:'analysis',status:{snapshot:{id:'scan-1',root:'/data'},job:{status:'running'}},nodeId:'9',offset:100,expanded:new Set(['0','9']),history:{entries:[{id:'0',directory:true},{id:'9',directory:true}],cursor:1}});
+ const view=createWorkspaceState({storage}).open('A','storage-tools',()=>null).getSnapshot();
+ assert.equal(view.snapshotId,'scan-1');assert.equal(view.nodeId,'9');assert.deepEqual(view.expanded,['0','9']);assert.equal(view.history.cursor,1);assert.equal(view.status,undefined);assert.equal(storage.text().includes('running'),false);
+});

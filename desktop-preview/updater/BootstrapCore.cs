@@ -1,6 +1,6 @@
 using System;using System.IO;using System.Linq;using System.Text;using System.Reflection;using System.Threading;using System.Threading.Tasks;
 internal static class BootstrapCore {
- internal const string TargetVersion="0.3.0-preview.22";
+ internal const string TargetVersion="0.3.0-preview.23";
  internal static string JoinArguments(string[] args){return string.Join(" ",args.Select(Quote));}
  static string Quote(string value){if(value==null)throw new ArgumentNullException("value");var s=new StringBuilder("\"");int slashes=0;foreach(char c in value){if(c=='\\'){slashes++;continue;}if(c=='\"')s.Append('\\',slashes*2+1);else s.Append('\\',slashes);s.Append(c);slashes=0;}s.Append('\\',slashes*2);return s.Append('"').ToString();}
  internal static ReleaseInfo ReadRelease(){using(var input=Assembly.GetExecutingAssembly().GetManifestResourceStream("release.json")){if(input==null)throw new InvalidDataException("升级程序缺少版本信息。");using(var output=new MemoryStream()){input.CopyTo(output);var release=AppUpdates.VerifyManifest(output.ToArray(),UpdatePublicKey.Xml);Validate(release);return release;}}}

@@ -1,3 +1,5 @@
+import {TaskNavigationItem} from '../foundation/TaskNavigationItem';
+import {storageTaskFocus} from '../foundation/task-focus';
 import React,{useState,useEffect,useLayoutEffect,useMemo,useRef,useSyncExternalStore,useId} from 'react';
 import {Toolbar} from '../foundation/ui';
 import {ToolNavigation} from '../foundation/ToolNavigation';
@@ -13,13 +15,14 @@ const activeJob=isActiveTask;
 const states={queued:'等待扫描',enumerating:'正在扫描',aggregating:'整理结果',paused:'已暂停',ready:'扫描完成',cancelled:'扫描已取消',failed:'扫描未完成'};
 const kinds={folder:'文件夹',model:'模型文件',archive:'压缩文件',media:'图像与视频',data:'数据库与日志',file:'其他文件'};
 export function tileTypography(w,h,name){const short=Math.min(w,h),pad=Math.min(18,Math.max(5,short*.085)),aw=Math.max(0,w-pad*2),ah=Math.max(0,h-pad*2),label=Math.max(14,Math.min(22,Math.sqrt(w*h)*.065));return {pad,label,value:Math.max(14,Math.min(24,label+2)),icon:Math.round(Math.max(16,Math.min(28,short*.15))),showName:aw>=64&&ah>=52,showValue:aw>=60&&ah>=82,showIcon:short>=24};}
-export function StorageTaskBadge({onOpen}){
- const state=useSyncExternalStore(storageJobs.subscribe,storageJobs.getSnapshot),jobs=(state.data||[]).filter(activeJob);
- return jobs.length>0&&<button className="nav-item storage-task-badge" onClick={()=>onOpen(jobs[0].deviceId)}><ScanLine size={17}/><span>扫描进行中 <small>{jobs.length} 个任务</small></span></button>;
+export function StorageTaskBadge({onOpen,devices}){
+ const state=useSyncExternalStore(storageJobs.subscribe,storageJobs.getSnapshot),jobs=(state.data||[]).filter(job=>activeJob(job)&&devices.some(row=>row.device.id===job.deviceId));
+ return jobs.length>0&&<TaskNavigationItem className="storage-task-badge" icon={ScanLine} label="磁盘扫描" detail={jobs.length>1?jobs.length:undefined} title={jobs.length===1?"查看磁盘扫描任务":"查看磁盘扫描任务，共 "+jobs.length+" 个"} onClick={()=>onOpen(jobs[0].deviceId)}/>;
 }
 export function StorageTools(props){return <StorageWorkspace key={props.deviceId} {...props}/>;}
 function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolChange}){
  const [restored]=useState(()=>storageDeviceState.read(deviceId)||{});
+ const restoredSnapshot=useRef(restored.snapshotId??null);
  const [treeWidth,setTreeWidth]=useState(()=>clampStorageTreeWidth(restored.treeWidth)),[treeAvailable,setTreeAvailable]=useState(1000),treeLayout=useRef(null),treeDrag=useRef(null),treeId=useId();
  const treeBounds=storageTreeBounds(treeAvailable),visibleTreeWidth=clampStorageTreeWidth(treeWidth,treeAvailable);
  function releaseTreePointer(event){const drag=treeDrag.current;if(!drag||event?.pointerId!==undefined&&event.pointerId!==drag.id)return;treeDrag.current=null;drag.node.removeAttribute('data-resizing');if(drag.node.hasPointerCapture(drag.id))drag.node.releasePointerCapture(drag.id);}
@@ -28,22 +31,25 @@ function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolCh
  function keyTreeResize(event){let next;const step=event.shiftKey?48:16;if(event.key==='ArrowLeft')next=visibleTreeWidth-step;else if(event.key==='ArrowRight')next=visibleTreeWidth+step;else if(event.key==='Home')next=treeBounds.min;else if(event.key==='End')next=treeBounds.max;else return;event.preventDefault();setTreeWidth(clampStorageTreeWidth(next,treeAvailable));}
  const [tool,setTool]=useState(restored.tool??null),[status,setStatus]=useState(restored.status??null),[path,setPath]=useState(restored.path??''),[data,setData]=useState(restored.data??null),[nodeId,setNodeId]=useState(restored.nodeId??'0'),[layout,setLayout]=useState(restored.layout??'map'),[query,setQuery]=useState(restored.query??''),[kind,setKind]=useState(restored.kind??''),[minimum,setMinimum]=useState(restored.minimum??104857600),[age,setAge]=useState(restored.age??0),[folders,setFolders]=useState(restored.folders??{}),[expanded,setExpanded]=useState(restored.expanded??new Set(['0'])),[history,setHistory]=useState(restored.history??{entries:[{id:'0',directory:true}],cursor:0}),[offset,setOffset]=useState(restored.offset??0),[selected,setSelected]=useState(new Set()),[clipboard,setClipboard]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(restored.notice??''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[dialog,setDialog]=useState(null),[unused,setUnused]=useState(false),[trash,setTrash]=useState([]),[hover,setHover]=useState(null),[menu,setMenu]=useState(null),[refresh,setRefresh]=useState(0),[transfer,setTransfer]=useState(restored.transfer??null),[size,setSize]=useState({w:800,h:440}),[mapTransition,setMapTransition]=useState(null),[navigating,setNavigating]=useState(false);
  const mapPages=useRef(new Map()),navigationRevision=useRef(0),navigationResult=useRef(null),outPortal=useRef(),inPortal=useRef();
- const tilePalettes=useRef({}),folderRequests=useRef(new Set()),folderCache=useRef(restored.folders||{}),generation=useRef(0),requestRevision=useRef(0),stage=useRef(),content=useRef(),transition=useRef(null),animation=useRef(null),hoverId=useRef(null),tooltipNode=useRef(null),contextRef=useRef(),statusRef=useRef(),toolRef=useRef();toolRef.current=tool;statusRef.current=status;
+ const tilePalettes=useRef({}),tileLayouts=useRef(new WeakMap()),folderRequests=useRef(new Set()),folderCache=useRef(restored.folders||{}),generation=useRef(0),requestRevision=useRef(0),stage=useRef(),content=useRef(),transition=useRef(null),animation=useRef(null),hoverId=useRef(null),tooltipNode=useRef(null),contextRef=useRef(),statusRef=useRef(),toolRef=useRef();toolRef.current=tool;statusRef.current=status;
  const preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion),statusResource=useMemo(()=>storageStatusResource(deviceId),[deviceId]);
  const snapshot=status?.snapshot,snapshotId=snapshot?.id,job=status?.job;
  useEffect(()=>{onToolChange?.(deviceId,tool)},[deviceId,tool,onToolChange]);
  const retainedView=useRef();retainedView.current={tool,status,path,data,nodeId,layout,query,kind,minimum,age,folders,expanded,history,offset,notice,transfer,treeWidth};
  useEffect(()=>()=>{storageDeviceState.save(deviceId,retainedView.current);generation.current++},[deviceId]);
+ useEffect(()=>{storageDeviceState.save(deviceId,retainedView.current)},[deviceId,tool,path,layout,query,kind,minimum,age,treeWidth,nodeId,offset,expanded,history,snapshotId]);
  const call=(method,params={},timeout)=>native.request(method,{deviceId,...params},timeout);
  useLayoutEffect(()=>{const node=treeLayout.current;if(!node)return;const update=()=>{const width=node.getBoundingClientRect().width;if(width>0)setTreeAvailable(width)};update();const observer=new ResizeObserver(update);observer.observe(node);return()=>observer.disconnect()},[tool,!!snapshotId]);
  useLayoutEffect(()=>{releaseTreePointer();return releaseTreePointer},[active,tool]);
  function resetTransition(){animation.current?.cancel();animation.current=null;transition.current=null;setMapTransition(null);}
+ const focusTicket=useSyncExternalStore(storageTaskFocus.subscribe,()=>storageTaskFocus.read(deviceId));
+ useEffect(()=>{if(!active||!focusTicket)return;resetTransition();setTool('analysis');setNotice('');storageTaskFocus.consume(deviceId,focusTicket)},[active,deviceId,focusTicket]);
  useEffect(()=>{
   generation.current++;navigationRevision.current++;setNavigating(false);resetTransition();if(!active)return;
   let alive=true;const rev=generation.current;
   const update=()=>{const state=statusResource.getSnapshot();if(!alive||rev!==generation.current)return;
    if(state.error){setError(state.error.message);return}const next=state.data;if(!next)return;
-   setStatus(old=>{if(next.snapshot?.id!==old?.snapshot?.id){mapPages.current.clear();navigationRevision.current++;setNavigating(false);resetTransition();setData(null);setNodeId('0');setOffset(0);setSelected(new Set());setFolders({});folderCache.current={};folderRequests.current.clear();setExpanded(new Set(['0']));setHistory({entries:[{id:'0',directory:true}],cursor:0})}return next});setPath(p=>p||next.snapshot?.root||next.job?.root||'');
+   setStatus(old=>{const sameRestoredSnapshot=next.snapshot?.id&&next.snapshot.id===restoredSnapshot.current;restoredSnapshot.current=null;if(next.snapshot?.id!==old?.snapshot?.id&&!sameRestoredSnapshot){mapPages.current.clear();navigationRevision.current++;setNavigating(false);resetTransition();setData(null);setNodeId('0');setOffset(0);setSelected(new Set());setFolders({});folderCache.current={};folderRequests.current.clear();setExpanded(new Set(['0']));setHistory({entries:[{id:'0',directory:true}],cursor:0})}return next});setPath(p=>p||next.snapshot?.root||next.job?.root||'');
   };const off=statusResource.subscribe(update);update();
   return()=>{alive=false;off();resetTransition()};
  },[deviceId,statusResource,active]);
@@ -59,7 +65,7 @@ function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolCh
  useLayoutEffect(()=>{const node=stage.current;if(!node)return;let previous=null;const observer=new ResizeObserver(entries=>{const rect=entries[0].contentRect,next={w:rect.width,h:rect.height};if(previous&&(Math.abs(next.w-previous.w)>.5||Math.abs(next.h-previous.h)>.5)&&transition.current)resetTransition();previous=next;setSize(next);setHover(null)});observer.observe(node);return()=>observer.disconnect()},[tool,layout,!!snapshotId]);
  useLayoutEffect(()=>{
   const pending=mapTransition;if(!pending||!content.current||!stage.current)return;
-  animation.current=animateDirectoryTransition({content:content.current,stage:stage.current,pending,outgoing:outPortal.current,incoming:inPortal.current,onComplete:()=>{if(transition.current===pending){transition.current=null;animation.current=null;setMapTransition(null)}}});
+  animation.current=animateDirectoryTransition({content:content.current,stage:stage.current,shade:content.current.nextElementSibling,pending,outgoing:outPortal.current,incoming:inPortal.current,onComplete:()=>{if(transition.current===pending){transition.current=null;animation.current=null;setMapTransition(null)}}});
   return()=>{animation.current?.cancel();animation.current=null;};
  },[mapTransition]);
  useDismissableLayer({open:Boolean(menu),refs:[contextRef],onDismiss:()=>setMenu(null)});
@@ -80,8 +86,9 @@ function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolCh
     const common=commonStorageDirectory(from,target);const parent=common===from.node.id?from:common===target.node.id?target:common?await mapPage(common):null;
     if(rev!==generation.current||nav!==navigationRevision.current)return;
     const source=stage.current.querySelector(`[data-tile="${CSS.escape(node.id)}"]`),stageRect=stage.current.getBoundingClientRect(),sourceRect=source?.getBoundingClientRect();
-    pending=planStorageNavigation({from,to:target,parent,tiles:storageTiles(parent,size.w,size.h,tilePalettes.current),actualSource:sourceRect?{x:sourceRect.left-stageRect.left,y:sourceRect.top-stageRect.top,width:sourceRect.width,height:sourceRect.height}:null});
-    if(pending){pending.layouts={parent:storageTiles(parent,size.w,size.h,tilePalettes.current),before:pending.before?storageTiles(from,size.w,size.h,tilePalettes.current):[],after:pending.after?storageTiles(target,size.w,size.h,tilePalettes.current):[]};transition.current=pending;setMapTransition(pending);}
+    const parentTiles=tilesFor(parent);
+    pending=planStorageNavigation({from,to:target,parent,tiles:parentTiles,actualSource:sourceRect?{x:sourceRect.left-stageRect.left,y:sourceRect.top-stageRect.top,width:sourceRect.width,height:sourceRect.height}:null});
+    if(pending){pending.layouts={parent:parentTiles,before:pending.before?tilesFor(from):[],after:pending.after?tilesFor(target):[]};transition.current=pending;setMapTransition(pending);}
    }
    navigationResult.current={snapshotId:sid,nodeId:node.id,result:target};setData(target);setNodeId(node.id);setOffset(0);setQuery('');setKind('');setSelected(new Set());
    if(record)setHistory(h=>({entries:[...h.entries.slice(0,h.cursor+1),node],cursor:h.cursor+1}));else if(travelIndex!==null)setHistory(h=>({...h,cursor:travelIndex}));
@@ -108,9 +115,42 @@ function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolCh
   {isExpanded&&branch&&branch.total>branch.items.length&&<button className="storage-tree-more" onClick={()=>loadFolders(n.id,true)}>显示更多…</button>}
  </React.Fragment>}
 
- const tiles=useMemo(()=>storageTiles(data,size.w,size.h,tilePalettes.current),[data,size]);
- function mapTiles(items,relative=false){return items.map(n=>{const rect=storageTileRect(n),type=tileTypography(rect.width,rect.height,n.name),position=relative?{left:rect.x/size.w*100+'%',top:rect.y/size.h*100+'%',width:rect.width/size.w*100+'%',height:rect.height/size.h*100+'%'}:{left:rect.x,top:rect.y,width:rect.width,height:rect.height};return <button key={n.id} data-tile={n.id} className={'storage-tile color-'+(n.color||tileColor(n))+(n.directory?' directory':' file')+(selected.has(n.id)?' selected':'')} style={{...position,padding:type.pad,borderRadius:Math.min(22,Math.min(rect.width,rect.height)*.2)}} tabIndex={mapTransition?-1:0} onClick={e=>{if(mapTransition||navigating)return;n.aggregate?setLayout('list'):n.directory&&!e.ctrlKey&&!e.metaKey?navigate(n):toggle(n,e.ctrlKey||e.metaKey)}} onContextMenu={e=>!mapTransition&&!n.aggregate&&itemMenu(e,n)} onPointerMove={e=>!mapTransition&&tooltip(e,n)} onFocus={e=>!mapTransition&&tooltip(e,n)} onBlur={()=>setHover(null)} aria-label={(n.directory?'文件夹 ':'文件 ')+n.name+' · '+bytesText(n.bytes)}><span className="storage-tile-content">{type.showIcon&&(n.directory?<FolderOpen size={type.icon}/>:<File size={type.icon}/>)}{type.showName&&<span className="storage-tile-name" style={{fontSize:type.label}}>{n.name}</span>}{type.showValue&&<span className="storage-tile-value" style={{fontSize:type.value}}>{bytesText(n.bytes)}</span>}</span>{rect.width>130&&rect.height>155&&<span className="storage-tile-kind">{n.directory?'文件夹':'文件'}</span>}</button>})}
- function portal(entry,ref,direction){if(!entry)return null;const type=tileTypography(entry.rect.width,entry.rect.height,entry.source.name);return <div ref={ref} className={'storage-map-portal color-'+entry.color} data-direction={direction} data-map-node={entry.result.node.id}><div className="storage-portal-content">{mapTiles(mapTransition.layouts[direction==='in'?'after':'before'],true)}</div><div className="storage-portal-face" style={{'--portal-name-size':type.label+'px','--portal-value-size':type.value+'px'}}>{type.showIcon&&<FolderOpen size={type.icon}/>}<strong>{entry.source.name}</strong>{type.showValue&&<b>{bytesText(entry.source.bytes)}</b>}</div></div>}
+ function tilesFor(result){
+  if(!result)return [];
+  let entry=tileLayouts.current.get(result);
+  if(!entry||entry.w!==size.w||entry.h!==size.h){
+   entry={w:size.w,h:size.h,tiles:storageTiles(result,size.w,size.h,tilePalettes.current)};
+   tileLayouts.current.set(result,entry);
+  }
+  return entry.tiles;
+ }
+ const tiles=tilesFor(data),other=tiles.find(tile=>tile.aggregate);
+ function showFileList(){resetTransition();setHover(null);setOffset(0);setLayout('list')}
+ function mapTiles(items,decorative=false){return items.map(n=>{
+  const rect=storageTileRect(n),type=tileTypography(rect.width,rect.height,n.name),short=Math.min(rect.width,rect.height);
+  if(short<1)return null;
+  const glyph=n.directory?<FolderOpen size={type.icon}/>:<File size={type.icon}/>;
+  const shape=short<9?' micro':(rect.width>=72&&rect.height>=24&&n.directory?' directory-mark':'');
+  const Tag=decorative?'div':'button';
+  const label=(n.aggregate?n.name:(n.directory?'文件夹 ':'文件 ')+n.name)+' · '+bytesText(n.bytes);
+  const interaction=decorative?{}:{type:'button',tabIndex:mapTransition?-1:0,'aria-label':label,onClick:e=>{
+   if(mapTransition||navigating)return;
+   if(n.aggregate)showFileList();else if(n.directory&&!e.ctrlKey&&!e.metaKey)navigate(n);else toggle(n,e.ctrlKey||e.metaKey);
+  },onContextMenu:e=>!mapTransition&&!n.aggregate&&itemMenu(e,n),onPointerMove:e=>!mapTransition&&tooltip(e,n),onFocus:e=>!mapTransition&&tooltip(e,n),onBlur:()=>setHover(null)};
+  return <Tag key={n.id} data-tile={n.id} className={'storage-tile color-'+(n.color||tileColor(n))+(n.directory?' directory':' file')+shape+(!decorative&&selected.has(n.id)?' selected':'')}
+   style={{left:rect.x,top:rect.y,width:rect.width,height:rect.height,padding:short<24?0:type.pad,borderRadius:Math.min(22,short*.2)}} {...interaction}>
+   {(type.showIcon||type.showName||type.showValue)&&<span className="storage-tile-content">{type.showIcon&&glyph}{type.showName&&<span className="storage-tile-name" style={{fontSize:type.label}}>{n.name}</span>}{type.showValue&&<span className="storage-tile-value" style={{fontSize:type.value}}>{bytesText(n.bytes)}</span>}</span>}
+   {!n.aggregate&&rect.width>130&&rect.height>155&&<span className="storage-tile-kind">{n.directory?'文件夹':'文件'}</span>}
+  </Tag>
+ })}
+ function portal(entry,ref,direction){
+  if(!entry)return null;
+  const type=tileTypography(entry.rect.width,entry.rect.height,entry.source.name);
+  return <div ref={ref} aria-hidden="true" className={'storage-map-portal color-'+entry.color} data-direction={direction} data-map-node={entry.result.node.id}>
+   <div className="storage-portal-content" style={{width:size.w,height:size.h}}>{mapTiles(mapTransition.layouts[direction==='in'?'after':'before'],true)}</div>
+   <div className="storage-portal-face" style={{'--portal-name-size':type.label+'px','--portal-value-size':type.value+'px'}}>{type.showIcon&&<FolderOpen size={type.icon}/>} {type.showName&&<strong>{entry.source.name}</strong>}{type.showValue&&<b>{bytesText(entry.source.bytes)}</b>}</div>
+  </div>
+ }
  function toggle(n,multiple=true){setSelected(old=>{const next=multiple?new Set(old):new Set();if(next.has(n.id))next.delete(n.id);else next.add(n.id);return next})}
  function copy(items=selection){if(!items.length)return;setClipboard({deviceId,snapshotId,ids:items.map(n=>n.id),names:items.map(n=>n.name)});setNotice(`已复制 ${items.length} 项`);setMenu(null)}
  async function paste(){if(!clipboard||clipboard.deviceId!==deviceId||clipboard.snapshotId!==snapshotId){setClipboard(null);setNotice('扫描已更新，请重新复制');return}await action(async()=>{const plan=await call('storage.copy',{snapshotId,ids:clipboard.ids,targetId:nodeId},120000);setDialog({type:'copy',plan})})}
@@ -125,7 +165,7 @@ function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolCh
  <ToolNavigation label="存储页面" items={[["monitor","运行监测"],["analysis","空间分析"],["large","大文件清理"]]} value={tool||'monitor'} onChange={next=>{if(next==='monitor'){resetTransition();setTool(null)}else{resetTransition();setTool(next);setNotice('')}}}/>
  <div className="foundation-tool-view" data-tool-view={tool||'monitor'}>
  {!tool?<><StoragePage sample={sample||{}} samples={samples||[]}/>{activeJob(job)&&<div className="storage-inline-task"><ScanLine size={18}/><span>{states[job.status]} · 已发现 {job.enumerated.toLocaleString()} 项</span><Button onClick={()=>setTool('analysis')}>查看</Button></div>}</>:<>
- {activeJob(job)||job?.status==='failed'||job?.status==='cancelled'?<div className="storage-scan-progress" role="status"><span><i className={activeJob(job)?'running':''}/>{states[job.status]}{activeJob(job)&&` · ${job.enumerated.toLocaleString()} 项 · ${job.seconds} 秒`}</span><span title={job.current}>{job.error||job.current||(job.status==='cancelled'?'已保留上次完整结果':'')}</span><div>{['enumerating','paused'].includes(job.status)&&<Button disabled={busy} onClick={()=>control(job.status==='paused'?'resume':'pause')}>{job.status==='paused'?<Play size={16}/>:<Pause size={16}/>} {job.status==='paused'?'继续':'暂停'}</Button>}{activeJob(job)&&<Button disabled={busy} onClick={()=>control('cancel')}>取消扫描</Button>}</div></div>:null}
+ {activeJob(job)||job?.status==='failed'||job?.status==='cancelled'?<div className="storage-scan-progress" role="status"><span><i className={activeJob(job)?'running':''}/>{states[job.status]}{activeJob(job)&&` · ${job.enumerated.toLocaleString()} 项 · ${job.seconds} 秒`}</span><span title={job.current}>{job.error||job.current||(job.status==='cancelled'?'已保留上次完整结果':'')}</span><div>{['enumerating','paused'].includes(job.status)&&<Button disabled={busy} onClick={()=>control(job.status==='paused'?'resume':'pause')}>{job.status==='paused'?<Play size={16}/>:<Pause size={16}/>} {job.status==='paused'?'继续':'暂停'}</Button>}{activeJob(job)&&<Button disabled={busy} onClick={()=>control('cancel')}>取消扫描</Button>}</div>{activeJob(job)&&<div className={'storage-scan-track '+job.status} role="progressbar" aria-label={states[job.status]} aria-valuetext={job.status==='aggregating'?'正在整理扫描结果':`已扫描 ${job.enumerated.toLocaleString()} 项，${bytesText(job.bytes||0)}`}><b/></div>}</div>:null}
  {snapshot&&<>
  <section className="storage-explorer" aria-label={tool==='analysis'?'磁盘空间分析工作区':'大文件清理工作区'}>
   <div className="storage-explorer-toolbar">
@@ -147,7 +187,7 @@ function StorageWorkspace({deviceId,sample,samples,settings,active=true,onToolCh
    <aside id={treeId} className="storage-folder-list" aria-label="文件夹目录树"><div className="storage-folder-title">文件与文件夹</div>{folders['0']?folderRow({...folders['0'].node,name:folders['0'].node.name||snapshot.root}):<span className="storage-tree-loading">读取目录…</span>}</aside>
    <div className="storage-tree-separator" role="separator" tabIndex={0} aria-label="调整文件夹目录树宽度" aria-orientation="vertical" aria-controls={treeId} aria-valuemin={treeBounds.min} aria-valuemax={treeBounds.max} aria-valuenow={Math.round(visibleTreeWidth)} aria-valuetext={Math.round(visibleTreeWidth)+' 像素'} onPointerDown={beginTreeResize} onPointerMove={moveTreeResize} onPointerUp={releaseTreePointer} onPointerCancel={releaseTreePointer} onLostPointerCapture={releaseTreePointer} onKeyDown={keyTreeResize}/>
    <div className="storage-map-column">
-    {layout==='map'?<><div ref={stage} className={'storage-map-stage'+(mapTransition?' animating':'')} aria-busy={Boolean(mapTransition||navigating)} onPointerLeave={()=>setHover(null)}>{mapTransition?<><div ref={content} className="storage-map-content storage-map-underlay" data-map-node={mapTransition.parent.node.id}>{mapTiles(mapTransition.layouts.parent)}</div>{portal(mapTransition.before,outPortal,'out')}{portal(mapTransition.after,inPortal,'in')}</>:<div ref={content} className="storage-map-content settled" data-map-node={data?.node.id}>{mapTiles(tiles)}{!tiles.length&&!loading&&<Empty icon={FolderOpen} title="此处没有可显示的文件" description="尝试文件列表或调整搜索"/>}</div>}</div><div className="storage-map-caption"><span>{data?.total||0} 项 · {bytesText(data?.bytes||0)}</span><span>点击进入文件夹 · 右键操作</span></div></>:table()}
+    {layout==='map'?<><div ref={stage} className={'storage-map-stage'+(mapTransition?' animating':'')} aria-busy={Boolean(mapTransition||navigating)} onPointerLeave={()=>setHover(null)}>{mapTransition?<><div ref={content} className="storage-map-content storage-map-underlay" aria-hidden="true" data-map-node={mapTransition.parent.node.id}>{mapTiles(mapTransition.layouts.parent,true)}</div><div className="storage-map-shade" aria-hidden="true"/>{portal(mapTransition.before,outPortal,'out')}{portal(mapTransition.after,inPortal,'in')}</>:<div ref={content} className="storage-map-content settled" data-map-node={data?.node.id}>{mapTiles(tiles)}{!tiles.length&&!loading&&<Empty icon={FolderOpen} title="此处没有可显示的文件" description="尝试文件列表或调整搜索"/>}</div>}</div><div className="storage-map-caption"><span>{data?.total||0} 项 · {bytesText(data?.bytes||0)}</span>{other?<button type="button" className="storage-map-overflow" onClick={showFileList} disabled={Boolean(mapTransition||navigating)}>查看其他 {other.aggregateCount.toLocaleString('zh-CN')} 项</button>:<span>点击进入文件夹 · 右键操作</span>}</div></>:table()}
    </div>
   </div>:<div className="storage-large-results">{table()}</div>}
  </section>

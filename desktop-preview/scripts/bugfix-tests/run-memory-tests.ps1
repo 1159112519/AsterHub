@@ -14,4 +14,8 @@ if($LASTEXITCODE-ne 0){throw 'Owned memory fixture build failed'}
 if($LASTEXITCODE-ne 0){throw 'Memory regression harness build failed'}
 & (Join-Path $runnerRoot 'MemoryNativeQA.exe') (Join-Path $EvidenceRoot 'data') (Join-Path $fixtureRoot 'Fixture.exe')
 if($LASTEXITCODE-ne 0){throw 'Memory regression failed'}
+& $compiler /nologo /target:exe /platform:x64 /reference:System.Web.Extensions.dll ('/out:'+(Join-Path $runnerRoot 'MemoryProtectionQA.exe')) (Join-Path $PSScriptRoot 'MemoryProtectionQA.cs') (Join-Path $previewRoot 'host/MemoryMaintenance.cs')
+if($LASTEXITCODE-ne 0){throw 'Memory protection harness build failed'}
+& (Join-Path $runnerRoot 'MemoryProtectionQA.exe') (Join-Path $EvidenceRoot 'protection-data') (Join-Path $fixtureRoot 'Fixture.exe')
+if($LASTEXITCODE-ne 0){throw 'Memory protection regression failed'}
 Write-Output ('MEMORY_TEST_EVIDENCE='+$EvidenceRoot)

@@ -46,7 +46,7 @@ internal static class UpdateDownload {
      try{
       if(release.installerBytes>=4L*1024*1024){try{DownloadRanges(release,partial,progress,deadline.Token);}catch(RangeUnsupported){DownloadStream(release,partial,progress,deadline.Token);}}
       else DownloadStream(release,partial,progress,deadline.Token);
-      string pending=Path.Combine(partial,"assembled.part");deadline.Token.ThrowIfCancellationRequested();AppUpdates.VerifyInstaller(pending,release);File.Move(pending,ready);Clear(partial);if(progress!=null)progress.Report(100);return ready;
+      string pending=Path.Combine(partial,"assembled.part");deadline.Token.ThrowIfCancellationRequested();AppUpdates.VerifyInstaller(pending,release);deadline.Token.ThrowIfCancellationRequested();File.Move(pending,ready);Clear(partial);if(progress!=null)progress.Report(100);return ready;
      }catch(InvalidDataException){Clear(partial);throw;}
     }
    }catch{if(caller.IsCancellationRequested)throw new OperationCanceledException(caller);if(deadline.IsCancellationRequested)throw new WebException("安装包下载暂时中断，已保留完成的部分，再次下载可继续。",WebExceptionStatus.Timeout);throw;}

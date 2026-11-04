@@ -23,3 +23,7 @@ html[data-motion="reduced"] .history-metric-selection,html[data-motion="reduced"
 .native-workbench .history-chart .data-stroke{stroke-width:1.5}
 .history-trend-panel{contain:layout style}
 .chart-selection-popover .history-peek{background:color-mix(in srgb,var(--surface) 96%,var(--text));border-color:color-mix(in srgb,var(--text) 15%,transparent)}
+
+/* Text uses the workbench font and an opaque surface; blur is never applied to the foreground. */
+.native-workbench .history-chart .history-peek{font-family:inherit;filter:none;backdrop-filter:none;background:var(--surface2,var(--surface))}
+.native-workbench .history-chart .history-peek strong,.native-workbench .history-chart .history-peek button{font-family:inherit}

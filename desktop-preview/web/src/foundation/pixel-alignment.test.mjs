@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {snapSurfacePosition} from './pixel-alignment.js';
+test('floating content stops on physical pixel boundaries across Windows scales',()=>{for(const ratio of [.9,1,1.125,1.25,1.5,2]){const p=snapSurfacePosition({left:129.271,top:320.38,width:400},ratio);assert.ok(Math.abs(p.left*ratio-Math.round(p.left*ratio))<1e-9);assert.ok(Math.abs(p.top*ratio-Math.round(p.top*ratio))<1e-9);assert.equal(p.width,400)}});

@@ -87,5 +87,11 @@ public sealed partial class WorkbenchWindow {
   }
   return new{deleted=true,bytes=entry.Bytes};
  }
+ void CancelStorageForDevice(string deviceId){
+  StorageScanJob job;
+  lock(storageGate)storageScans.TryGetValue(deviceId,out job);
+  if(job==null)return;
+  lock(job.Gate){job.Cancel.Cancel();job.Resume.Set();}
+ }
  async Task CleanupStorage(){Task[] writes,scans;lock(storageGate){storageClosing=true;foreach(var job in storageScans.Values){job.Cancel.Cancel();job.Resume.Set();}writes=storageWrites.ToArray();scans=storageScans.Values.Where(x=>x.Work!=null).Select(x=>x.Work).ToArray();}await Task.WhenAll(writes);await Task.WhenAny(Task.WhenAll(scans),Task.Delay(3000));}
 }

@@ -1,0 +1,19 @@
+import React,{useEffect,useId,useRef,useState} from 'react';
+import {CalendarDays,ChevronLeft,ChevronRight} from 'lucide-react';
+import {ThemedSelect} from '../themed-select';
+import {localMinute,parseLocalMinute} from './history-range.js';
+import './history-range.css';
+const pad=value=>String(value).padStart(2,'0');
+const hours=Array.from({length:24},(_,i)=>pad(i)),minutes=Array.from({length:60},(_,i)=>pad(i));
+export function HistoryDateTime({label,value,onChange}){
+ const [open,setOpen]=useState(false),[month,setMonth]=useState(()=>new Date((Number.isFinite(parseLocalMinute(value))?parseLocalMinute(value):Date.now())));
+ const root=useRef(null),trigger=useRef(null),id=useId();
+ useEffect(()=>{if(!open)return;const outside=event=>{if(!root.current?.contains(event.target)&&!event.target.closest?.('.themed-select-menu'))setOpen(false)},escape=event=>{if(event.key==='Escape'){setOpen(false);trigger.current?.focus()}};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape)}},[open]);
+ const parsed=parseLocalMinute(value),selected=new Date(Number.isFinite(parsed)?parsed:Date.now()),first=new Date(month.getFullYear(),month.getMonth(),1),offset=(first.getDay()+6)%7;
+ const days=Array.from({length:42},(_,index)=>new Date(first.getFullYear(),first.getMonth(),index-offset+1));
+ function choose(day){const date=new Date(day);date.setHours(selected.getHours(),selected.getMinutes(),0,0);onChange(localMinute(date));if(day.getMonth()!==month.getMonth())setMonth(new Date(day))}
+ function time(kind,next){const parts=(value||localMinute(Date.now())).split('T'),clock=(parts[1]||'00:00').split(':');clock[kind]=next;onChange(parts[0]+'T'+clock.join(':'))}
+ return <div className="history-datetime" ref={root}><span className="history-datetime-label">{label}</span><div className="history-datetime-field"><input aria-label={label} inputMode="numeric" value={(value||'').replace('T',' ')} placeholder="YYYY-MM-DD HH:mm" onChange={event=>onChange(event.target.value.replace(' ','T'))}/><button type="button" ref={trigger} aria-label={'选择'+label} aria-expanded={open} aria-controls={open?id:undefined} onClick={()=>{if(!open)setMonth(selected);setOpen(!open)}}><CalendarDays size={17}/></button></div>
+ {open&&<div id={id} className="history-calendar" role="dialog" aria-label={label+'选择器'}><header><button type="button" aria-label="上个月" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))}><ChevronLeft size={16}/></button><strong>{month.getFullYear()} 年 {month.getMonth()+1} 月</strong><button type="button" aria-label="下个月" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))}><ChevronRight size={16}/></button></header><div className="history-calendar-week">{'一二三四五六日'.split('').map(day=><span key={day}>{day}</span>)}</div><div className="history-calendar-days">{days.map(day=>{const chosen=day.toDateString()===selected.toDateString();return <button type="button" key={day.getTime()} aria-label={day.toLocaleDateString('zh-CN')} aria-pressed={chosen} className={(day.getMonth()!==month.getMonth()?'outside-month ':'')+(chosen?'selected':'')} onClick={()=>choose(day)}>{day.getDate()}</button>})}</div><div className="history-calendar-clock"><span>时间</span><ThemedSelect aria-label={label+'小时'} value={pad(selected.getHours())} onChange={event=>time(0,event.target.value)}>{hours.map(hour=><option key={hour} value={hour}>{hour}</option>)}</ThemedSelect><b>:</b><ThemedSelect aria-label={label+'分钟'} value={pad(selected.getMinutes())} onChange={event=>time(1,event.target.value)}>{minutes.map(minute=><option key={minute} value={minute}>{minute}</option>)}</ThemedSelect><button type="button" className="history-calendar-done" onClick={()=>{setOpen(false);trigger.current?.focus()}}>完成</button></div></div>}
+ </div>;
+}

@@ -52,7 +52,7 @@ public class ArchiveStore {
   var next=new IndexedArchiveFile();if(append){next.Points.AddRange(state.Points);next.Lines=state.Lines;next.Skipped=state.Skipped;next.End=state.End;}
   using(var reader=new ArchiveLineReader(file,next.End)){string line;long offset;int number=next.Lines;while((line=reader.ReadLine(out offset))!=null){cancel.ThrowIfCancellationRequested();number++;
    if((external&&number==1)||string.IsNullOrWhiteSpace(line)){next.Lines=number;next.End=reader.Position;continue;}
-   try{var record=Json().Deserialize<ArchiveRecord>(line);if(record==null||record.V!=1||record.T<DateTime.MinValue.Ticks||record.T>DateTime.MaxValue.Ticks)throw new InvalidDataException();var list=record.Gpus??new List<Gpu>();next.Points.Add(new ArchivePoint{T=record.T,Cpu=ResourceSample.ParsePercent(record.Cpu),Memory=ResourceSample.MemoryPercent(record.Mem),Gpu=AverageGpu(list),GpuIds=list.Select(x=>x.Index).ToArray(),GpuUsage=list.Select(x=>ResourceSample.ParsePercent(x.Util)).ToArray(),Count=list.Count,Interval=Math.Max(2,record.Interval),Error=record.Error??"",File=file,Line=number,ByteOffset=offset});if(next.Points.Count>250000)throw new OverflowException("存档记录过多，请缩小查询范围。");}
+   try{var summary=ArchiveSummaryReader.Read(line,cancel);summary.File=file;summary.Line=number;summary.ByteOffset=offset;next.Points.Add(summary);if(next.Points.Count>250000)throw new OverflowException("存档记录过多，请缩小查询范围。");}
    catch(Exception e){if(e is OperationCanceledException||e is OutOfMemoryException||e is OverflowException)throw;if(!reader.Terminated)break;next.Skipped++;}
    next.Lines=number;next.End=reader.Position;
   }}

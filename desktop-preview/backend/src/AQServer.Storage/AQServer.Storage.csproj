@@ -19,6 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Archive.cs" />
+    <Compile Include="ArchiveSummaryReader.cs" />
     <Compile Include="SettingsStore.cs" />
     <Compile Include="..\..\Properties\AssemblyInfo.cs"><Link>Properties\AssemblyInfo.cs</Link></Compile>
     <Compile Include="..\..\Properties\AssemblyAccess.cs"><Link>Properties\AssemblyAccess.cs</Link></Compile>

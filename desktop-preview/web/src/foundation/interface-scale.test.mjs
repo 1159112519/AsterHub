@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {interfaceScaleOptions} from './interface-scale.js';
+test('new standard 100 percent preserves the old 90 percent physical zoom',()=>{const options=interfaceScaleOptions(.9);assert.deepEqual(options[0],[.9,'标准 · 100%']);assert.equal(options[1][0],.99)});
+test('existing physical zoom stays selectable rather than changing an unrelated setting',()=>{const options=interfaceScaleOptions(1);assert.ok(options.some(([value,label])=>value===1&&label.includes('111%')));assert.equal(interfaceScaleOptions(.99).filter(([v])=>v===.99).length,1)});

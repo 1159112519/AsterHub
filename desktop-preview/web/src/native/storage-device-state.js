@@ -5,7 +5,7 @@ export function storageTreeBounds(available=1000){return {min:160,max:Math.max(1
 export function clampStorageTreeWidth(width,available=1000){const {min,max}=storageTreeBounds(available);return Math.max(min,Math.min(max,Number.isFinite(width)?width:220));}
 
 // Completed views survive component remounts; inactive devices retain data, never timers.
-export function createStorageDeviceState({request, limit = 8}) {
+export function createStorageDeviceState({request, limit = 8, workspace = null}) {
  if (!Number.isInteger(limit) || limit < 1) throw new RangeError('Invalid storage device cache limit');
  const devices = new Map();
  function trim(keepId) {
@@ -17,7 +17,7 @@ export function createStorageDeviceState({request, limit = 8}) {
  }
  function entry(deviceId) {
   let value = devices.get(deviceId);
-  if (!value) value = {view: null, resource: null};
+  if (!value) {const restored=workspace?.open(deviceId,'storage-tools',()=>null).getSnapshot();value={view:restored?{...restored,...(Array.isArray(restored.expanded)?{expanded:new Set(restored.expanded)}:{})}:null,resource:null};}
   devices.delete(deviceId); devices.set(deviceId, value); trim(deviceId);
   return value;
  }
@@ -27,6 +27,7 @@ export function createStorageDeviceState({request, limit = 8}) {
    // Keep the current branch and recent folder pages, rather than every visited branch.
    const folders = view.folders || {}, keys = new Set(['0', ...(view.data?.crumbs || []).map(node => node.id)]);
    for (const key of Object.keys(folders).reverse()) { if (keys.size >= 32) break; keys.add(key); }
+   workspace?.open(deviceId,'storage-tools',()=>null).setState(view);
    entry(deviceId).view = {...view, folders: Object.fromEntries([...keys].filter(key => folders[key]).map(key => [key, folders[key]]))};
   },
   resource(deviceId) {
