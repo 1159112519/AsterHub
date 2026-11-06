@@ -1,59 +1,67 @@
 # AsterHub
 
-Windows / Ubuntu 本机与 SSH 服务器资源监控工作台。Windows 新工作台公开预览 **0.3.0-preview.14**，稳定版保留 **0.2.1**，Ubuntu 保留 **0.1.3** 预览版。两个平台独立发版，后续 Ubuntu 不随 Windows 同步更新。
+**连接设备，看见运行。**
 
-- 多核 CPU、多 GPU、内存、网络上下行和分区容量监控，支持没有 GPU 的设备。
-- 已连接设备持续采集，历史保存在本机；切换设备不影响采集。
-- GPU 历史进程快照、用户名、进程结束确认。
-- 内嵌终端、双栏文件浏览、复制传输及传输进度。
-- 多主题、迷你置顶窗口、托盘、开机启动及签名更新清单；Windows 支持一键更新并重启。
-- Windows 支持密码、空密码、私钥及 SSH 配置连接；密码可由当前 Windows 账户加密保存。
-- 设置中的反馈与建议可提交问题并获得编号，连接密码、终端内容和历史数据不会自动上传。
+AsterHub 是一个桌面工作台。你可以查看本机的运行状态，也可以通过 SSH 连接服务器。发现显存快满了、网络变慢了，或者磁盘空间不够时，可以在同一个窗口查看历史、打开终端或传输文件。
 
-新的 Windows 工作台源码与构建说明见 [desktop-preview/](desktop-preview/README.md)。预览与稳定通道分开更新、独立保存数据。
+[下载 Windows](https://github.com/1159112519/AsterHub/releases/latest) · [下载 Ubuntu](https://github.com/1159112519/AsterHub/releases/tag/ubuntu-v0.1.3) · [全部版本与更新说明](https://github.com/1159112519/AsterHub/releases) · [反馈问题](https://github.com/1159112519/AsterHub/issues)
 
-## 官网
+![AsterHub 资源概览：CPU、内存、网络、GPU、存储和设备配置](docs/screenshots/overview.webp)
 
-[访问 AsterHub 官网](https://spotlight-ruled-slightly-void.trycloudflare.com/asterhub/)（当前为临时预览域名）。
+*截图来自 Windows 工作台，使用演示设备与示例数据。*
 
-滚动浏览资源概览、GPU、终端、文件、网络、存储与历史，界面随章节切换。电脑采用固定展示区，平板和手机采用顺序图文。展示图来自当前 Windows 预览前端，使用示例数据。
+## 能做什么
 
-## 下载
+| 想做的事 | 在哪里看 |
+| --- | --- |
+| 确认电脑或服务器是否满载 | 在**资源概览**同时查看 CPU、GPU、内存、网络和存储。 |
+| 找出哪张显卡忙、哪张还有显存 | 在 **GPU** 页逐卡查看利用率、显存和可读取的温度、功耗。 |
+| 查刚才发生了什么 | 在**历史记录**选择时间段，回看已采集的资源数据。 |
+| 检查网络与磁盘 | 查看接口收发速率、运行网络测速，或在**空间分析**中逐层查看大目录和文件。 |
+| 执行命令或传文件 | 用内置**终端**打开本机 PowerShell 或 SSH 会话，在**文件**页浏览和传输文件。 |
 
-- [Windows 预览版 0.3.0-preview.14](https://github.com/1159112519/AsterHub/releases/tag/v0.3.0-preview.14)
-- [Windows 稳定版安装包与免安装版](https://github.com/1159112519/AsterHub/releases)
-- [Ubuntu Debian 安装包](https://github.com/1159112519/AsterHub/releases/tag/ubuntu-v0.1.3)
+## 下载与安装
 
-请在Release的Assets中选择对应平台的正式安装包。GitHub自动生成的Source code压缩包是源码，不是可直接安装的软件。
+| 平台 | 系统要求 | 安装方式 |
+| --- | --- | --- |
+| Windows | Windows 10 / 11，x64；需要 WebView2 Runtime | 打开 [Windows 发行页](https://github.com/1159112519/AsterHub/releases/latest)，在 **Assets** 中下载 `AsterHub-Setup-*.exe` 并运行。 |
+| Ubuntu | Ubuntu 22.04 桌面，amd64 | 下载 [Ubuntu 0.1.3 的 DEB](https://github.com/1159112519/AsterHub/releases/tag/ubuntu-v0.1.3)，再运行下面的命令。 |
 
-## 目录
-
-- `linux/`：Ubuntu .deb、原生 GTK/WebKit 入口、本机服务与 Linux/SSH 采集。安装和能力边界见 `linux/README.md`。
-- `desktop/`：五个独立项目的 WPF / C# 5 / .NET Framework 解决方案；核心、存储、Windows 服务、界面和启动入口分离。
-- `website/`：React 18、TypeScript、Vite、Tailwind、Lucide；字体 Inter / Playfair Display。
-- `installer/`：Inno Setup 安装定义和运行时依赖下载脚本。
-- `scripts/`：构建、打包、签名发布与验证。
-- `docs/`：设计审查、数据位置、发布和部署说明。
-
-## 开发
-
-Windows 10 1809 或以上，x64，.NET Framework 4.7.2 或以上。
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File desktop/build.ps1
-cd website
-npm ci
-npm run dev
+```bash
+sudo apt install ./AQServer-0.1.3-ubuntu-all.deb
 ```
 
-终端使用系统 WebView2 Evergreen Runtime。安装器在检测不到时通过微软引导程序安装，需要网络；免安装版本也需要此运行时。
+Windows 与 Ubuntu 独立发布。Ubuntu 版可查看资源和历史记录；下方的 Windows 界面与功能不代表 Ubuntu 版。各发行页的 **Assets** 提供安装包和 SHA-256 校验文件。`Source code` 压缩包无需下载。
 
-构建输出为 `desktop/bin/Release/AQServer.exe` 及其组件目录。安装器和目录 ZIP 都交付完整文件夹，不再生成单 EXE 自解压版。架构见 `docs/ARCHITECTURE.md`，完整发布见 `docs/RELEASING.md`。私钥、密码、SSH 密钥、运行配置与历史档案不属于源代码。
+## 第一次使用
 
-## 更新日志与问题反馈
+1. **看本机。** 打开 AsterHub，在左侧选「本机」，从资源概览开始。
+2. **连服务器。** 在「我的设备」旁点 `+`，填写地址、SSH 端口和用户名，选择服务器支持的认证方式，再测试连接。首次连接时，核对服务器的 SSH 主机指纹。
+3. **查问题。** 从概览进入资源详情，或打开历史记录对照时间。需要执行命令或传输文件时，从左侧进入相应页面。
 
-各版本新增功能、优化、修复与升级注意事项发布在 [GitHub Releases](https://github.com/1159112519/AsterHub/releases)；完整记录见 [CHANGELOG.md](CHANGELOG.md)。Windows 与 Ubuntu 分别维护版本。反馈问题时请提供平台、版本和复现步骤，并遮盖私人信息。本仓库公开提供项目代码、版本说明及正式发行包。
+远程设备需要能从你的电脑访问，并已启用 SSH。只在内网或 VPN 可达的服务器，请先连上对应网络。可显示的指标取决于设备、系统和访问权限。
 
-## 发布状态
+## 界面一览
 
-Windows v0.3.0-preview.14 / Ubuntu v0.1.3 为早期预览，尚未完成跨机器长期稳定性验证。更新清单使用 RSA-SHA256 签名，安装器尚无 Windows Authenticode 代码签名。项目尚未指定开源许可证；第三方组件按其各自许可证分发，见 `desktop/assets/terminal` 和 `desktop/deps`。
+### 多卡 GPU
+
+在同一页对照各卡的利用率和显存用量。
+
+![八张 GPU 经典卡片，展示各卡的利用率、显存、频率、温度和功耗](docs/screenshots/multi-gpu.webp)
+
+### 内置终端
+
+在查看监控的同一工作台里执行命令。下图用 PowerShell 按大小列出示例目录中的文件。
+
+![PowerShell 终端按文件大小排序并显示文件名和字节数](docs/screenshots/terminal.webp)
+
+### 存储空间分析
+
+从目录钻取到文件，按面积看清空间主要被什么占用。
+
+![空间分析页面显示模型目录中不同文件的大小及占比](docs/screenshots/storage.webp)
+
+## 更新与反馈
+
+- **找更新：** 每个版本的新功能和修复都列在 [GitHub Releases](https://github.com/1159112519/AsterHub/releases)。Windows 也可以在「关于与更新」中检查更新。
+- **提问题：** 可以用软件内的「反馈与建议」，也可以到 [GitHub Issues](https://github.com/1159112519/AsterHub/issues) 留下系统、AsterHub 版本和复现步骤。附截图时请遮住账号、服务器地址、密钥和其他私密信息。
