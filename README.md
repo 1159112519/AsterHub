@@ -65,3 +65,12 @@ Windows 与 Ubuntu 独立发布。Ubuntu 版可查看资源和历史记录；下
 
 - **找更新：** 每个版本的新功能和修复都列在 [GitHub Releases](https://github.com/1159112519/AsterHub/releases)。Windows 也可以在「关于与更新」中检查更新。
 - **提问题：** 可以用软件内的「反馈与建议」，也可以到 [GitHub Issues](https://github.com/1159112519/AsterHub/issues) 留下系统、AsterHub 版本和复现步骤。附截图时请遮住账号、服务器地址、密钥和其他私密信息。
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=1159112519%2FAsterHub&amp;type=date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=1159112519%2FAsterHub&amp;type=date&amp;theme=dark" />
+    <img src="https://api.star-history.com/svg?repos=1159112519%2FAsterHub&amp;type=date" alt="AsterHub 的 GitHub Star 历史趋势" />
+  </picture>
+</a>
