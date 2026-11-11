@@ -1,0 +1,46 @@
+name: Verify native storage enumeration
+on:
+  pull_request:
+    paths:
+      - 'desktop-preview/host/LocalStorageScan.cs'
+      - 'desktop-preview/host/StorageIndex.cs'
+      - 'desktop-preview/host/FilesBridge.cs'
+      - 'desktop-preview/backend/**'
+      - 'desktop-preview/scripts/bugfix-tests/*Storage*'
+      - 'desktop-preview/scripts/bugfix-tests/run-storage-tests.ps1'
+      - '.github/workflows/storage-native-enum.yml'
+  push:
+    branches: ['codex/storage-native-enum']
+    paths:
+      - 'desktop-preview/host/LocalStorageScan.cs'
+      - 'desktop-preview/host/StorageIndex.cs'
+      - 'desktop-preview/host/FilesBridge.cs'
+      - 'desktop-preview/backend/**'
+      - 'desktop-preview/scripts/bugfix-tests/*Storage*'
+      - 'desktop-preview/scripts/bugfix-tests/run-storage-tests.ps1'
+      - '.github/workflows/storage-native-enum.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-storage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native-storage:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run real storage and native enumeration regressions
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          & ./desktop-preview/scripts/bugfix-tests/run-storage-tests.ps1 -EvidenceRoot (Join-Path $env:RUNNER_TEMP 'asterhub-native-storage')
+          if($LASTEXITCODE -ne 0){throw 'Storage regressions failed'}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-storage-evidence
+          path: ${{ runner.temp }}/asterhub-native-storage/*.txt
+          if-no-files-found: warn
+          retention-days: 14
