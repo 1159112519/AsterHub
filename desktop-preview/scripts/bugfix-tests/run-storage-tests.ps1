@@ -1,4 +1,4 @@
-﻿param([switch]$Baseline,[string]$EvidenceRoot)
+param([switch]$Baseline,[string]$EvidenceRoot)
 $ErrorActionPreference='Stop'
 if(!$EvidenceRoot){$EvidenceRoot=Join-Path ([IO.Path]::GetTempPath()) ('AsterHub-Storage-'+[guid]::NewGuid().ToString('N'))}
 $sourceRoot=Split-Path (Split-Path $PSScriptRoot)
@@ -37,11 +37,22 @@ $compilerArgs=@('/nologo',('/out:'+$testExe))
 if($Baseline){$compilerArgs+='/define:BASELINE'}
 foreach($ref in $refs){$compilerArgs+='/r:'+$ref}
 $compilerArgs+=@((Join-Path $sourceRoot 'host/StorageIndex.cs'),$normalizerPath,(Join-Path $PSScriptRoot 'StorageTests.cs'))
+$compilerArgs+=(Join-Path $sourceRoot 'host/LocalStorageScan.cs')
 & "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe" @compilerArgs
 if($LASTEXITCODE -ne 0){throw 'Storage regression compile failed'}
 Get-ChildItem -LiteralPath (Join-Path $sourceRoot 'app/runtime/managed') -Filter *.dll | Copy-Item -Destination $EvidenceRoot -Force
 & $testExe | Tee-Object -FilePath (Join-Path $EvidenceRoot $(if($Baseline){'red.txt'}else{'green.txt'}))
 if($LASTEXITCODE -ne 0 -or $Baseline){exit $LASTEXITCODE}
+# Native enumeration uses the same real index/connection and metadata normalizer.
+$nativeExe=Join-Path $EvidenceRoot 'NativeStorageEnumerationTests.exe'
+$nativeArgs=@('/nologo','/optimize+','/platform:x64','/main:NativeStorageEnumerationTests',('/out:'+$nativeExe))
+foreach($ref in $refs){$nativeArgs+='/r:'+$ref}
+$nativeArgs+=@((Join-Path $sourceRoot 'host/StorageIndex.cs'),(Join-Path $sourceRoot 'host/LocalStorageScan.cs'),$normalizerPath,(Join-Path $PSScriptRoot 'StorageTests.cs'),(Join-Path $PSScriptRoot 'NativeStorageEnumerationTests.cs'))
+& (Join-Path $framework 'csc.exe') @nativeArgs
+if($LASTEXITCODE -ne 0){throw 'Native enumeration regression compile failed'}
+& $nativeExe | Tee-Object -FilePath (Join-Path $EvidenceRoot 'native-green.txt')
+if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+
 # Compile into the evidence directory only; never replace the installed/shared application.
 $appRoot=Join-Path $sourceRoot 'app'
 $framework=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319'
