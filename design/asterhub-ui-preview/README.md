@@ -2,7 +2,7 @@
 
 This directory builds the standalone Windows UI preview. It overlays the existing layout, injecting only demo data and presentation changes. It does not connect to devices, modify files, install updates, or integrate with Explorer. The production desktop build does not import this directory.
 
-- Taskbar editor restores the underline tabs. Analysis page navigation grows slightly; analysis and preference selectors gain label/chevron spacing. The two chart footers share a lower text line and leave a clear gap below.
+- Taskbar editor restores the underline tabs. Analysis page navigation grows slightly; analysis and preference selectors gain label/chevron spacing. The chart and process footers share a centered row between the separator and the card bottom. Buttons have equal space above and below and their labels share the text baseline with both footer notes. CPU, GPU, memory and network use the same rule.
 - Appearance shows language with the common settings. Themes and app icons are at the bottom. The preview offers Classic Dark and Frosted Glass only. Glass uses a softly lit backdrop, frosted surfaces with fine edge highlights, and solid option menus.
 - The preview switches between Chinese and English for the workbench, preferences and the reviewed analysis surfaces. This is not a full translation of the production product; screens outside the review can still have Chinese copy.
 
