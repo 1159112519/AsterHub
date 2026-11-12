@@ -1,0 +1,490 @@
+diff --git a/desktop-preview/host/taskbar/TaskbarModel.cs b/desktop-preview/host/taskbar/TaskbarModel.cs
+index 9a3b42044794..9081bd0c52d4 100644
+--- a/desktop-preview/host/taskbar/TaskbarModel.cs
++++ b/desktop-preview/host/taskbar/TaskbarModel.cs
+@@ -37,3 +37,3 @@ public sealed class TaskbarSettings {
+  internal bool HasWideCells{get{return Enumerable.Range(0,PageCount).Any(p=>Modules(p,Columns(p)*2,false).Any(m=>m!=null&&m.Parts.Length>1));}}
+- internal string Key{get{return new JavaScriptSerializer().Serialize(new object[]{background,backgroundStyle,autoPage,clickDetails,intervalSeconds,refreshMs,numberMotion,deviceId,motion,reduced,Revision,Get(layout,"pages"),Get(layout,"typography"),Get(layout,"shelf")});}}
++ internal string Key{get{return new JavaScriptSerializer().Serialize(new object[]{background,backgroundStyle,autoPage,clickDetails,intervalSeconds,refreshMs,numberMotion,deviceId,motion,reduced,Revision,Get(layout,"pages"),Get(layout,"typography"),Get(layout,"shelf"),Get(layout,"colors")});}}
+  internal static int WidthFor(int columns,bool wide){return (wide?WideCellWidth:CellWidth)-(columns==3?ThreeColumnTrim:0);}
+@@ -67,2 +67,14 @@ public sealed class TaskbarSettings {
+  }
++ // Colors are optional, opaque per-metric overrides; absent values keep system colors.
++ static readonly string[] ColorParts={"label","reading","graph"};
++ static bool TryColor(string value,out int rgb){rgb=0;return value.Length==7&&value[0]=='#'&&int.TryParse(value.Substring(1),NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture,out rgb);}
++ static Dictionary<string,object> NormalizeColors(object value){
++  var map=new Dictionary<string,object>();var input=Obj(value);
++  foreach(string metric in Metrics){var row=Obj(Get(input,metric));if(row==null)continue;var clean=new Dictionary<string,object>();
++   foreach(string part in ColorParts){int rgb;if(TryColor(Str(Get(row,part)),out rgb))clean[part]="#"+rgb.ToString("X6",CultureInfo.InvariantCulture);}
++   if(clean.Count>0)map[metric]=clean;
++  }
++  return map;
++ }
++ internal int? ColorRgb(string metric,string part){var row=Obj(Get(Obj(Get(layout,"colors")),metric));int rgb;return TryColor(Str(Get(row,part)),out rgb)?(int?)rgb:null;}
+  public TaskbarSettings Normalize(){
+@@ -99,3 +111,3 @@ public sealed class TaskbarSettings {
+   }
+-  wire["schemaVersion"]=Math.Max(2,Int(Get(wire,"schemaVersion"),2));wire["revision"]=Math.Max(0,Int(Get(wire,"revision"),0));wire["pages"]=normalized.ToArray();wire["shelf"]=shelf;wire["typography"]=Copy(Get(wire,"typography"));
++  wire["schemaVersion"]=Math.Max(2,Int(Get(wire,"schemaVersion"),2));wire["revision"]=Math.Max(0,Int(Get(wire,"revision"),0));wire["pages"]=normalized.ToArray();wire["shelf"]=shelf;wire["typography"]=Copy(Get(wire,"typography"));wire["colors"]=NormalizeColors(Get(wire,"colors"));
+   value.layout=wire;if(!value.SetActive(Str(Get(wire,"activePageId"))))value.SetActive(value.PageId(Math.Max(0,Math.Min(value.PageCount-1,page))));
+@@ -119,2 +131,3 @@ internal sealed class TaskbarModule {
+   if(Metric=="down"||Metric=="up")return v=="chinese"?(Metric=="up"?"上传":"下载"):(Metric=="up"?"↑":"↓");
++  if(Metric=="memory"&&v=="ram")return "RAM";if(Metric=="storage"&&v=="ssd")return "SSD";
+   if(v=="icon")return "◇";
+diff --git a/desktop-preview/host/taskbar/TaskbarPainter.cs b/desktop-preview/host/taskbar/TaskbarPainter.cs
+index fc40b196eae9..882d184b4c9c 100644
+--- a/desktop-preview/host/taskbar/TaskbarPainter.cs
++++ b/desktop-preview/host/taskbar/TaskbarPainter.cs
+@@ -14,3 +14,3 @@ internal sealed class TaskbarPainter:IDisposable {
+  sealed class DigitInk {internal Bitmap Image;internal int Foot,Offset;}
+- struct DigitDraw {internal DigitInk Ink;internal int X,Y;internal double Opacity;internal Rectangle Clip;}
++ struct DigitDraw {internal DigitInk Ink;internal int X,Y;internal double Opacity;internal Rectangle Clip;internal Color? Tint;}
+  float renderScaleX;
+@@ -70,3 +70,3 @@ internal sealed class TaskbarPainter:IDisposable {
+  }
+- void Digit(char glyph,float x,float bottom,double opacity,float displacement,Rectangle clip,int blur=0){
++ void Digit(char glyph,float x,float bottom,double opacity,float displacement,Rectangle clip,int blur=0,Color? tint=null){
+   if(opacity<=0||clip.Width<=0||clip.Height<=0)return;var ink=PhysicalDigit(glyph,blur);float sy=height/38f;
+@@ -75,3 +75,3 @@ internal sealed class TaskbarPainter:IDisposable {
+   // Displacement is relative to the same anchored position and never saved in the glyph cache.
+-  digitQueue.Add(new DigitDraw{Ink=ink,X=left,Y=foot-ink.Foot+(int)Math.Round(displacement*sy),Opacity=opacity,Clip=clip});
++  digitQueue.Add(new DigitDraw{Ink=ink,X=left,Y=foot-ink.Foot+(int)Math.Round(displacement*sy),Opacity=opacity,Clip=clip,Tint=tint});
+  }
+@@ -81,4 +81,8 @@ internal sealed class TaskbarPainter:IDisposable {
+    var state=g.Save();g.SetClip(item.Clip,CombineMode.Intersect);var image=item.Ink.Image;
+-   if(item.Opacity>=1)g.DrawImageUnscaled(image,item.X,item.Y);
+-   else{var matrix=new ColorMatrix();matrix.Matrix33=(float)item.Opacity;alpha.SetColorMatrix(matrix);g.DrawImage(image,new Rectangle(item.X,item.Y,image.Width,image.Height),0,0,image.Width,image.Height,GraphicsUnit.Pixel,alpha);}
++   if(item.Opacity>=1&&!item.Tint.HasValue)g.DrawImageUnscaled(image,item.X,item.Y);
++   else{var matrix=new ColorMatrix();matrix.Matrix33=(float)item.Opacity;
++    // Tint the existing alpha mask, including the blurred transition. Keep cache keys,
++    // physical glyph anchor and hit geometry independent from the user's color.
++    if(item.Tint.HasValue){var tint=item.Tint.Value;matrix.Matrix00=matrix.Matrix11=matrix.Matrix22=0;matrix.Matrix40=tint.R/255f;matrix.Matrix41=tint.G/255f;matrix.Matrix42=tint.B/255f;}
++    alpha.SetColorMatrix(matrix);g.DrawImage(image,new Rectangle(item.X,item.Y,image.Width,image.Height),0,0,image.Width,image.Height,GraphicsUnit.Pixel,alpha);}
+    g.Restore(state);
+@@ -202,10 +206,13 @@ internal sealed class TaskbarPainter:IDisposable {
+      }
+-     for(int j=0;j<parts.Length;j++)if(parts[j]!="number")DrawGraph(g,parts[j],sample,now,x+cell.GraphX[j],top+10+options.Offset(id,"graph"),options.reduced);
++     var nameInk=OverrideColor(options,id,"label")??labelColor;
++     var readingInk=OverrideColor(options,id,"reading");
++     var graphInk=OverrideColor(options,id,"graph");
++     for(int j=0;j<parts.Length;j++)if(parts[j]!="number")DrawGraph(g,parts[j],sample,now,x+cell.GraphX[j],top+10+options.Offset(id,"graph"),options.reduced,graphInk);
+      float labelX=x+cell.LabelX;
+-     if(label=="↑"||label=="↓"){float sign=label=="↑"?-1:1,arrowY=bottom-4,tip=arrowY+sign*4;using(var pen=new Pen(labelColor,1.2f)){pen.StartCap=pen.EndCap=LineCap.Round;g.DrawLine(pen,labelX+3.5f,arrowY-sign*4,labelX+3.5f,tip);g.DrawLines(pen,new[]{new PointF(labelX+.75f,tip-sign*2.75f),new PointF(labelX+3.5f,tip),new PointF(labelX+6.25f,tip-sign*2.75f)});}}
+-     else if(label=="◇")DrawMetricIcon(g,id,labelX,bottom-10);
+-     else Put(g,label,IsAscii(label)?labelFont:hanFont,labelColor,labelX,bottom);
++     if(label=="↑"||label=="↓"){float sign=label=="↑"?-1:1,arrowY=bottom-4,tip=arrowY+sign*4;using(var pen=new Pen(nameInk,1.2f)){pen.StartCap=pen.EndCap=LineCap.Round;g.DrawLine(pen,labelX+3.5f,arrowY-sign*4,labelX+3.5f,tip);g.DrawLines(pen,new[]{new PointF(labelX+.75f,tip-sign*2.75f),new PointF(labelX+3.5f,tip),new PointF(labelX+6.25f,tip-sign*2.75f)});}}
++     else if(label=="◇")DrawMetricIcon(g,id,labelX,bottom-10,nameInk);
++     else Put(g,label,IsAscii(label)?labelFont:hanFont,nameInk,labelX,bottom);
+      if(!parts.Contains("number"))continue;
+      string text=cell.Text,prior=FitNumber(priorDisplay,cell.NumberTrack);float advance=NumberWidth(text),cx=x+cell.NumberX+cell.NumberTrack-advance;
+-     if(!string.IsNullOrEmpty(display.Unit))Put(g,display.Unit,unitFont,unitColor,x+cell.UnitX,unitBottom);
++     if(!string.IsNullOrEmpty(display.Unit))Put(g,display.Unit,unitFont,readingInk??unitColor,x+cell.UnitX,unitBottom);
+      var clip=Rectangle.FromLTRB((int)Math.Floor((cx-1)*renderScaleX),(int)Math.Floor((top+.5f)*height/38f),(int)Math.Ceiling((cx+advance+1)*renderScaleX),(int)Math.Ceiling((top+16.5f)*height/38f));
+@@ -213,4 +220,4 @@ internal sealed class TaskbarPainter:IDisposable {
+       char ch=text[at];float cellWidth=Advance(ch);bool moving=options.motion&&!options.reduced&&options.numberMotion!="direct"&&progress<1&&old!=null&&now.animate&&!now.stale&&!old.stale&&display.Unit==priorDisplay.Unit&&TaskbarValue.GlyphChanges(prior,text,at);
+-      if(moving){var column=Rectangle.Intersect(clip,Rectangle.FromLTRB((int)Math.Round(cx*renderScaleX),clip.Top,(int)Math.Round((cx+cellWidth)*renderScaleX),clip.Bottom));char was=' ';string key=TaskbarValue.PlaceKey(text,at);for(int j=0;j<prior.Length;j++)if(TaskbarValue.PlaceKey(prior,j)==key)was=prior[j];int direction=now.value<old.value?-1:1;float travel=options.numberMotion=="fade"?0:options.numberMotion=="slide"?8:14;int blurIn=options.numberMotion=="current"?(progress<.45?2:progress<.78?1:0):0,blurOut=options.numberMotion=="current"?(progress>.55?2:progress>.25?1:0):0;if(was!=' ')Digit(was,cx,numberBottom,1-progress,(float)(-direction*travel*progress),column,blurOut);Digit(ch,cx,numberBottom,progress,(float)(direction*travel*(1-progress)),column,blurIn);}
+-      else Digit(ch,cx,numberBottom,1,0,clip);cx+=cellWidth;
++      if(moving){var column=Rectangle.Intersect(clip,Rectangle.FromLTRB((int)Math.Round(cx*renderScaleX),clip.Top,(int)Math.Round((cx+cellWidth)*renderScaleX),clip.Bottom));char was=' ';string key=TaskbarValue.PlaceKey(text,at);for(int j=0;j<prior.Length;j++)if(TaskbarValue.PlaceKey(prior,j)==key)was=prior[j];int direction=now.value<old.value?-1:1;float travel=options.numberMotion=="fade"?0:options.numberMotion=="slide"?8:14;int blurIn=options.numberMotion=="current"?(progress<.45?2:progress<.78?1:0):0,blurOut=options.numberMotion=="current"?(progress>.55?2:progress>.25?1:0):0;if(was!=' ')Digit(was,cx,numberBottom,1-progress,(float)(-direction*travel*progress),column,blurOut,readingInk);Digit(ch,cx,numberBottom,progress,(float)(direction*travel*(1-progress)),column,blurIn,readingInk);}
++      else Digit(ch,cx,numberBottom,1,0,clip,0,readingInk);cx+=cellWidth;
+      }
+@@ -264,4 +271,5 @@ internal sealed class TaskbarPainter:IDisposable {
+  }
+- void DrawMetricIcon(Graphics g,string metric,float x,float y){
+-  var state=g.Save();g.TranslateTransform(x+.5f,y);using(var p=new Pen(labelColor,1.05f)){
++ static Color? OverrideColor(TaskbarSettings settings,string metric,string part){var rgb=settings.ColorRgb(metric,part);return rgb.HasValue?(Color?)Color.FromArgb(unchecked((int)0xff000000)|rgb.Value):null;}
++ void DrawMetricIcon(Graphics g,string metric,float x,float y,Color ink){
++  var state=g.Save();g.TranslateTransform(x+.5f,y);using(var p=new Pen(ink,1.05f)){
+    p.StartCap=p.EndCap=LineCap.Round;p.LineJoin=LineJoin.Round;
+@@ -278,12 +286,13 @@ internal sealed class TaskbarPainter:IDisposable {
+  }
+- void DrawGraph(Graphics g,string part,TaskbarSnapshot sample,TaskbarValue value,float x,float y,bool instant){
+-  if((part!="line"&&part!="bars")||value.stale||!value.value.HasValue||double.IsNaN(value.value.Value)||double.IsInfinity(value.value.Value)){Put(g,"—",unitFont,labelColor,x,y+3);return;}
++ void DrawGraph(Graphics g,string part,TaskbarSnapshot sample,TaskbarValue value,float x,float y,bool instant,Color? custom){
++  Color ink=custom??accent,dimInk=custom??labelColor;
++  if((part!="line"&&part!="bars")||value.stale||!value.value.HasValue||double.IsNaN(value.value.Value)||double.IsInfinity(value.value.Value)){Put(g,"—",unitFont,dimInk,x,y+3);return;}
+   double ratio=Math.Max(0,Math.Min(1,value.value.Value/100));
+-  using(var pen=new Pen(accent,1.1f))using(var brush=new SolidBrush(accent)){
++  using(var pen=new Pen(ink,1.1f))using(var brush=new SolidBrush(ink)){
+    pen.StartCap=pen.EndCap=LineCap.Round;
+    if(part=="bars"&&value.id=="cpu"&&sample.cpuCores.Length>0){int n=Math.Min(12,sample.cpuCores.Length);for(int k=0;k<n;k++){double avg=sample.cpuCores.Skip(k*sample.cpuCores.Length/n).Take((k+1)*sample.cpuCores.Length/n-k*sample.cpuCores.Length/n).Average();float h=(float)Math.Max(1,Math.Min(9,avg*.09));g.FillRectangle(brush,x+k*22f/n,y+3-h,Math.Max(1,22f/n-1),h);}return;}
+-   if(part=="bars"&&(value.id=="gpu"||value.id=="memory"||value.id=="gpuMemory")){using(var dim=new Pen(Color.FromArgb(90,labelColor),1.2f))g.DrawEllipse(dim,x+4,y-5,9,9);g.DrawArc(pen,x+4,y-5,9,9,-90,(float)(360*ratio));return;}
+-   if(part=="bars"&&value.unit=="%"&&value.id!="cpu"){for(int k=0;k<10;k++){using(var mark=new Pen(k<ratio*10?accent:Color.FromArgb(90,labelColor),1.1f))g.DrawLine(mark,x+k*2.3f,y-2,x+k*2.3f,y+3);}return;}
+-   var points=History==null?new double[0]:History.Read(value.id,instant);if(points.Length<2){Put(g,"—",unitFont,labelColor,x,y+3);return;}
+-   float dx=2f,shift=(float)(History.Shift(value.id,instant)*dx);var graphClip=g.Save();g.SetClip(new RectangleF(x,y-5.6f,22,9.2f),CombineMode.Intersect);using(var path=new GraphicsPath()){for(int j=1;j<points.Length;j++){float x0=x+(j-1)*dx-shift,x1=x+j*dx-shift,y0=y+3-(float)points[j-1]*8,y1=y+3-(float)points[j]*8;path.AddBezier(x0,y0,x0+dx*.45f,y0,x1-dx*.45f,y1,x1,y1);}using(var edge=new LinearGradientBrush(new PointF(x,0),new PointF(x+22,0),accent,accent)){edge.InterpolationColors=new ColorBlend{Colors=new[]{Color.FromArgb(0,accent),accent,accent,Color.FromArgb(0,accent)},Positions=new[]{0f,.09f,.91f,1f}};using(var edgePen=new Pen(edge,1.1f)){edgePen.StartCap=edgePen.EndCap=LineCap.Round;g.DrawPath(edgePen,path);}}}g.Restore(graphClip);
++   if(part=="bars"&&(value.id=="gpu"||value.id=="memory"||value.id=="gpuMemory")){using(var dim=new Pen(Color.FromArgb(90,dimInk),1.2f))g.DrawEllipse(dim,x+4,y-5,9,9);g.DrawArc(pen,x+4,y-5,9,9,-90,(float)(360*ratio));return;}
++   if(part=="bars"&&value.unit=="%"&&value.id!="cpu"){for(int k=0;k<10;k++){using(var mark=new Pen(k<ratio*10?ink:Color.FromArgb(90,dimInk),1.1f))g.DrawLine(mark,x+k*2.3f,y-2,x+k*2.3f,y+3);}return;}
++   var points=History==null?new double[0]:History.Read(value.id,instant);if(points.Length<2){Put(g,"—",unitFont,dimInk,x,y+3);return;}
++   float dx=2f,shift=(float)(History.Shift(value.id,instant)*dx);var graphClip=g.Save();g.SetClip(new RectangleF(x,y-5.6f,22,9.2f),CombineMode.Intersect);using(var path=new GraphicsPath()){for(int j=1;j<points.Length;j++){float x0=x+(j-1)*dx-shift,x1=x+j*dx-shift,y0=y+3-(float)points[j-1]*8,y1=y+3-(float)points[j]*8;path.AddBezier(x0,y0,x0+dx*.45f,y0,x1-dx*.45f,y1,x1,y1);}using(var edge=new LinearGradientBrush(new PointF(x,0),new PointF(x+22,0),ink,ink)){edge.InterpolationColors=new ColorBlend{Colors=new[]{Color.FromArgb(0,ink),ink,ink,Color.FromArgb(0,ink)},Positions=new[]{0f,.09f,.91f,1f}};using(var edgePen=new Pen(edge,1.1f)){edgePen.StartCap=edgePen.EndCap=LineCap.Round;g.DrawPath(edgePen,path);}}}g.Restore(graphClip);
+   }
+diff --git a/desktop-preview/scripts/bugfix-tests/TaskbarColorTests.cs b/desktop-preview/scripts/bugfix-tests/TaskbarColorTests.cs
+new file mode 100644
+index 000000000000..1aa18e0c4a4c
+--- /dev/null
++++ b/desktop-preview/scripts/bugfix-tests/TaskbarColorTests.cs
+@@ -0,0 +1,50 @@
++using System;
++using System.Collections.Generic;
++using System.Drawing;
++using System.Drawing.Imaging;
++using System.IO;
++using System.Linq;
++using System.Web.Script.Serialization;
++
++internal static class TaskbarColorTests {
++ static void Require(bool ok,string name){if(!ok)throw new InvalidOperationException(name);Console.WriteLine("PASS "+name);}
++ static Dictionary<string,object> Dict(params object[] pairs){var result=new Dictionary<string,object>();for(int i=0;i<pairs.Length;i+=2)result[(string)pairs[i]]=pairs[i+1];return result;}
++ static TaskbarSettings Setup(string metric,string name,params string[] parts){
++  return new TaskbarSettings{layout=Dict("pages",new[]{Dict("id","one","grid",Dict("columns",1),"slots",new[]{Dict("row",0,"column",0,"module",Dict("metricId",metric,"name",Dict("variant",name),"parts",parts))})})}.Normalize();
++ }
++ static TaskbarSettings Colored(TaskbarSettings basis,string metric){
++  var serializer=new JavaScriptSerializer();var options=serializer.Deserialize<TaskbarSettings>(serializer.Serialize(basis));
++  options.layout["colors"]=Dict(metric,Dict("label","#FF3322","reading","#22FF33","graph","#2244FF","extra","#123456"),"unknown",Dict("label","#FFFFFF"),"gpuPower",Dict("label","#33AAAA55"));
++  return options.Normalize();
++ }
++ static TaskbarSnapshot Sample(string id,double value,int seconds){var s=new TaskbarSnapshot{timeUtc=new DateTime(2026,1,1,0,0,seconds,DateTimeKind.Utc),cpuCores=new[]{12d,80,36,70}};s.values[id]=new TaskbarValue{id=id,label=id=="up"?"↑":"CPU",unit=id=="up"?"K/s":"%",value=value,timeUtc=s.timeUtc};return s;}
++ static int Count(Bitmap image,int part){int n=0;for(int y=0;y<image.Height;y++)for(int x=0;x<image.Width;x++){var c=image.GetPixel(x,y);if(c.A>54&&(part==0?c.R>180&&c.G<100&&c.B<100:part==1?c.G>180&&c.R<100&&c.B<100:c.B>180&&c.R<100&&c.G<120))n++;}return n;}
++ static bool SameInk(Bitmap a,Bitmap b){for(int y=0;y<a.Height;y++)for(int x=0;x<a.Width;x++)if((a.GetPixel(x,y).A>100)!=(b.GetPixel(x,y).A>100))return false;return true;}
++ static int Main(string[] args){
++  var basis=Setup("cpu","english","number","bars");var options=Colored(basis,"cpu");
++  Require(options.Key!=basis.Key&&options.ColorRgb("cpu","label")==0xff3322,"color participates in desktop save revision and reconfigure");
++  Require(options.ColorRgb("cpu","extra")==null&&options.ColorRgb("unknown","label")==null&&options.ColorRgb("gpuPower","label")==null,"reject unknown metrics, properties and alpha");
++  var json=new JavaScriptSerializer();Require(json.Deserialize<TaskbarSettings>(json.Serialize(options)).Normalize().Key==options.Key,"round-trip config keeps color and layout");
++  Require(basis.ColorRgb("cpu","label")==null,"old config follows defaults");
++  Require(Setup("memory","ram","number").Modules(0,2,false)[0].Label("内存")=="RAM"&&Setup("storage","ssd","number").Modules(0,2,false)[0].Label("存储")=="SSD","new names are opt-in native variants");
++  Require(Setup("memory","english","number").Modules(0,2,false)[0].Label("内存")=="MEM"&&Setup("storage","english","number").Modules(0,2,false)[0].Label("存储")=="Disk","existing aliases are unchanged");
++  var now=Sample("cpu",48,4);var prior=Sample("cpu",27,1);
++  foreach(double scale in new[]{1d,1.25d})using(var painter=new TaskbarPainter((int)(136*scale),(int)(38*scale),scale==1,args[0])){
++   painter.CellWidth=TaskbarSettings.WideCellWidth;
++   using(var plain=painter.Render(now,prior,basis,0,1,false))using(var tinted=painter.Render(now,prior,options,0,1,false)){
++    Require(Count(tinted,0)>8&&Count(tinted,1)>12&&Count(tinted,2)>5,"name, reading, unit and bars use independent colors at "+scale);
++    Require(SameInk(plain,tinted),"custom colors preserve static ink geometry at "+scale);
++    tinted.Save(Path.Combine(args[1],"taskbar-bars-"+scale+".png"),ImageFormat.Png);
++   }
++   var animated=options;animated.numberMotion="current";
++   using(var image=painter.Render(now,prior,animated,0,.62,false))Require(Count(image,1)>5,"changing and resting digits share reading color at "+scale);
++   var arrow=Colored(Setup("up","arrow","number"),"up");using(var image=painter.Render(Sample("up",1.4,4),null,arrow,0,1,false))Require(Count(image,0)>4,"arrow uses name color at "+scale);
++   var icon=Colored(Setup("cpu","icon","line"),"cpu");painter.History=new TaskbarHistory();painter.History.Add(prior);painter.History.Add(now);
++   using(var image=painter.Render(now,prior,icon,0,1,false)){
++    Require(Count(image,0)>4&&Count(image,2)>4,"name icon and line stroke use overrides at "+scale);
++    image.Save(Path.Combine(args[1],"taskbar-line-"+scale+".png"),ImageFormat.Png);
++   }
++  }
++  return 0;
++ }
++}
+diff --git a/desktop-preview/scripts/bugfix-tests/run-taskbar-color-tests.ps1 b/desktop-preview/scripts/bugfix-tests/run-taskbar-color-tests.ps1
+new file mode 100644
+index 000000000000..3bdf8eff53ec
+--- /dev/null
++++ b/desktop-preview/scripts/bugfix-tests/run-taskbar-color-tests.ps1
+@@ -0,0 +1,11 @@
++param([Parameter(Mandatory=$true)][string]$BuiltApp,[Parameter(Mandatory=$true)][string]$EvidenceRoot)
++$ErrorActionPreference='Stop'
++$source=Split-Path (Split-Path $PSScriptRoot)
++$evidence=(New-Item -ItemType Directory -Path $EvidenceRoot -Force).FullName
++$compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
++$files=@('TaskbarModel.cs','TaskbarSqueeze.cs','TaskbarPainter.cs','TaskbarHistory.cs','TaskbarDetailContent.cs') | ForEach-Object {Join-Path $source "host/taskbar/$_"}
++$exe=Join-Path $evidence 'TaskbarColorTests.exe'
++& $compiler /nologo /platform:x64 /optimize+ /r:System.Web.Extensions.dll /r:System.Drawing.dll "/out:$exe" @files (Join-Path $source 'backend/src/AQServer.Core/TelemetryContinuity.cs') (Join-Path $PSScriptRoot 'TaskbarColorTests.cs')
++if($LASTEXITCODE -ne 0){throw 'Taskbar color regression compilation failed'}
++& $exe $BuiltApp $evidence
++if($LASTEXITCODE -ne 0){throw 'Taskbar color regression failed'}
+diff --git a/desktop-preview/web/package.json b/desktop-preview/web/package.json
+index edfda606a09a..e1e4a5204cfe 100644
+--- a/desktop-preview/web/package.json
++++ b/desktop-preview/web/package.json
+@@ -8,3 +8,3 @@
+     "test:layout": "node ../scripts/bugfix-tests/verify-layout-history.mjs",
+-    "test:foundation": "node --test src/time-series.test.mjs src/appearance/*.test.mjs src/foundation/*.test.mjs src/native/bridge.test.mjs src/native/update-task.test.mjs src/native/task-center-model.test.mjs src/native/history-range.test.mjs src/native/light-telemetry.test.mjs src/native/terminal-device-state.test.mjs src/native/storage-device-state.test.mjs src/native/memory-scope.test.mjs ../scripts/recent-updates.test.mjs src/native/storage-scan-scope.test.mjs src/native/storage-size-filter.test.mjs src/native/network-speed.test.mjs src/native/storage-rates.test.mjs src/native/taskbar-layout.test.mjs src/native/taskbar-composer.test.mjs src/native/taskbar-preview.test.mjs src/native/terminal-themes.test.mjs",
++    "test:foundation": "node --test src/time-series.test.mjs src/appearance/*.test.mjs src/foundation/*.test.mjs src/native/bridge.test.mjs src/native/update-task.test.mjs src/native/task-center-model.test.mjs src/native/history-range.test.mjs src/native/light-telemetry.test.mjs src/native/terminal-device-state.test.mjs src/native/storage-device-state.test.mjs src/native/memory-scope.test.mjs ../scripts/recent-updates.test.mjs src/native/storage-scan-scope.test.mjs src/native/storage-size-filter.test.mjs src/native/network-speed.test.mjs src/native/storage-rates.test.mjs src/native/taskbar-layout.test.mjs src/native/taskbar-colors.test.mjs src/native/taskbar-composer.test.mjs src/native/taskbar-preview.test.mjs src/native/terminal-themes.test.mjs",
+     "check:foundation": "node scripts/check-foundations.mjs"
+diff --git a/desktop-preview/web/src/native/TaskbarColorPane.jsx b/desktop-preview/web/src/native/TaskbarColorPane.jsx
+new file mode 100644
+index 000000000000..e15e778f6049
+--- /dev/null
++++ b/desktop-preview/web/src/native/TaskbarColorPane.jsx
+@@ -0,0 +1,80 @@
++import React,{useEffect,useLayoutEffect,useRef,useState,useId} from 'react';
++import {createPortal} from 'react-dom';
++import {RotateCcw} from 'lucide-react';
++import {Button} from '../foundation/ui';
++import {useDismissableLayer} from '../foundation/overlay';
++import {contrast} from '../appearance/resolve-appearance';
++import {taskbarMetrics} from './taskbar-layout';
++import {parts,hex,fromHsv,toHsv} from './taskbar-colors.mjs';
++const labels=Object.fromEntries(taskbarMetrics.map(([id,label])=>[id,label]));
++const defaults={label:'var(--widget-value,var(--text))',reading:'var(--widget-value,var(--text))',graph:'var(--widget-accent,var(--green))'};
++const palettes={dark:['#F1F3F6','#8DBCF5','#67D4DC','#8DDF9F','#E4C471','#F3A997','#F5A9CB','#C7AFFB'],light:['#222731','#215DB1','#007580','#28754E','#845000','#A44027','#A13D6A','#6840B1']};
++function actualColor(expression){
++ const probe=document.createElement('i');probe.hidden=true;probe.style.color=expression;document.body.append(probe);
++ const css=getComputedStyle(probe).color;probe.remove();
++ // CSS tokens can compute to either rgb() or color(srgb ...) on different skins.
++ const canvas=document.createElement('canvas');canvas.width=canvas.height=1;
++ const ctx=canvas.getContext('2d');ctx.fillStyle=css;ctx.fillRect(0,0,1,1);
++ return '#'+Array.from(ctx.getImageData(0,0,1,1).data).slice(0,3).map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
++}
++function Picker({target,original,preview,finish,reduced}){
++ const initial=original??target.fallback;
++ const [state,setState]=useState({hsv:toHsv(initial),text:initial,value:original});
++ const ref=useRef(null),anchor=useRef(target.anchor),entry=useRef(null),drag=useRef(null),id=useId();
++ const [pos,setPos]=useState(null);
++ const cancel=(focus=false)=>{finish(false);if(focus)anchor.current?.focus({preventScroll:true})};
++ const accept=value=>{finish(true,value);anchor.current?.focus({preventScroll:true})};
++ useDismissableLayer({refs:[anchor,ref],onDismiss:reason=>cancel(reason==='escape')});
++ useLayoutEffect(()=>{
++  const place=()=>{const el=ref.current,b=anchor.current?.getBoundingClientRect();if(!el||!b)return;
++   const w=el.offsetWidth,h=el.offsetHeight,edge=8,gap=7;
++   const beside=b.right+gap+w<=window.innerWidth-edge;
++   const x=beside?b.right+gap:b.left-gap-w>=edge?b.left-gap-w:Math.min(b.left,window.innerWidth-w-edge);
++   const y=beside||x+w<=b.left?b.top-8:b.bottom+gap+h<=window.innerHeight-edge?b.bottom+gap:b.top-h-gap;
++   setPos({left:Math.max(edge,Math.min(x,window.innerWidth-w-edge)),top:Math.max(edge,Math.min(y,window.innerHeight-h-edge))});
++  };
++  place();const observer=new ResizeObserver(place);observer.observe(ref.current);window.addEventListener('resize',place);window.addEventListener('scroll',place,true);
++  return()=>{observer.disconnect();window.removeEventListener('resize',place);window.removeEventListener('scroll',place,true)};
++ },[]);
++ useLayoutEffect(()=>{entry.current?.focus({preventScroll:true})},[]);
++ function keepFocus(e){
++  if(e.key!=='Tab')return;
++  const items=[...ref.current.querySelectorAll('button:not(:disabled),input,[tabindex="0"]')];
++  const first=items[0],last=items.at(-1);
++  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus({preventScroll:true});}
++  if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus({preventScroll:true});}
++ }
++ function change(hsv,instant=false){const value=fromHsv(...hsv);setState({hsv,text:value,value});preview(value,instant)}
++ function type(text){const value=hex(text);setState(s=>({...s,text,value:value??s.value,hsv:value?toHsv(value):s.hsv}));if(value)preview(value,false)}
++ function point(e){const r=e.currentTarget.getBoundingClientRect(),unit=n=>Math.min(1,Math.max(0,n));change([state.hsv[0],unit((e.clientX-r.left)/r.width),unit(1-(e.clientY-r.top)/r.height)],true)}
++ function arrow(e){const dx={ArrowLeft:-1,ArrowRight:1}[e.key]??0,dy={ArrowDown:-1,ArrowUp:1}[e.key]??0;if(!dx&&!dy)return;e.preventDefault();const delta=e.shiftKey ? .1 : .02;change([state.hsv[0],Math.max(0,Math.min(1,state.hsv[1]+dx*delta)),Math.max(0,Math.min(1,state.hsv[2]+dy*delta))],true)}
++ const [h,s,v]=state.hsv, invalid=!hex(state.text),color=hex(state.text)??initial;
++ const weak=state.value&&contrast(color,target.background)<(target.part==='graph'?3:4.5);
++ const scheme=document.documentElement.dataset.appearanceMode==='light'?'light':'dark';
++ return createPortal(<div ref={ref} id={id} className="tb-color-picker" onKeyDown={keepFocus} role="dialog" aria-label={`${labels[target.metric]} · ${target.label}颜色`} data-reduced={reduced} style={pos??{left:0,top:0,visibility:'hidden'}}>
++  <header><strong>{labels[target.metric]}</strong><span>{target.label}颜色</span></header>
++  <div className="tb-color-sv" role="button" tabIndex={0} aria-label="饱和度与明度，方向键微调" style={{'--hue':fromHsv(h,1,1)}} onKeyDown={arrow} onPointerDown={e=>{if(e.button!==0||!e.isPrimary)return;drag.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);point(e)}} onPointerMove={e=>{if(drag.current===e.pointerId)point(e)}} onLostPointerCapture={()=>{drag.current=null}}><i style={{left:`${s*100}%`,top:`${(1-v)*100}%`,background:color}}/></div>
++  <input className="tb-color-hue" type="range" min="0" max="359" value={Math.round(h)%360} aria-label="色相" onChange={e=>change([+e.target.value,s,v],true)}/>
++  <div className="tb-color-presets" aria-label="推荐色板">{palettes[scheme].map(c=><button type="button" key={c} title={c} aria-label={`色板 ${c}`} aria-pressed={state.value===c} style={{'--chip':c}} onClick={()=>change(toHsv(c))}/>)}</div>
++  <div className="tb-color-hex"><label htmlFor={id+'-hex'}>HEX</label><input id={id+'-hex'} ref={entry} value={state.text} aria-invalid={invalid} spellCheck={false} maxLength={8} onChange={e=>type(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!invalid){e.preventDefault();accept(state.value)}}}/><span style={{background:color}} aria-hidden="true"/></div>
++  <div className="tb-color-note" aria-live="polite">{invalid?'请输入 6 位十六进制色值':weak?'与当前预览底色对比偏低':state.value?'上方预览同步更新':'当前使用默认颜色'}</div>
++  <footer><Button icon={RotateCcw} className="tb-color-default" disabled={state.value===null} onClick={()=>{setState({hsv:toHsv(target.fallback),text:target.fallback,value:null});preview(null,false)}}>恢复默认</Button><Button onClick={()=>cancel(true)}>取消</Button><Button tone="primary" className="tb-color-confirm" disabled={invalid} onClick={()=>accept(state.value)}>确定</Button></footer>
++ </div>,document.body);
++}
++export function ColorPane({metrics,categoryIndex,navigation,selected,colorMap,previewMap,changeColor,previewColor,reduced}){
++ const [target,setTarget]=useState(null),scroll=useRef(null);
++
++ function done(commit,value){if(commit)changeColor(target.metric,target.part,value);previewColor(null);setTarget(null)}
++ useLayoutEffect(()=>{const view=scroll.current;if(!view)return;const row=[...view.querySelectorAll('[data-color-metric]')].find(el=>el.dataset.colorMetric===selected);view.scrollTop=row?Math.max(0,row.offsetTop-view.clientHeight/2+row.offsetHeight/2):0},[categoryIndex,selected]);
++ return <div className="tb-color-colors tb42-library-body">
++  {navigation}
++  <div className="tb-color-table" role="table" aria-label="按指标设置颜色">
++   <div className="tb-color-head tb-color-row" role="row"><span role="columnheader">指标</span>{parts.map(([p,label])=><span key={p} role="columnheader">{label}</span>)}</div>
++   <div className="tb-color-scroll" role="rowgroup" ref={scroll} key={categoryIndex} data-reduced={reduced}>{metrics.map(metric=><div key={metric} className="tb-color-row" role="row" data-color-metric={metric} data-selected={metric===selected}>
++    <span role="rowheader" title={labels[metric]}>{labels[metric]}</span>
++    {parts.map(([part,label])=>{const c=previewMap?.[metric]?.[part],active=target?.metric===metric&&target?.part===part;return <span key={part} role="cell"><button className="tb-color-chip" type="button" data-default={!c} aria-label={`${labels[metric]} · ${label}颜色`} aria-expanded={active} aria-haspopup="dialog" title={c??'跟随皮肤默认'} onClick={e=>{previewColor(null);setTarget(active?null:{metric,part,label,anchor:e.currentTarget,fallback:actualColor(defaults[part]),background:actualColor('var(--surface)')})}} style={{'--chip':c??defaults[part]}}><i/></button></span>})}
++   </div>)}</div>
++  </div>
++  {target&&<Picker key={`${target.metric}:${target.part}`} target={target} original={colorMap?.[target.metric]?.[target.part]??null} reduced={reduced} finish={done} preview={(value,instant)=>previewColor({metric:target.metric,part:target.part,value,instant})}/>}
++ </div>;
++}
+diff --git a/desktop-preview/web/src/native/TaskbarReadout.jsx b/desktop-preview/web/src/native/TaskbarReadout.jsx
+index 2ad7096f3710..641328bbf584 100644
+--- a/desktop-preview/web/src/native/TaskbarReadout.jsx
++++ b/desktop-preview/web/src/native/TaskbarReadout.jsx
+@@ -1 +1,2 @@
++import {metricCss} from './taskbar-colors.mjs';
+ import React,{useLayoutEffect,useRef,useId,useState} from 'react';
+@@ -42,3 +43,3 @@ function Chart({kind,id,sample,points,cores,x,y,motion}){
+  },[points,mode,hasData,motion,x,y,sample?.unit,id]);
+- if(!hasData||mode==='line'&&!(points?.length>1))return <text x={x} y={y+3} className="taskbar-cell-unit">—</text>;
++ if(!hasData||mode==='line'&&!(points?.length>1))return <text x={x} y={y+3} className="taskbar-cell-unit taskbar-chart-empty">—</text>;
+  if(mode==='ring')return <g className="taskbar-chart"><circle cx={x+9} cy={y-.5} r="4.5" opacity=".28"/><circle cx={x+9} cy={y-.5} r="4.5" pathLength="100" strokeDasharray={`${ratio*100} 100`} transform={`rotate(-90 ${x+9} ${y-.5})`}/></g>;
+@@ -94,3 +95,3 @@ export function taskbarPreviewFootprint(module,peer,width,typography){
+ }
+-export function Readout({id,module,peer,snapshot,numberMotion='direct',chartMotion=true,points,width=88,typography,mode}){
++export function Readout({id,module,peer,snapshot,numberMotion='direct',chartMotion=true,points,width=88,typography,mode,colors}){
+  const root=useRef(null),[phase,setPhase]=useState({x:0,y:0});
+@@ -117,3 +118,3 @@ export function Readout({id,module,peer,snapshot,numberMotion='direct',chartMoti
+  let cursor=start;
+- return <svg ref={root} className="taskbar-mini-cell" viewBox={`0 0 ${visibleWidth} 17`} width={visibleWidth} height="17" style={{width:visibleWidth,minWidth:visibleWidth,overflow:mode?undefined:'visible'}} role="img" aria-label={`${row?.[1]||id||'空位置'} ${text} ${unit}`}>
++ return <svg ref={root} className="taskbar-mini-cell" data-custom-name={Boolean(colors?.[id]?.label)} viewBox={`0 0 ${visibleWidth} 17`} width={visibleWidth} height="17" style={{...metricCss(colors,id),width:visibleWidth,minWidth:visibleWidth,overflow:mode?undefined:'visible'}} role="img" aria-label={`${row?.[1]||id||'空位置'} ${text} ${unit}`}>
+   <defs><clipPath id={clip}><rect x={start-1} y=".5" width={numberWidth+2} height="16"/></clipPath></defs>
+diff --git a/desktop-preview/web/src/native/TaskbarSettings.jsx b/desktop-preview/web/src/native/TaskbarSettings.jsx
+index c4a6425611ce..a2f75ff5273d 100644
+--- a/desktop-preview/web/src/native/TaskbarSettings.jsx
++++ b/desktop-preview/web/src/native/TaskbarSettings.jsx
+@@ -8,2 +8,5 @@ import {migrateLayout,editLayout,displayModule,groups,moduleLabel,nameVariants,v
+ import './taskbar-settings.css';
++import './taskbar-colors.css';
++import {tabs,moveTab,withColor} from './taskbar-colors.mjs';
++import {ColorPane} from './TaskbarColorPane';
+ import {createTaskbarPreviewFeed} from './taskbar-preview';
+@@ -74,2 +77,13 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+  const [editorMode,setEditorMode]=useState('components');
++ const [colorDraft,setColorDraft]=useState(null);
++ const colorMap=layout.colors??{};
++ const previewColors=colorDraft?withColor(colorMap,colorDraft.metric,colorDraft.part,colorDraft.value):colorMap;
++ const editorRef=useRef(null);
++ useLayoutEffect(()=>{
++  if(editorMode!=='colors')return;
++  const editor=editorRef.current,body=editor?.closest('.native-preferences-body');if(!body)return;
++  const bounds=editor.getBoundingClientRect(),viewport=body.getBoundingClientRect();
++  const shift=Math.min(bounds.bottom-viewport.bottom+5,bounds.top-viewport.top-6);
++  if(shift>0)body.scrollTop+=Math.ceil(shift);
++ },[editorMode]);
+  const [libraryFocus,setLibraryFocus]=useState(null);
+@@ -156,3 +170,3 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+  function chooseSlot(id){if(moveFrom&&moveFrom!==id){commit({type:'swap',from:moveFrom,to:id});setMoveFrom(null)}else{setSlotId(id);setMessage('');const metric=page.slots.find(s=>s.id===id)?.module?.metricId;const index=groups.findIndex(([,ids])=>ids.includes(metric));if(index>=0){categoryDirection.current=index>=categoryIndex?1:-1;setCategory(groups[index][0]);setLibraryFocus({metric,request:performance.now()})}}}
+- function undoEdit(){const last=undo.at(-1);if(!last)return;update({layout:last.layout});setPageId(last.pageId);setSlotId(last.slotId);setUndo(undo.slice(0,-1));setMessage('')}
++ function undoEdit(){const last=undo.at(-1);if(!last)return;update({layout:{...last.layout,colors:layout.colors}});setPageId(last.pageId);setSlotId(last.slotId);setUndo(undo.slice(0,-1));setMessage('')}
+  function start(event,source,ghost){event.stopPropagation();drag.current=source;setDragging(true);event.dataTransfer.setData(dragType,'widget');event.dataTransfer.effectAllowed='move';if(ghost)event.dataTransfer.setDragImage(ghost,Math.round(ghost.offsetWidth/2),Math.round(ghost.offsetHeight/2));}
+@@ -162,3 +176,3 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+  function deletePage(){const confirmed=confirmDelete.current===page.id;commit({type:'delete',confirm:confirmed});confirmDelete.current=!confirmed&&page.slots.some(s=>s.module)?page.id:null;}
+- const widget=(module,width=88,peer)=> <Readout module={module} peer={peer} snapshot={snapshot} points={series[module.metricId]} width={width} numberMotion={reduced?'direct':numberMotion} chartMotion={!reduced} typography={previewTypography}/>;
++ const widget=(module,width=88,peer)=> <Readout colors={previewColors} module={module} peer={peer} snapshot={snapshot} points={series[module.metricId]} width={width} numberMotion={reduced?'direct':numberMotion} chartMotion={!reduced} typography={previewTypography}/>;
+  const catalogueName=metric=>{
+@@ -168,3 +182,3 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+  const title=module=>catalogueName(module.metricId);
+- function tabTo(mode,focus){setEditorMode(mode);setTuningDraft(null);if(focus)document.getElementById(tabsId+'-'+mode)?.focus();}
++ function tabTo(mode,focus){setEditorMode(mode);setTuningDraft(null);setColorDraft(null);if(focus)document.getElementById(tabsId+'-'+mode)?.focus();}
+  function previewColumns(slide,cellWidth){
+@@ -193,3 +207,4 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+  finishTuning.current=(part,next,cancel)=>{setTuningDraft(null);if(!cancel)changeTuning(part,next);};
+- return <section className="taskbar-settings" data-fonts-ready={fontsReady} data-reduced={reduced}>
++ const categoryNav=label=><nav className="tb42-categories" aria-label={label} style={{'--tb-cat-index':categoryIndex}}><span className="tb42-category-marker" aria-hidden="true"/>{groups.map(([name],index)=><button type="button" key={name} aria-label={name} aria-pressed={category===name} onClick={()=>chooseCategory(name,index)}><CategoryInk name={name} ready={fontsReady}/></button>)}</nav>;
++ return <section className="taskbar-settings" data-fonts-ready={fontsReady} data-reduced={reduced} data-color-instant={colorDraft?.instant===true}>
+   <section className="tb43-monitor-options" aria-labelledby={tabsId+'-monitor'}>
+@@ -212,3 +227,3 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+   </section>
+-  <section className="tb42-editor" aria-label="任务栏布局编辑">
++  <section ref={editorRef} className="tb42-editor" aria-label="任务栏布局编辑">
+    <header className="tb42-heading tb42-preview-tools"><h4>实时预览</h4><div className="tb42-stepper"><button type="button" aria-label="减少一页" title="减少一页" disabled={layout.pages.length<2} onClick={deletePage}><PageStepIcon/></button><button type="button" aria-label="增加一页" title="增加一页" disabled={layout.pages.length>=3} onClick={()=>commit({type:'add'})}><PageStepIcon add/></button></div></header>
+@@ -237,4 +252,4 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+    <div className="tb43-mode-bar">
+-    <div role="tablist" className="tb43-modes" aria-label="任务栏编辑方式" onKeyDown={e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();tabTo(e.key==='Home'?'components':e.key==='End'?'tuning':editorMode==='components'?'tuning':'components',true)}}>
+-     {[['components','组件'],['tuning','排版微调']].map(([mode,label])=><button type="button" key={mode} role="tab" id={tabsId+'-'+mode} aria-controls={tabsId+'-pane-'+mode} aria-selected={mode===editorMode} tabIndex={mode===editorMode?0:-1} onClick={()=>tabTo(mode,false)}>{label}</button>)}
++    <div role="tablist" className="tb43-modes" aria-label="任务栏编辑方式" onKeyDown={e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();tabTo(moveTab(editorMode,e.key),true)}}>
++     {tabs.map(([mode,label])=><button type="button" key={mode} role="tab" id={tabsId+'-'+mode} aria-controls={tabsId+'-pane-'+mode} aria-selected={mode===editorMode} tabIndex={mode===editorMode?0:-1} onClick={()=>tabTo(mode,false)}>{label}</button>)}
+     </div>
+@@ -248,3 +263,3 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+     <div className="tb42-library-body">
+-     <nav className="tb42-categories" aria-label="组件分类" style={{'--tb-cat-index':categoryIndex}}><span className="tb42-category-marker" aria-hidden="true"/>{groups.map(([name],index)=><button type="button" key={name} aria-label={name} aria-pressed={category===name} onClick={()=>chooseCategory(name,index)}><CategoryInk name={name} ready={fontsReady}/></button>)}</nav>
++     {categoryNav('组件分类')}
+      <div className="tb42-shelf"><div className="tb42-palette-legend" aria-hidden="true"><Tag size={10}/><Activity size={11}/></div><div className="tb42-shelf-scroll" ref={shelfScroll} role="region" aria-label={`${category}组件`} tabIndex={0}><div className="tb42-shelf-rows" key={category} style={{'--tb-cat-direction':categoryDirection.current}}>{groups[categoryIndex][1].map(metric=>{
+@@ -253,5 +268,5 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+       return <div className="tb42-library-item" key={metric} data-metric={metric} data-located={libraryFocus?.metric===metric} aria-label={metricName}>
+-       <div className="tb42-library-names">{nameVariants(metric).map(variant=><button type="button" key={variant} data-variant={variant} draggable title={`${metricName}：${variantLabel[variant]}`} aria-label={`${metricName} ${variantLabel[variant]}`} onDragStart={e=>start(e,source({variant}))} onDragEnd={clearDrag} onClick={()=>insert({variant})}><Readout module={{...item,name:{variant},parts:[]}} snapshot={snapshot} mode="name"/></button>)}</div>
++       <div className="tb42-library-names">{nameVariants(metric).map(variant=><button type="button" key={variant} data-variant={variant} draggable title={`${metricName}：${variantLabel[variant]}`} aria-label={`${metricName} ${variantLabel[variant]}`} onDragStart={e=>start(e,source({variant}))} onDragEnd={clearDrag} onClick={()=>insert({variant})}><Readout colors={previewColors} module={{...item,name:{variant},parts:[]}} snapshot={snapshot} mode="name"/></button>)}</div>
+        <span className="tb42-palette-divider" aria-hidden="true"/>
+-       <div className="tb42-library-parts">{Object.entries(partLabels).map(([part,label])=><button type="button" key={part} data-library-part={part} title={`${metricName}：${label}`} aria-label={`${metricName} ${label}`} draggable onDragStart={e=>start(e,source({part}))} onDragEnd={clearDrag} onClick={()=>insert({part})}><Readout module={{...item,parts:[part]}} snapshot={snapshot} points={series[metric]} numberMotion={reduced?'direct':numberMotion} chartMotion={!reduced} mode="part"/></button>)}</div>
++       <div className="tb42-library-parts">{Object.entries(partLabels).map(([part,label])=><button type="button" key={part} data-library-part={part} title={`${metricName}：${label}`} aria-label={`${metricName} ${label}`} draggable onDragStart={e=>start(e,source({part}))} onDragEnd={clearDrag} onClick={()=>insert({part})}><Readout colors={previewColors} module={{...item,parts:[part]}} snapshot={snapshot} points={series[metric]} numberMotion={reduced?'direct':numberMotion} chartMotion={!reduced} mode="part"/></button>)}</div>
+       </div>})}</div></div></div>
+@@ -259,2 +274,5 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
+    </section>
++   <section className="tb-color-panel" role="tabpanel" id={tabsId+'-pane-colors'} aria-labelledby={tabsId+'-colors'} hidden={editorMode!=='colors'}>
++    {editorMode==='colors'&&<ColorPane metrics={groups[categoryIndex][1]} categoryIndex={categoryIndex} navigation={categoryNav('颜色分类')} selected={libraryFocus?.metric??selected.module?.metricId} colorMap={colorMap} previewMap={previewColors} changeColor={(metric,part,value)=>update({layout:{...layout,colors:withColor(colorMap,metric,part,value)}})} previewColor={setColorDraft} reduced={reduced}/>}
++   </section>
+    <section className="tb42-typography" role="tabpanel" id={tabsId+'-pane-tuning'} aria-labelledby={tabsId+'-tuning'} hidden={editorMode!=='tuning'}>
+diff --git a/desktop-preview/web/src/native/taskbar-colors.css b/desktop-preview/web/src/native/taskbar-colors.css
+new file mode 100644
+index 000000000000..d1ef94a62156
+--- /dev/null
++++ b/desktop-preview/web/src/native/taskbar-colors.css
+@@ -0,0 +1,32 @@
++.tb-color-colors{display:grid;height:100%;min-height:0;padding:4px 0 5px;font:400 14px Inter,"HarmonyOS Sans SC",sans-serif;box-sizing:border-box}
++.tb-color-table{display:grid;grid-template-rows:25px minmax(0,1fr);min-width:0;min-height:0}
++.tb-color-scroll{position:relative;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-gutter:stable;scrollbar-color:color-mix(in srgb,var(--muted) 52%,transparent) transparent}
++.tb-color-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,minmax(36px,54px));column-gap:4px;align-items:center;min-width:0;min-height:32px;padding-inline:8px 0;border-radius:7px}
++.tb-color-head{min-height:24px;padding-right:12px;color:var(--muted);font-size:13px}.tb-color-row>span{min-width:0}.tb-color-row>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tb-color-row>span:not(:first-child){display:grid;justify-items:center}
++.tb-color-row[data-selected=true]{background:var(--hover)}
++.tb42-editor .tb-color-chip{display:grid;place-items:center;min-height:26px;width:36px;padding:0;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--text)}
++.tb42-editor .tb-color-chip:hover,.tb42-editor .tb-color-chip[aria-expanded=true]{border-color:var(--muted);background:var(--hover)}
++.tb-color-chip i{display:block;width:19px;height:11px;border-radius:3px;background:var(--chip);box-shadow:inset 0 0 0 1px #80808048;pointer-events:none}.tb-color-chip[data-default=true] i{border:1px dashed var(--chip);box-shadow:none;background:transparent}
++.taskbar-settings .taskbar-mini-cell .taskbar-cell-label{fill:var(--tb-custom-name,var(--widget-value,var(--text)))}
++.taskbar-settings .taskbar-mini-cell .taskbar-cell-number{fill:var(--tb-custom-reading,var(--widget-value,var(--text)))}
++.taskbar-settings .taskbar-mini-cell .taskbar-cell-unit{fill:var(--tb-custom-reading,var(--widget-label,var(--muted)))}
++.taskbar-settings .taskbar-mini-cell .taskbar-chart-empty{fill:var(--tb-custom-graph,var(--widget-label,var(--muted)))}
++.taskbar-settings .taskbar-mini-cell .taskbar-chart{stroke:var(--tb-custom-graph,var(--widget-accent,var(--green)))}
++.taskbar-settings .taskbar-mini-cell .taskbar-chart-core{fill:var(--tb-custom-graph,var(--widget-accent,var(--green)))}
++:root .taskbar-settings .taskbar-mini-cell[data-custom-name=true] .taskbar-metric-icon{color:var(--tb-custom-name)}
++.taskbar-settings[data-reduced=false][data-color-instant=false] :is(.taskbar-cell-label,.taskbar-cell-number,.taskbar-cell-unit,.taskbar-metric-icon,.taskbar-chart,.taskbar-chart-core){transition:fill var(--motion-feedback,.14s) var(--ease,var(--taskbar-ease)),stroke var(--motion-feedback,.14s) var(--ease,var(--taskbar-ease)),color var(--motion-feedback,.14s) var(--ease,var(--taskbar-ease))}
++.tb-color-picker{position:fixed;z-index:10000;box-sizing:border-box;width:min(268px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:13px;display:grid;gap:9px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);box-shadow:0 14px 38px #0005;font:400 14px/1.4 Inter,"HarmonyOS Sans SC",sans-serif}
++.tb-color-picker>*{animation:tb-color-picker-in var(--motion-surface,.28s) var(--ease,ease-out) both}
++@keyframes tb-color-picker-in{from{opacity:.65}to{opacity:1}}
++.tb-color-picker header{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.tb-color-picker header strong{font-weight:600}.tb-color-picker header span{color:var(--muted);white-space:nowrap;font-size:13px}
++.tb-color-sv{position:relative;height:94px;border-radius:6px;background:linear-gradient(0deg,#000,transparent),linear-gradient(90deg,#fff,var(--hue));touch-action:none;cursor:crosshair;overflow:hidden}.tb-color-sv i{position:absolute;transform:translate(-50%,-50%);width:10px;height:10px;box-sizing:border-box;border:1.5px solid white;border-radius:50%;box-shadow:0 0 0 1px #000;pointer-events:none}
++.tb-color-hue{appearance:none;margin:0;width:100%;height:9px;border-radius:99px;background:linear-gradient(90deg,red,#ff0,#0f0,#0ff,#00f,#f0f,red);cursor:pointer}.tb-color-hue::-webkit-slider-thumb{appearance:none;width:13px;height:13px;background:white;border:2px solid #393a3b;border-radius:50%;box-shadow:0 0 0 1px #fff}
++.tb-color-presets{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin-top:2px}.tb-color-presets button{width:100%;height:21px;padding:0;border:1px solid var(--line);border-radius:5px;background:var(--chip);cursor:pointer}.tb-color-presets button[aria-pressed=true]{outline:1px solid var(--text);outline-offset:1px}
++.tb-color-hex{display:grid;grid-template-columns:auto minmax(0,1fr) 23px;align-items:center;gap:9px}.tb-color-hex label{font-size:13px;color:var(--muted)}.tb-color-hex input{box-sizing:border-box;width:100%;height:28px;min-width:0;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--input,var(--surface2));color:var(--text);font:inherit;letter-spacing:.04em}.tb-color-hex input[aria-invalid=true]{border-color:var(--danger)}.tb-color-hex span{height:18px;border:1px solid var(--line);border-radius:4px}
++.tb-color-note{font-size:12px;color:var(--muted);min-height:17px}.tb-color-picker footer{display:flex;align-items:center;gap:6px}.tb-color-picker footer .button{flex:none;min-height:26px;height:26px;padding:0 8px;border-radius:7px;font-size:14px;white-space:nowrap}.tb-color-picker footer .tb-color-default{margin-right:auto;background:transparent;border-color:transparent;padding-inline:0 3px;color:var(--muted)}.tb-color-default svg{width:13px;height:13px}
++.tb-color-picker :focus-visible,.tb-color-chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}.tb-color-picker[data-reduced=true]>*{animation:none}
++@media(prefers-reduced-motion:reduce){.tb-color-picker>*{animation:none}.taskbar-settings .taskbar-mini-cell *{transition:none!important}}
++
++.tb-color-table{padding-top:6px}
++.tb-color-scroll[data-reduced=false]{animation:tb43-pane-enter var(--motion-page,.24s) var(--ease,var(--taskbar-ease)) both}
++@container(max-width:395px){.tb-color-table{padding-top:0}}
+diff --git a/desktop-preview/web/src/native/taskbar-colors.mjs b/desktop-preview/web/src/native/taskbar-colors.mjs
+new file mode 100644
+index 000000000000..2126ff908465
+--- /dev/null
++++ b/desktop-preview/web/src/native/taskbar-colors.mjs
+@@ -0,0 +1,9 @@
++export const tabs=[['components','组件'],['colors','颜色'],['tuning','位置']];
++export function moveTab(id,key){const i=tabs.findIndex(([x])=>x===id);return tabs[key==='Home'?0:key==='End'?2:(i+(key==='ArrowLeft'?2:1))%3][0]}
++export const parts=[['label','名称'],['reading','读数'],['graph','图形']];
++export const hex=x=>/^[#]?[a-f\d]{6}$/i.test(x?.trim()??'')?'#'+x.trim().replace('#','').toUpperCase():null;
++const clamp=x=>Math.min(1,Math.max(0,x));
++export function fromHsv(h,s,v){const f=n=>{const k=(n+h/60)%6;return Math.round(255*clamp(v-v*s*Math.max(0,Math.min(k,4-k,1)))).toString(16).padStart(2,'0')};return ('#'+f(5)+f(3)+f(1)).toUpperCase()}
++export function toHsv(color){const [r,g,b]=hex(color).slice(1).match(/../g).map(x=>parseInt(x,16)/255);const max=Math.max(r,g,b),d=max-Math.min(r,g,b);const h=!d?0:60*(max===r?(g-b)/d:max===g?2+(b-r)/d:4+(r-g)/d);return [(h+360)%360,max?d/max:0,max]}
++export function withColor(map,metric,part,value){if(value!==null&&!hex(value)||!parts.some(([p])=>p===part))return map;const out={...map}, row={...out[metric]};if(value===null)delete row[part];else row[part]=hex(value);if(Object.keys(row).length)out[metric]=row;else delete out[metric];return out}
++export const metricCss=(map,metric)=>({'--tb-custom-name':map?.[metric]?.label,'--tb-custom-reading':map?.[metric]?.reading,'--tb-custom-graph':map?.[metric]?.graph});
+diff --git a/desktop-preview/web/src/native/taskbar-colors.test.mjs b/desktop-preview/web/src/native/taskbar-colors.test.mjs
+new file mode 100644
+index 000000000000..26e1b55a10b2
+--- /dev/null
++++ b/desktop-preview/web/src/native/taskbar-colors.test.mjs
+@@ -0,0 +1,16 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import {hex,fromHsv,toHsv,withColor,metricCss,tabs,moveTab} from './taskbar-colors.mjs';
++test('valid opaque hex and HSV round trip',()=>{
++ assert.equal(hex(' a1B2c3 '),'#A1B2C3');assert.equal(hex('#12zz56'),null);assert.equal(hex('#ff008066'),null);
++ for(const v of ['#000000','#FFFFFF','#D34679','#45B03E','#477ADB'])assert.equal(fromHsv(...toHsv(v)),v);
++});
++test('draft map never mutates other metrics or other parts and default removes override',()=>{
++ const first=withColor({},'cpu','label','#abcdef');const second=withColor(first,'down','reading','#D34679');
++ assert.deepEqual(first,{cpu:{label:'#ABCDEF'}});assert.strictEqual(withColor(second,'cpu','graph','bad'),second);
++ assert.deepEqual(metricCss(second,'cpu'),{'--tb-custom-name':'#ABCDEF','--tb-custom-reading':undefined,'--tb-custom-graph':undefined});
++ assert.deepEqual(withColor(second,'cpu','label',null),{down:{reading:'#D34679'}});
++});
++test('keyboard tab order wraps and Home/End follow the three labels',()=>{
++ assert.deepEqual(tabs.map(x=>x[1]),['组件','颜色','位置']);assert.equal(moveTab('components','ArrowLeft'),'tuning');assert.equal(moveTab('tuning','ArrowRight'),'components');assert.equal(moveTab('components','ArrowRight'),'colors');assert.equal(moveTab('colors','End'),'tuning');
++});
+diff --git a/desktop-preview/web/src/native/taskbar-composer.js b/desktop-preview/web/src/native/taskbar-composer.js
+index 2d41b4730787..3ac2a8dcc16e 100644
+--- a/desktop-preview/web/src/native/taskbar-composer.js
++++ b/desktop-preview/web/src/native/taskbar-composer.js
+@@ -6,4 +6,4 @@ const blank=(page,row,column)=>({id:`${page}-r${row}c${column}`,row,column,modul
+ const newPage=(page,columns)=>({id:page,grid:{rows:2,columns},slots:Array.from({length:2*columns},(_,i)=>blank(page,Math.floor(i/columns),i%columns))});
+-export const nameVariants=metric=>['down','up'].includes(metric)?['arrow','chinese']:['storageRead','storageWrite'].includes(metric)?['english','short','chinese','icon']:/^cpu|^gpu(?:$|Frequency|Temperature)/.test(metric)?['english','icon']:['chinese','english','icon'];
+-export const variantLabel={chinese:'中文',english:'英文',arrow:'箭头',icon:'图标',short:'单字'};
++export const nameVariants=metric=>metric==='memory'?['chinese','english','ram','icon']:metric==='storage'?['chinese','english','ssd','icon']:['down','up'].includes(metric)?['arrow','chinese']:['storageRead','storageWrite'].includes(metric)?['english','short','chinese','icon']:/^cpu|^gpu(?:$|Frequency|Temperature)/.test(metric)?['english','icon']:['chinese','english','icon'];
++export const variantLabel={chinese:'中文',english:'英文',arrow:'箭头',icon:'图标',short:'单字',ram:'RAM',ssd:'SSD'};
+ const defaultVariant=metric=>nameVariants(metric)[0];
+@@ -11,2 +11,3 @@ export function moduleLabel(module,fallback='未知'){
+  const metric=module.metricId,variant=module.name?.variant;
++ if(metric==='memory'&&variant==='ram')return 'RAM';if(metric==='storage'&&variant==='ssd')return 'SSD';
+  if(metric==='down'||metric==='up')return variant==='chinese'?(metric==='down'?'下载':'上传'):(metric==='down'?'↓':'↑');
+diff --git a/desktop-preview/web/src/native/taskbar-settings.css b/desktop-preview/web/src/native/taskbar-settings.css
+index faa57861099c..f8d8cd4deaee 100644
+--- a/desktop-preview/web/src/native/taskbar-settings.css
++++ b/desktop-preview/web/src/native/taskbar-settings.css
+@@ -211,3 +211,3 @@
+ .tb43-mode-bar .tb42-edit-actions{min-width:0;align-self:center}.tb43-mode-bar .tb42-edit-actions[hidden]{display:none}.tb42-editor .tb43-mode-bar .tb42-edit-actions>button{display:grid;place-items:center;padding:0;min-height:23px;width:23px;border:0;background:transparent;color:var(--muted)}.tb42-editor .tb43-mode-bar .tb42-edit-actions>button:not(:disabled):hover{color:var(--text)}
+-.tb43-editor-panes{display:grid;height:201px;min-width:0}.tb43-editor-panes>[role=tabpanel]{grid-area:1/1;min-width:0;min-height:0;animation:tb43-pane-enter 180ms var(--taskbar-ease) both}.tb43-editor-panes>[hidden]{display:none}@keyframes tb43-pane-enter{from{opacity:.45}to{opacity:1}}
++.tb43-editor-panes{display:grid;height:201px;min-width:0}.tb43-editor-panes>[role=tabpanel]{grid-area:1/1;min-width:0;min-height:0;animation:tb43-pane-enter var(--motion-page,.24s) var(--ease,var(--taskbar-ease)) both}.tb43-editor-panes>[hidden]{display:none}@keyframes tb43-pane-enter{from{opacity:.45}to{opacity:1}}
+ .tb43-editor-panes .tb42-library-body{block-size:100%;padding-top:3px}.tb43-editor-panes .tb42-library{margin:0;padding:0;border:0}.tb43-editor-panes .tb42-library[data-returning=true]{outline-offset:1px}.tb43-editor-panes .tb42-typography{overflow:auto;scrollbar-width:thin}
+@@ -235 +235,6 @@
+ .tb43-tune-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}.tb43-tune-tools .tb42-tune-scope{min-width:0;font-size:var(--text-control)}.tb42-editor .tb43-tune-reset{display:inline-flex;align-items:center;gap:5px;flex:none;height:26px;min-height:26px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--text);font:400 12px Inter,"HarmonyOS Sans SC",sans-serif}.tb42-editor .tb43-tune-reset:enabled:hover{background:var(--hover)}.tb42-editor .tb43-tune-reset:disabled{opacity:.46}
++
++/* Two extra names are optional variants, not a change to the user's slots. */
++.tb42-library-item:is([data-metric=memory],[data-metric=storage]) .tb42-library-names{grid-template-columns:repeat(4,minmax(0,1fr))}
++.tb42-library-names>:is([data-variant=ram],[data-variant=ssd]){grid-column:3}
++.tb42-library-item:is([data-metric=memory],[data-metric=storage]) .tb42-library-names>[data-variant=icon]{grid-column:4}
