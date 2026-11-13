@@ -25,7 +25,7 @@ AsterHub 是 Windows 上的多设备资源工作台：在同一应用中查看 C
 
 ## 构建 Windows 程序
 
-需要 Windows、Node.js 20+（含 npm）和系统 .NET Framework C# 编译器：
+需要 Windows、Node.js 22.12+（含 npm）和系统 .NET Framework C# 编译器：
 
 ```powershell
 cd desktop/web

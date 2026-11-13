@@ -3,7 +3,7 @@
 ## Windows 程序
 
 - Windows 10 1809+ / x64，.NET Framework 4.7.2+。
-- Node.js 20+ / npm；前端锁文件为 `desktop/web/package-lock.json`，用 `npm ci` 安装。
+- Node.js 22.12+ / npm；前端锁文件为 `desktop/web/package-lock.json`，用 `npm ci` 安装。
 - `desktop/build.ps1` 使用系统 `Framework64/v4.0.30319/csc.exe` 编译当前后端和宿主。
 - `desktop/app/runtime` 是固定版本的可再分发依赖，`desktop/app/licenses` 包含许可证。终端资源位于 `desktop/app/resources/terminal`。无需旧 AQServer 程序。
 
