@@ -1,0 +1,37 @@
+/* History filters have their own selection surface; chart readings stay exact. */
+.native-workbench .history-chart .history-metric-tabs {
+ position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(3,minmax(60px,1fr));gap:0;padding:4px;min-height:38px;border-radius:10px;
+}
+.native-workbench .history-chart .history-metric-tabs button {
+ position:relative;z-index:1;min-height:28px;padding:4px 14px;font-size:14px;font-weight:600;line-height:20px;border:0;border-radius:7px;box-shadow:none;background:transparent;white-space:nowrap;transition:color var(--motion-page,.24s) var(--ease,cubic-bezier(.22,1,.36,1));
+}
+.native-workbench .history-chart .history-metric-tabs button.active {background:transparent;box-shadow:none;color:var(--text)}
+.history-metric-selection {
+ position:absolute;z-index:0;left:4px;top:4px;bottom:4px;width:calc((100% - 8px)/3);border-radius:7px;background:var(--surface);box-shadow:0 1px 4px #0002;transform:translateX(calc(var(--history-selection)*100%));transition:transform var(--motion-layout,.28s) var(--ease,cubic-bezier(.22,1,.36,1));pointer-events:none;
+}
+.history-trend-viewport {position:relative;min-width:0;transform-origin:center center}
+.history-trend-panel[aria-hidden="true"] {position:absolute;inset:0;visibility:hidden;pointer-events:none}
+@media(max-width:700px){
+ .native-workbench .history-chart .history-metric-tabs {grid-template-columns:repeat(3,minmax(47px,1fr));min-height:36px}
+ .native-workbench .history-chart .history-metric-tabs button {padding:4px 9px;font-size:14px;min-height:26px;line-height:18px}
+}
+html[data-motion="reduced"] .history-metric-selection,html[data-motion="reduced"] .history-metric-tabs button {transition:none!important}
+@media(prefers-reduced-motion:reduce){.history-metric-selection,.history-metric-tabs button {transition:none!important}}
+
+.history-snapshot-status{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:14px}
+.native-workbench .history-chart .data-area{opacity:.5}
+.native-workbench .history-chart .data-stroke{stroke-width:1.5}
+.history-trend-panel{contain:layout style}
+.chart-selection-popover .history-peek{background:color-mix(in srgb,var(--surface) 96%,var(--text));border-color:color-mix(in srgb,var(--text) 15%,transparent)}
+
+/* Text uses the workbench font and an opaque surface; blur is never applied to the foreground. */
+.native-workbench .history-chart .history-peek{font-family:inherit;filter:none;backdrop-filter:none;background:var(--surface2,var(--surface))}
+.native-workbench .history-chart .history-peek strong,.native-workbench .history-chart .history-peek button{font-family:inherit}
+
+/* Avoid changing text rasterization and native scrollbar paint while opening. */
+.native-workbench .history-chart .chart-selection-popover>.motion-surface{will-change:auto}
+.native-workbench .history-chart .chart-selection-popover .history-peek{max-height:min(370px,60dvh,var(--motion-available-height,100dvh))}
+.native-workbench .history-chart .history-peek-scroll>.scroll-surface-scroll{
+ max-height:141px;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable both-edges;mask-image:none;
+}
+@media(max-width:600px){.native-workbench .history-chart .history-peek-scroll>.scroll-surface-scroll{max-height:94px}}

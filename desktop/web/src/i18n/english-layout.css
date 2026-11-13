@@ -1,0 +1,23 @@
+/* Language changes content, never the approved font size or control height. */
+.appearance-general-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.appearance-general-grid>.field{min-width:0}
+.appearance-general-grid .themed-select{width:100%;min-width:0}
+.appearance-general-grid~.appearance-picker{margin-top:22px}
+:lang(en) .native-preferences-layout>nav button{min-width:0}
+:lang(en) .preferences-nav-label{white-space:normal;overflow-wrap:break-word}
+:lang(en) .native-preferences-body .native-setting-check{height:auto;min-height:32px}
+:lang(en) .native-setting-help{overflow-wrap:break-word}
+:lang(en) .foundation-tool-navigation{flex-wrap:wrap}
+:lang(en) .foundation-tool-navigation>button{min-width:0}
+:lang(en) .native-workbench .page-heading{flex-wrap:wrap;row-gap:16px}
+:lang(en) .native-workbench .section-title{flex-wrap:wrap;row-gap:10px}
+:lang(en) .native-workbench .sidebar .nav-item{min-width:0}
+:lang(en) .native-workbench .sidebar .nav-item>span{white-space:normal}
+@media(max-width:640px){.appearance-general-grid{grid-template-columns:minmax(0,1fr)}}
+.preview5-preferences .appearance-general-grid>.field{margin:0}
+:lang(en) .preview5-preferences .native-preferences-layout{grid-template-columns:210px minmax(0,1fr)}
+:lang(en) .preview5-preferences .preferences-nav-label{white-space:normal;overflow-wrap:break-word}
+
+:lang(en) .memory-cache-row{grid-template-columns:minmax(0,1fr) 86px 68px}
+
+:lang(en) .themed-select-option>span{min-width:0;white-space:normal;overflow-wrap:anywhere}

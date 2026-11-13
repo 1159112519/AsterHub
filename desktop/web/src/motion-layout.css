@@ -1,0 +1,33 @@
+/* Chart geometry and meter transforms each have one animation owner. */
+.chart.motion-chart .motion-data-stroke,
+.chart.motion-chart .motion-data-area,
+.sparkline.motion-sparkline > path {
+  animation: none;
+  transition: stroke 650ms var(--ease), fill 650ms var(--ease);
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}
+.meter.motion-meter > span,
+.meter.motion-meter > span.meter-echo {
+  transform-origin: left center;
+  transition: transform 360ms var(--ease);
+}
+/* Keep the two GPU meter edges visibly separated while a value settles. */
+.meter.motion-meter > span.meter-echo { transition-duration:1050ms; opacity:1; }
+.meter.motion-meter[data-reduced="true"] > span { transition:none; }
+@media (prefers-reduced-motion: reduce) {
+  .chart.motion-chart .motion-data-stroke,
+  .chart.motion-chart .motion-data-area,
+  .sparkline.motion-sparkline > path,
+  .meter.motion-meter > span,
+  .meter.motion-meter > span.meter-echo {
+    transition: none;
+  }
+}
+[data-motion="reduced"] .chart.motion-chart .motion-data-stroke,
+[data-motion="reduced"] .chart.motion-chart .motion-data-area,
+[data-motion="reduced"] .sparkline.motion-sparkline > path,
+[data-motion="reduced"] .meter.motion-meter > span,
+[data-motion="reduced"] .meter.motion-meter > span.meter-echo {
+  transition: none;
+}

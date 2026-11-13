@@ -1,0 +1,105 @@
+/* Shared measured glyph centering; no universal one-pixel nudge. */
+.native-workbench{--label-optical-y:0px}
+/* One control line box: icons and labels share a centre in every native surface. */
+.native-workbench .button{display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:22px;min-height:32px;padding-block:4px;box-sizing:border-box;text-align:center}
+.native-workbench .button-content{display:inline-flex;align-items:center;justify-content:center;min-height:22px;line-height:22px;text-align:center;position:relative;top:var(--label-optical-y)}
+.native-workbench :is(.button,.icon-button,.nav-item,.themed-select,.foundation-tool-navigation>button,.storage-map-actions>button)>svg{display:block;flex-shrink:0;align-self:center;vertical-align:middle}
+.native-workbench .icon-button{display:inline-flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box}
+.native-workbench .themed-select{display:inline-flex;align-items:center;gap:8px;line-height:24px}
+.native-workbench .themed-select>span{display:block;line-height:24px}
+.native-workbench .foundation-tool-navigation{align-items:center;width:max-content;max-width:100%;padding:3px;border-radius:14px}
+.native-workbench .foundation-tool-navigation>button{display:inline-flex;align-items:center;justify-content:center;line-height:22px;min-height:34px;padding:5px 16px;border-radius:10px}
+.native-workbench .sidebar .nav-item{display:flex;align-items:center;gap:12px;min-height:40px;line-height:22px;font-size:15px;font-weight:600;padding-block:6px;box-sizing:border-box}
+.native-workbench .sidebar .nav-item>span{display:flex;align-items:center;min-height:22px;line-height:22px;position:relative;top:var(--label-optical-y);opacity:1;transition:none}
+.native-workbench .sidebar .nav-item>svg{width:19px;height:19px;flex:0 0 19px;margin:0}
+.native-workbench .sidebar-section-label,.native-workbench .native-device-label{font-weight:550;line-height:24px}
+.native-workbench .sidebar .sidebar-brand-name{transition:none}
+.native-workbench.sidebar-collapsed .sidebar .nav-item>span{display:none}
+.native-workbench.sidebar-collapsed .sidebar .sidebar-brand-name{display:none}
+.native-workbench.sidebar-collapsed .sidebar .nav-item{justify-content:center;gap:0;padding-inline:12px}
+.native-workbench .sidebar::before{transition:none}
+.sidebar-drawer-snapshot .sidebar::before{transition:none!important}
+.sidebar-drawer-snapshot .sidebar *{transition:none!important;animation:none!important}
+.native-workbench :is(.files-table,.storage-list-table) :is(th,td){vertical-align:middle}
+.native-workbench .resizable-table td{overflow:hidden;text-overflow:ellipsis}
+.native-workbench .resizable-table .column-title{line-height:24px;min-height:24px;display:flex;align-items:center;gap:8px}
+.native-workbench .files-table :is(th,td):nth-child(3){font-variant-numeric:tabular-nums;text-align:right}
+.native-workbench .files-table th:nth-child(3) .column-title{justify-content:flex-end}
+.native-workbench .files-table :is(th,td):nth-child(4){font-variant-numeric:tabular-nums;white-space:nowrap;padding-inline:12px}
+.native-workbench .files-name{display:flex;align-items:center;gap:10px;line-height:24px;min-height:24px;overflow:hidden}
+.native-workbench .files-name button{display:block;min-width:0;max-width:100%;font:inherit;line-height:24px}
+.native-workbench .files-table input[type=checkbox],.native-workbench .storage-tools input[type=checkbox]{margin:0;vertical-align:middle;width:18px;height:18px}
+.native-workbench .storage-map-actions{align-items:center;gap:12px}
+.native-workbench .storage-map-actions .button{gap:8px}
+.native-workbench .file-toolbar,.native-workbench .storage-list-toolbar{align-items:center}
+.native-workbench .button:has(>.button-content:empty){gap:0}
+@media(prefers-reduced-motion:reduce){.sidebar-drawer-snapshot{display:none!important}}
+/* Interface chrome cannot create accidental selection flashes; content remains copyable. */
+.native-workbench{user-select:none}
+.native-workbench :is(input,textarea,[contenteditable=true],.process-executable-path,.process-command-details,.aggregate-process-command,.native-terminal-emulator,.xterm,.xterm *){user-select:text}
+.native-workbench :is(.button,.icon-button,.nav-item,.themed-select,.column-title,.column-resize-handle){user-select:none;-webkit-user-select:none}
+.native-workbench .aggregate-gpu-processes :is(th,td):not(:first-child){text-align:center}
+.native-workbench .aggregate-gpu-processes th:not(:first-child) .column-title{justify-content:center}
+.native-workbench .aggregate-gpu-processes :is(th,td){padding:12px 10px;vertical-align:middle;line-height:24px}
+.native-workbench .aggregate-gpu-processes .aggregate-process-identity{padding-block:14px}
+.native-workbench .aggregate-gpu-processes .aggregate-process-identity>small{line-height:22px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.native-workbench .aggregate-gpu-processes .process-end-button{min-height:36px;line-height:24px;padding:5px 12px;border-radius:12px}
+.native-workbench .aggregate-gpu-processes .process-command-toggle{line-height:22px;margin-top:3px;min-height:24px}
+.native-workbench .aggregate-gpu-processes h3{align-items:center;line-height:24px;flex-wrap:wrap}
+.native-workbench .aggregate-gpu-processes th.resizable-column{padding-right:10px!important}
+.native-workbench .aggregate-gpu-processes th:first-child .column-title{justify-content:flex-start}
+
+/* Resting text must be painted at its native resolution, not in a retained scaled layer. */
+.motion-surface{will-change:auto}
+[data-motion-state=entering]>.motion-surface,[data-motion-state=updating]>.motion-surface,[data-motion-state=exiting]>.motion-surface{will-change:transform,opacity}
+.native-workbench,.wheel-number-popover,.themed-select-menu{font-synthesis:none;text-rendering:auto;-webkit-font-smoothing:auto}
+.native-workbench .sidebar .nav-item>span:has(>small){flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
+.native-workbench .sidebar .nav-item>span>small{font:400 13px/20px var(--font-interface);margin:0}
+
+.native-workbench .foundation-tool-navigation .tool-label,.native-workbench .sidebar .task-navigation-label{position:relative;top:var(--label-optical-y)}
+.native-workbench .network-workspace>.foundation-tool-navigation{margin:0}
+.native-workbench .network-workspace{min-width:0}
+.native-workbench .network-workspace .ns-actions .button{min-height:32px;padding-block:4px}
+
+.native-preferences .native-preferences-layout>nav>button{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;column-gap:10px;text-align:left;min-height:32px;padding-block:4px}.native-preferences .native-preferences-layout>nav>button>svg{justify-self:center}.native-preferences .preferences-nav-label{position:relative;top:var(--label-optical-y);line-height:22px}.native-workbench .themed-select>span{position:relative;top:var(--label-optical-y)}.native-updater :is(.about-link-button,.about-external-link>a)>span{position:relative;top:var(--label-optical-y)}
+
+/* Body portals are outside .native-workbench: use the same control typography and table geometry. */
+:is(.gpu-inspector,.native-resource-inspector) .resizable-table .column-title{display:flex;align-items:center;min-height:22px;line-height:22px}
+:is(.gpu-inspector,.native-resource-inspector) .resizable-table th{padding-inline:8px!important}
+:is(.gpu-inspector,.native-resource-inspector) .resizable-table td{padding-inline:8px;vertical-align:middle}
+.gpu-inspector .inspector-processes :is(th,td):not(:first-child){text-align:center}
+.gpu-inspector .inspector-processes th:not(:first-child) .column-title{justify-content:center}
+.gpu-inspector .inspector-processes :is(th,td):first-child{text-align:left}
+:is(.gpu-inspector,.native-resource-inspector) .inspector-processes td .process-end-button{font:500 14px/20px var(--font-interface);height:30px;min-height:30px;padding:4px 9px;letter-spacing:normal}
+.gpu-inspector .inspector-processes td:last-child{font-family:var(--font-interface)}
+.resizable-table th.align-right .column-title{display:flex;justify-content:flex-end}
+.resizable-table th.align-center .column-title{display:flex;justify-content:center}
+:is(.gpu-inspector,.native-resource-inspector) :is(button,.column-title){user-select:none}
+
+.gpu-inspector .inspector-processes tbody>tr:not(.process-command-row)>td{padding-block:10px;line-height:22px}
+.gpu-inspector .inspector-processes tbody>tr:not(.process-command-row)>td:not(:first-child)>span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:22px}
+
+/* Align visible content edges as well as column centres. */
+.gpu-inspector .inspector-processes :is(th,td):last-child{padding-inline:8px!important;text-align:right}
+.gpu-inspector .inspector-processes th.process-action-column .column-title{width:84px;max-width:100%;margin-left:auto;justify-content:center}
+.gpu-inspector .inspector-processes td .process-end-button{width:84px;max-width:100%}
+.native-resource-inspector .aggregate-gpu-processes :is(th,td):last-child{padding-inline:8px!important;text-align:right}
+.native-resource-inspector .aggregate-gpu-processes th:last-child .column-title{width:84px;max-width:100%;margin-left:auto;justify-content:center}
+.native-resource-inspector .aggregate-gpu-processes td .process-end-button{width:84px;max-width:100%}
+
+/* One optical-label contract for workbench controls and every body portal. */
+:is(.native-workbench,.modal) .button{min-height:32px;padding-block:4px;line-height:22px}
+:is(.native-workbench,.modal) .button-content,.control-label,.themed-select-option>span{position:relative;top:var(--label-optical-y,0px)}
+:is(.native-workbench,.modal) .dialog-actions>.button{min-height:32px;padding-block:4px}
+.native-preferences .dialog-actions{min-height:64px;padding-block:12px}
+.native-preferences .native-preferences-layout>nav>button{min-height:32px;padding-block:4px}
+.native-workbench .foundation-tool-navigation>button{min-height:34px;padding-block:5px}
+.native-workbench .network-workspace .ns-actions .button{min-height:32px;padding-block:4px}
+
+/* Header text is measured inside its own column without changing horizontal alignment. */
+.resizable-table .table-optical-label{display:inline-flex;align-items:center;min-width:0;max-width:100%;line-height:22px;position:relative;top:var(--label-optical-y,0px)}
+
+/* Control labels must shrink before they can consume the gap to a neighbouring field. */
+.native-preferences .field{min-width:0}
+.native-preferences .field>.themed-select{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+.native-preferences .themed-select>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

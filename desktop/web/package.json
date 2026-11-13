@@ -1,0 +1,20 @@
+{
+  "name": "asterhub-windows-workbench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../scripts/generate-recent-updates.mjs && vite build --outDir ../app/resources/workbench --emptyOutDir",
+    "test:layout": "node ../scripts/bugfix-tests/verify-layout-history.mjs",
+    "test:foundation": "node --test src/time-series.test.mjs src/appearance/*.test.mjs src/foundation/*.test.mjs src/native/bridge.test.mjs src/native/update-task.test.mjs src/native/task-center-model.test.mjs src/native/history-range.test.mjs src/native/light-telemetry.test.mjs src/native/terminal-device-state.test.mjs src/native/storage-device-state.test.mjs src/native/memory-scope.test.mjs ../scripts/recent-updates.test.mjs src/native/storage-scan-scope.test.mjs src/native/storage-size-filter.test.mjs src/native/network-speed.test.mjs src/native/storage-rates.test.mjs src/native/taskbar-layout.test.mjs src/native/taskbar-colors.test.mjs src/native/taskbar-composer.test.mjs src/native/taskbar-preview.test.mjs src/native/terminal-themes.test.mjs",
+    "check:foundation": "node scripts/check-foundations.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "5.0.4",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "6.4.2"
+  }
+}

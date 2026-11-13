@@ -1,0 +1,61 @@
+.history-range-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-width:0}
+.history-datetime{position:relative;min-width:0;flex:1 1 215px}.history-datetime-label{display:block;margin:0 0 4px;color:var(--muted);font-size:12px;line-height:18px}
+.history-datetime-field{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden;height:34px}
+.history-datetime-field:focus-within{border-color:var(--green);box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 13%,transparent)}
+.history-datetime-field input{flex:1;min-width:0;width:0;outline:none!important;border:0!important;box-shadow:none!important;background:transparent!important;padding:0 0 0 9px;line-height:32px;font:inherit;font-size:14px;font-variant-numeric:tabular-nums;color:var(--text)}
+.history-datetime-field>button,.history-calendar header button{display:grid;place-items:center;background:transparent;border:0;color:var(--muted);width:32px;height:32px;padding:0;border-radius:6px;cursor:pointer}
+.history-datetime-field>button:hover,.history-calendar header button:hover{background:var(--hover);color:var(--text)}
+.history-calendar{position:fixed;z-index:9000;overflow:auto;overscroll-behavior:contain;box-sizing:border-box;width:284px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 12px 40px #0003;animation:history-range-enter .18s cubic-bezier(.22,1,.36,1)}
+.history-calendar header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.history-calendar header strong{font-size:14px;font-weight:600}
+.history-calendar-week,.history-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}.history-calendar-week{font-size:11px;color:var(--muted);line-height:28px}
+.history-calendar-days button{border:0;background:transparent;color:var(--text);font:inherit;font-size:12px;min-width:0;height:31px;border-radius:7px;padding:0;cursor:pointer;font-variant-numeric:tabular-nums}.history-calendar-days button:hover{background:var(--hover)}.history-calendar-days .outside-month{opacity:.35}.history-calendar-days .selected{background:color-mix(in srgb,var(--green) 20%,var(--surface));color:var(--green);font-weight:600}
+.history-calendar-clock{display:flex;align-items:center;gap:6px;padding-top:10px;border-top:1px solid var(--line);margin-top:10px;font-size:12px}.history-calendar-clock>span{color:var(--muted);margin-right:auto}.history-calendar-clock .themed-select{width:56px;min-width:0}.history-calendar-clock b{font-weight:400;color:var(--muted)}.history-calendar-done{font:inherit;border:0;border-radius:6px;padding:7px 9px;background:var(--green);color:var(--bg);cursor:pointer}
+.history-query-pending{margin-left:8px;font-size:12px;color:var(--muted)}
+@keyframes history-range-enter{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.history-custom-range,.history-calendar{animation:none}}
+html[data-motion="reduced"] .history-custom-range,html[data-motion="reduced"] .history-calendar{animation:none}
+
+.history-toolbar[data-custom]{flex-wrap:wrap;gap:10px 16px;margin-bottom:0;align-items:flex-end}
+.history-toolbar .history-range-controls{flex:none}
+.history-custom-range{display:flex;align-items:end;justify-content:flex-end;gap:8px 12px;flex:0 1 558px;max-width:100%;min-width:min(100%,500px);margin-left:auto;flex-wrap:wrap;user-select:none}
+.history-datetime-label,.history-calendar,.history-datetime-field button,.history-apply{user-select:none}
+.history-datetime-field input{user-select:text;height:100%;outline:0!important}
+.history-datetime-field>button{flex:0 0 32px;outline:none!important;box-shadow:none!important}
+.history-datetime:focus-within .history-datetime-field{border-color:var(--green)}
+.history-toolbar .history-apply.button{min-height:34px;height:34px;padding:0 13px;line-height:20px;margin-left:auto;align-self:end}
+.history-range-status{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:4px 12px;margin:7px 0 13px;min-height:20px;user-select:none}
+.history-range-status .history-archive-state{margin:0;width:auto;padding:0}
+.history-range-error{color:var(--red,#ec8e8e);font-size:14px}
+.native-history-processes{display:grid;gap:16px;min-width:0}
+.native-history-processes>section{margin-block:0;min-width:0}
+@media(max-width:800px){.history-datetime{flex:1 1 185px}.history-custom-range{width:100%}}
+
+/* Calendars are body portals too; keep their compact controls legible without inherited workbench rules. */
+.history-calendar-clock .themed-select{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:58px;flex:0 0 58px;padding:5px 6px;min-height:32px;font:inherit;font-size:14px;line-height:20px}
+.history-calendar-clock .themed-select>span{flex:1;min-width:18px;line-height:20px;text-align:center}
+.history-calendar-clock .themed-select>svg{flex:none;width:14px;height:14px}
+.history-calendar-week,.history-calendar-days button{font-size:14px}
+.history-calendar :is(button,.themed-select){font-family:var(--font-interface)}
+
+.history-toolbar .range-control .themed-select{height:36px;min-height:36px;padding-block:5px}
+
+
+.history-calendar{width:320px;padding:16px 16px 18px;border-radius:16px;background-color:var(--bg);background-image:linear-gradient(var(--surface2),var(--surface2));box-shadow:0 14px 42px #0004;isolation:isolate}
+.history-calendar header{margin-bottom:10px}
+.history-calendar-clock{display:grid;grid-template-columns:minmax(26px,1fr) 58px auto 58px 52px;align-items:center;column-gap:8px;margin-top:14px;padding-top:14px}
+.history-calendar-clock>span{margin:0;font-size:14px}
+.history-calendar-clock .history-calendar-done{min-width:52px;height:32px;min-height:32px;margin:0;padding:0 10px;border-radius:8px;font-size:14px;line-height:20px;display:flex;align-items:center;justify-content:center}
+
+/* One-height toolbar. Date labels sit beside their fields instead of adding a row. */
+.native-workbench .history-toolbar[data-custom]{display:flex;align-items:center;min-height:76px;padding:16px 18px;gap:12px 18px;box-sizing:border-box}
+.native-workbench .history-toolbar .history-range-controls{align-self:center;flex:none;min-height:40px}
+.native-workbench .history-toolbar .range-control{display:flex;align-items:center;gap:10px;margin:0;min-height:40px;line-height:20px}
+.native-workbench .history-toolbar .range-control>svg{display:block;flex:none;margin:0}
+.native-workbench .history-toolbar .range-control .themed-select{margin:0;display:inline-flex;align-items:center;min-width:144px;height:36px;min-height:36px;line-height:20px}
+.native-workbench .history-custom-range{align-self:center;flex:0 1 670px;min-width:0;flex-wrap:nowrap;gap:12px;align-items:center}
+.native-workbench .history-custom-range .history-datetime{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.native-workbench .history-custom-range .history-datetime-label{margin:0;white-space:nowrap;flex:none;font-size:13px}
+.native-workbench .history-custom-range .history-datetime-field{min-width:0;flex:1;height:36px}
+.native-workbench .history-custom-range .history-apply.button{height:36px;min-height:36px;align-self:center;flex:none;margin:0}
+@media(max-width:1120px){.native-workbench .history-custom-range{flex-basis:540px}.native-workbench .history-custom-range .history-datetime-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}}
+@media(max-width:850px){.native-workbench .history-custom-range{flex:1 1 100%;width:100%}}

@@ -1,0 +1,371 @@
+[
+  {
+    "id": "01",
+    "label": "01",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "01",
+    "palette": {
+      "accent": "#8CA9FF",
+      "tint": "#29364A",
+      "signal": [
+        "#48DFBD",
+        "#78B7FF",
+        "#C697FF",
+        "#FFBE77"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#111B36",
+        "sidebar": "#0E1930",
+        "surface": "#182B48",
+        "elevated": "#203B59",
+        "text": "#EDF4FF",
+        "muted": "#A1BBDF",
+        "border": "#355275",
+        "terminal": "#0D172A"
+      },
+      "light": {
+        "canvas": "#E0EBFC",
+        "sidebar": "#CDDEF8",
+        "surface": "#EAF2FF",
+        "elevated": "#D7E6FC",
+        "text": "#1C365C",
+        "muted": "#496085",
+        "border": "#AEC7E8",
+        "terminal": "#D5E4FB"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "02",
+    "label": "02",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "02",
+    "palette": {
+      "accent": "#D76373",
+      "tint": "#49343B",
+      "signal": [
+        "#6DE7BF",
+        "#8EB5FF",
+        "#F09DDA",
+        "#FFC185"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#2A142D",
+        "sidebar": "#231027",
+        "surface": "#391E38",
+        "elevated": "#49273E",
+        "text": "#FFEFF7",
+        "muted": "#DBACCA",
+        "border": "#653850",
+        "terminal": "#1C1020"
+      },
+      "light": {
+        "canvas": "#F8E2EB",
+        "sidebar": "#F4CFDF",
+        "surface": "#FCECF3",
+        "elevated": "#F7DCE9",
+        "text": "#54243F",
+        "muted": "#82536D",
+        "border": "#E0B4CB",
+        "terminal": "#F3D6E3"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "03",
+    "label": "03",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "03",
+    "palette": {
+      "accent": "#C58CEA",
+      "tint": "#393048",
+      "signal": [
+        "#7FE6A3",
+        "#73C9FF",
+        "#C9A5FF",
+        "#FFD17B"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#0D282B",
+        "sidebar": "#092124",
+        "surface": "#133838",
+        "elevated": "#1A4945",
+        "text": "#E7FFF4",
+        "muted": "#9BCBBF",
+        "border": "#306157",
+        "terminal": "#0A2023"
+      },
+      "light": {
+        "canvas": "#DEF3E9",
+        "sidebar": "#C9EADC",
+        "surface": "#E8F9EF",
+        "elevated": "#D2EEDF",
+        "text": "#174735",
+        "muted": "#4A7262",
+        "border": "#AAD7C2",
+        "terminal": "#CFEBDD"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "04",
+    "label": "04",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "04",
+    "palette": {
+      "accent": "#F89B80",
+      "tint": "#493139",
+      "signal": [
+        "#87E6CB",
+        "#9FBEFF",
+        "#DE9FFF",
+        "#FFA9B3"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#24172F",
+        "sidebar": "#1D1228",
+        "surface": "#34213F",
+        "elevated": "#443052",
+        "text": "#F7EDFF",
+        "muted": "#C6ACD8",
+        "border": "#62446F",
+        "terminal": "#1A1122"
+      },
+      "light": {
+        "canvas": "#EDE3FB",
+        "sidebar": "#E0D2F5",
+        "surface": "#F3ECFF",
+        "elevated": "#E6D9F9",
+        "text": "#40245E",
+        "muted": "#705387",
+        "border": "#C8AFE3",
+        "terminal": "#E1D3F4"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "05",
+    "label": "05",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "05",
+    "palette": {
+      "accent": "#79CDAE",
+      "tint": "#1E4037",
+      "signal": [
+        "#70E3C9",
+        "#7DC5FF",
+        "#D4ADFF",
+        "#FFCA8A"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#172839",
+        "sidebar": "#10212F",
+        "surface": "#20374A",
+        "elevated": "#2A485B",
+        "text": "#F1F8FF",
+        "muted": "#ADC9DD",
+        "border": "#3C6077",
+        "terminal": "#10202C"
+      },
+      "light": {
+        "canvas": "#F9E7D7",
+        "sidebar": "#F5D8BD",
+        "surface": "#FFF0DF",
+        "elevated": "#F7E0C7",
+        "text": "#55351C",
+        "muted": "#806048",
+        "border": "#DFBD9B",
+        "terminal": "#F2DEC8"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "06",
+    "label": "06",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "06",
+    "palette": {
+      "accent": "#63C8EA",
+      "tint": "#162637",
+      "signal": [
+        "#66E6CF",
+        "#78CAFF",
+        "#C1B1FF",
+        "#FFBA87"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#111D2B",
+        "sidebar": "#0C1724",
+        "surface": "#182F42",
+        "elevated": "#21445B",
+        "text": "#EAF6FF",
+        "muted": "#9FBDD4",
+        "border": "#385A73",
+        "terminal": "#0B1620"
+      },
+      "light": {
+        "canvas": "#DEF0FA",
+        "sidebar": "#C7E6F8",
+        "surface": "#E8F6FF",
+        "elevated": "#D0EAF9",
+        "text": "#1A405B",
+        "muted": "#4A6B84",
+        "border": "#A7CCE6",
+        "terminal": "#CCE6F7"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "07",
+    "label": "07",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "07",
+    "palette": {
+      "accent": "#D79AF0",
+      "tint": "#3C2A4A",
+      "signal": [
+        "#89E6C4",
+        "#A8C0FF",
+        "#E6A3F5",
+        "#FFBEA0"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#241535",
+        "sidebar": "#1C102B",
+        "surface": "#342046",
+        "elevated": "#492B58",
+        "text": "#FAEEFF",
+        "muted": "#D5B0E3",
+        "border": "#674279",
+        "terminal": "#1B1026"
+      },
+      "light": {
+        "canvas": "#F0E4F9",
+        "sidebar": "#E6CFF2",
+        "surface": "#F8EEFF",
+        "elevated": "#EEDAF7",
+        "text": "#4D285B",
+        "muted": "#785585",
+        "border": "#D1B1DF",
+        "terminal": "#E8D6F0"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "08",
+    "label": "08",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "08",
+    "palette": {
+      "accent": "#F0AA7F",
+      "tint": "#302626",
+      "signal": [
+        "#9DE2BE",
+        "#9CBFFF",
+        "#DBADF1",
+        "#FFC58D"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#211B1B",
+        "sidebar": "#1B1517",
+        "surface": "#332629",
+        "elevated": "#443136",
+        "text": "#FFF2E9",
+        "muted": "#DCB8AB",
+        "border": "#67494C",
+        "terminal": "#181215"
+      },
+      "light": {
+        "canvas": "#F7E8D9",
+        "sidebar": "#F1D8C0",
+        "surface": "#FFF0E2",
+        "elevated": "#F7E1CD",
+        "text": "#563A28",
+        "muted": "#82634D",
+        "border": "#DCBDA0",
+        "terminal": "#F1DDC8"
+      }
+    },
+    "renderStyle": "solid"
+  },
+  {
+    "id": "09",
+    "label": "09",
+    "schemaVersion": 1,
+    "packVersion": "1.1.0",
+    "compatibleTokenVersion": 1,
+    "recommendedIconId": "09",
+    "palette": {
+      "accent": "#B8CE82",
+      "tint": "#293B45",
+      "signal": [
+        "#A8E77E",
+        "#84CBFF",
+        "#E3A7ED",
+        "#FFD06A"
+      ]
+    },
+    "appearance": {
+      "dark": {
+        "canvas": "#132820",
+        "sidebar": "#0D211B",
+        "surface": "#1C372C",
+        "elevated": "#284B37",
+        "text": "#F2FCE7",
+        "muted": "#B4D2AB",
+        "border": "#44674B",
+        "terminal": "#0D1E18"
+      },
+      "light": {
+        "canvas": "#E8F2D7",
+        "sidebar": "#D9E9BB",
+        "surface": "#F1F8E5",
+        "elevated": "#E0EDCA",
+        "text": "#344824",
+        "muted": "#63794F",
+        "border": "#BCD09A",
+        "terminal": "#DEEBCA"
+      }
+    },
+    "renderStyle": "solid"
+  }
+]

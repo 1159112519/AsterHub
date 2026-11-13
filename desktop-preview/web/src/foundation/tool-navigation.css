@@ -1,7 +1,0 @@
-.foundation-tool-navigation{display:flex;align-items:stretch;align-self:flex-start;gap:4px;max-width:100%;padding:5px;border:1px solid var(--line-soft,var(--line));border-radius:18px;background:color-mix(in srgb,var(--surface) 82%,transparent);font-family:var(--font-ui,inherit)}
-.foundation-tool-navigation>button{position:relative;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 19px;border:0;border-radius:13px;background:transparent;color:var(--muted);font:inherit;font-size:15px;white-space:nowrap;cursor:pointer;transition:background .28s cubic-bezier(.22,1,.36,1),color .28s cubic-bezier(.22,1,.36,1),box-shadow .28s cubic-bezier(.22,1,.36,1)}
-.foundation-tool-navigation>button:hover{background:var(--hover);color:var(--text)}
-.foundation-tool-navigation>button[aria-current=page]{background:color-mix(in srgb,var(--surface2) 78%,var(--green) 10%);color:var(--text);box-shadow:0 1px 3px #0000000b}
-.foundation-tool-navigation>button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
-@media(max-width:760px){.foundation-tool-navigation{align-self:stretch}.foundation-tool-navigation>button{flex:1;font-size:14px;padding:10px 12px}}
-@media(prefers-reduced-motion:reduce){.foundation-tool-navigation>button{transition:none}}[data-motion=reduced] .foundation-tool-navigation>button{transition:none}
