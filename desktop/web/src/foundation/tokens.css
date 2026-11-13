@@ -1,0 +1,23 @@
+@font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+/* Preserve the approved appearance. Components consume roles, not page guesses. */
+:root {
+  --font-interface: Inter,"HarmonyOS Sans SC","Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  --font-files: var(--font-interface);
+  --numeric-font: var(--font-interface);
+  --text-control: 14px;
+  --control-compact-height: 26px; --settings-section-body-gap: 18px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+  --control-icon: 16px; --control-icon-button: 18px; --control-icon-box: 32px;
+  --control-padding-y: 9px; --control-padding-x: 14px; --control-gap: 7px;
+  --radius-control: 10px; --radius-icon-control: 8px;
+  --tool-launcher-height: 96px;
+  --shadow-popover: 0 8px 24px #00000033;
+  --shadow-tool-hover: 0 5px 14px #0000000d;
+  --dialog-body-padding: 24px; --dialog-body-gap: 16px;
+  --file-control-height: 37px; --file-control-radius: 9px;
+}
+
+/* Only the fill transform animates; the gradient itself never repaints per frame. */
+.motion-meter>span:last-child{background:linear-gradient(90deg,color-mix(in srgb,var(--meter-color) 36%,transparent),color-mix(in srgb,var(--meter-color) 68%,transparent))}
+.motion-meter>.meter-echo{background:color-mix(in srgb,var(--meter-color) 38%,transparent)}
+.motion-meter[data-reduced=true]>span{transition:none}

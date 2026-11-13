@@ -1,1 +1,0 @@
-"""AQ Server Ubuntu edition."""
