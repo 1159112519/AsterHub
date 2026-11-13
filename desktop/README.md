@@ -1,7 +1,9 @@
 # AsterHub Windows
 
-正式版本：0.4.3.5。此目录是 Windows 程序的唯一源码入口。
+AsterHub Windows 应用的开发入口。产品介绍与下载请见 [项目首页](../README.md)。
 
-从 `web/` 执行 `npm ci`，返回本目录后运行 `./build.ps1`，产物为 `app/AsterHub.exe` 与同目录运行资源。完整步骤、依赖和安装包入口见 [构建说明](../docs/BUILDING.md)。
+## 本地构建
 
-`host/` 负责 Windows 窗口和原生能力，`backend/` 负责采样与存档，`web/src/native/` 是真实界面。测试中的合成样本不代表运行时读数；缺失历史不能由当前进程或演示数据补齐。
+在 `web/` 执行 `npm ci`，返回本目录后运行 `./build.ps1`。产物为 `app/AsterHub.exe` 与同目录运行资源。
+
+完整环境要求、目录结构、验证方式及安装包构建见 [开发指南](../docs/BUILDING.md)。
