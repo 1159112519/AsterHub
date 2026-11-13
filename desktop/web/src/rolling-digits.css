@@ -1,0 +1,4 @@
+.rolling-number,.rolling-glyphs{display:inline-block;line-height:inherit;white-space:nowrap;font-variant-numeric:tabular-nums}
+.roll-digit{display:inline-block;position:relative;overflow:clip;line-height:inherit;vertical-align:baseline}
+.roll-front{display:inline-block}
+.roll-back{position:absolute;inset:0;opacity:0;pointer-events:none}

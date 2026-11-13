@@ -1,0 +1,16 @@
+node_modules/
+app/*.exe
+app/*.exe.config
+app/app/
+app/VERSION
+app/payload-manifest.json
+app/resources/workbench/
+app/resources/brand-icons/
+app/resources/fonts/
+app/resources/locales/
+installer/payload-*/
+installer/*result.json
+installer/compiler.log
+AsterHub-Setup-*.exe
+qa/evidence/
+artifacts/

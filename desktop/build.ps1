@@ -1,45 +1,30 @@
-param([switch]$Console,[string]$OutputDirectory)
 $ErrorActionPreference='Stop'
-$project=Split-Path $PSScriptRoot
-if(!$OutputDirectory){$OutputDirectory=Join-Path $PSScriptRoot 'bin/Release'}
-$out=[IO.Path]::GetFullPath($OutputDirectory)
-$framework=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319'
-if(!(Test-Path -LiteralPath (Join-Path $framework 'csc.exe'))){throw 'The .NET Framework x64 compiler is required.'}
-foreach($folder in @('app/modules','runtime/managed','runtime/win-x64','resources/terminal','resources/ui','licenses','docs')){New-Item -ItemType Directory -Path (Join-Path $out $folder) -Force | Out-Null}
-$moduleOutputs=@{}
-$modules=@('AQServer.Core','AQServer.Storage','AQServer.Platform.Windows','AQServer.Desktop','AQServer.Bootstrap')
-foreach($module in $modules){
- $folder=Join-Path $PSScriptRoot ('src/'+$module)
- [xml]$definition=Get-Content -LiteralPath (Join-Path $folder ($module+'.csproj')) -Raw
- $isBootstrap=$module-eq'AQServer.Bootstrap'
- $destination=if($isBootstrap){Join-Path $out 'AQServer.exe'}elseif($module-eq'AQServer.Desktop'){Join-Path $out 'app/AQServer.Desktop.dll'}else{Join-Path $out ('app/modules/'+$module+'.dll')}
- $target=if($isBootstrap){if($Console){'exe'}else{'winexe'}}else{'library'}
- $arguments=@('/nologo',('/target:'+$target),'/optimize+','/platform:x64',('/out:'+$destination))
- if($isBootstrap){$arguments+=@('/main:AQBootstrap',('/win32manifest:'+(Join-Path $PSScriptRoot 'assets/app.manifest')),('/win32icon:'+(Join-Path $PSScriptRoot 'assets/AQServer.ico')))}
- if($module-eq'AQServer.Desktop'){foreach($icon in @('AQServer.ico','AQTrayLight.ico','AQTrayDark.ico')){$arguments+=('/resource:'+(Join-Path $PSScriptRoot ('assets/'+$icon))+','+$icon)}}
- foreach($reference in $definition.SelectNodes("//*[local-name()='Reference']")){
-  $name=[string]$reference.Include
-  if($reference.HintPath){$path=[IO.Path]::GetFullPath((Join-Path $folder ([string]$reference.HintPath)))}
-  elseif($name-in@('WindowsBase','PresentationCore','PresentationFramework')){$path=Join-Path $framework ('WPF/'+$name+'.dll')}
-  else{$path=$name+'.dll'}
-  $arguments+=('/reference:'+$path)
- }
- foreach($reference in $definition.SelectNodes("//*[local-name()='ProjectReference']")){$arguments+=('/reference:'+$moduleOutputs[[string]$reference.Name])}
- foreach($source in $definition.SelectNodes("//*[local-name()='Compile']")){$arguments+=[IO.Path]::GetFullPath((Join-Path $folder ([string]$source.Include)))}
- & (Join-Path $framework 'csc.exe') @arguments
- if($LASTEXITCODE-ne 0){throw ('Compilation failed: '+$module)}
- $moduleOutputs[$module]=$destination
- Write-Output ('BUILT='+$module)
-}
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'src/AQServer.Bootstrap/App.config') -Destination (Join-Path $out 'AQServer.exe.config') -Force
-foreach($dll in (Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'deps/sshnet') -Filter *.dll)){Copy-Item -LiteralPath $dll.FullName -Destination (Join-Path $out 'runtime/managed') -Force}
-foreach($name in @('Core','Wpf')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('deps/webview2/sdk/lib/net462/Microsoft.Web.WebView2.'+$name+'.dll')) -Destination (Join-Path $out 'runtime/managed') -Force}
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'deps/webview2/sdk/runtimes/win-x64/native/WebView2Loader.dll') -Destination (Join-Path $out 'runtime/win-x64') -Force
-foreach($asset in @('terminal','ui')){Copy-Item -Path (Join-Path $PSScriptRoot ('assets/'+$asset+'/*')) -Destination (Join-Path $out ('resources/'+$asset)) -Recurse -Force}
-Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'deps') -Recurse -File | Where-Object {$_.Name-match'^(LICENSE|COPYING|NOTICE)' -or $_.Name-like'*LICENSE*.txt'} | ForEach-Object {$relative=$_.FullName.Substring((Join-Path $PSScriptRoot 'deps').Length+1).Replace('\','_');Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $out ('licenses/'+$relative)) -Force}
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'deps/sshnet/sha256.json') -Destination (Join-Path $out 'licenses/sshnet-dependencies-sha256.json') -Force
-foreach($document in @('DATA-AND-INSTALL.md','ARCHITECTURE.md')){if(Test-Path -LiteralPath (Join-Path $project ('docs/'+$document))){Copy-Item -LiteralPath (Join-Path $project ('docs/'+$document)) -Destination (Join-Path $out 'docs') -Force}}
-Copy-Item -LiteralPath (Join-Path $project 'VERSION') -Destination $out -Force
-$components=@($moduleOutputs.GetEnumerator() | Sort-Object Name | ForEach-Object {[ordered]@{name=$_.Key;file=$_.Value.Substring($out.Length+1).Replace('\','/');version=[Reflection.AssemblyName]::GetAssemblyName($_.Value).Version.ToString()}})
-[ordered]@{version=([IO.File]::ReadAllText((Join-Path $project 'VERSION'))).Trim();architecture='x64';components=$components}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $out 'components.json') -Encoding UTF8
-Write-Output ('BUILD_ROOT='+$out)
+$previewRoot=$PSScriptRoot
+Push-Location (Join-Path $previewRoot 'web')
+try { & npm.cmd run build; if($LASTEXITCODE -ne 0){throw 'Frontend build failed'} } finally { Pop-Location }
+$compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
+$appRoot=Join-Path $previewRoot 'app'
+$fontOutput=Join-Path $appRoot 'resources/fonts'
+New-Item -ItemType Directory -Path $fontOutput -Force | Out-Null
+Copy-Item -Path (Join-Path $previewRoot 'host/fonts/*') -Destination $fontOutput -Force
+New-Item -ItemType Directory -Path (Join-Path $appRoot 'licenses') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $previewRoot 'web/public/fonts/HarmonyOS-Sans-LICENSE.txt') -Destination (Join-Path $appRoot 'licenses/HarmonyOS-Sans-LICENSE.txt') -Force
+$localeOutput=Join-Path $appRoot 'resources/locales'
+New-Item -ItemType Directory -Path $localeOutput -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $previewRoot 'web/src/i18n/en.json') -Destination (Join-Path $localeOutput 'en.json') -Force
+$brandOutput=Join-Path $appRoot 'resources/brand-icons'
+New-Item -ItemType Directory -Path $brandOutput -Force | Out-Null
+Copy-Item -Path (Join-Path $previewRoot 'host/brand-icons/*') -Destination $brandOutput -Recurse -Force
+& (Join-Path $previewRoot 'scripts/build-backend.ps1') -Root $previewRoot
+$framework=Split-Path $compiler
+$refs=@('System.Windows.Forms.dll','System.Drawing.dll','System.dll','System.Core.dll','System.Web.Extensions.dll','System.Xaml.dll',(Join-Path $framework 'WPF/WindowsBase.dll'),(Join-Path $framework 'WPF/PresentationCore.dll'),(Join-Path $framework 'WPF/PresentationFramework.dll'),(Join-Path $framework 'WPF/UIAutomationClient.dll'),(Join-Path $framework 'WPF/UIAutomationTypes.dll'),(Join-Path $appRoot 'runtime/managed/Microsoft.Web.WebView2.Core.dll'),(Join-Path $appRoot 'runtime/managed/Microsoft.Web.WebView2.Wpf.dll'),(Join-Path $appRoot 'app/modules/AsterHub.Core.dll'),(Join-Path $appRoot 'app/modules/AsterHub.Storage.dll'),(Join-Path $appRoot 'app/modules/AsterHub.Platform.Windows.dll'))
+$argsBuild=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+(Join-Path $appRoot 'AsterHub.exe')),('/win32icon:'+(Join-Path $previewRoot 'host/AsterHub.Process.ico')))
+foreach($reference in $refs){$argsBuild+=('/reference:'+$reference)}
+$argsBuild+=('/win32manifest:'+(Join-Path $previewRoot 'host/AsterHub.manifest'))
+$argsBuild+=@(Get-ChildItem (Join-Path $previewRoot 'host') -Filter *.cs -Recurse | ForEach-Object {$_.FullName})
+& $compiler @argsBuild
+if($LASTEXITCODE -ne 0){throw 'Windows host build failed'}
+Copy-Item -LiteralPath (Join-Path $previewRoot 'host/App.config') -Destination (Join-Path $appRoot 'AsterHub.exe.config') -Force
+& node (Join-Path $previewRoot 'scripts/package-app.mjs')
+if($LASTEXITCODE -ne 0){throw 'Payload inventory failed'}
+Write-Output ('ASTERHUB_EXE='+(Join-Path $appRoot 'AsterHub.exe'))

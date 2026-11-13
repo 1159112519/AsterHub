@@ -29,7 +29,7 @@ class GpuPathTests(unittest.TestCase):
    readlink.assert_not_called()
 class RemoteGpuPathTests(unittest.TestCase):
  def program(self):
-  source=(Path(__file__).parents[2]/'desktop-preview/backend/src/AQServer.Platform.Windows/Remote.cs').read_text(encoding='utf-8-sig')
+  source=(Path(__file__).parents[2]/'desktop/backend/src/AsterHub.Platform.Windows/Remote.cs').read_text(encoding='utf-8-sig')
   return re.search(r'CommandMetadataProgram=@"(.*?)";',source,re.S).group(1).replace('""','"')
  def collect(self,path,denied=False):
   stat='701 (python worker) '+' '.join(['S']+['0']*18+['123456'])

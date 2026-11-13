@@ -1,1 +1,0 @@
-export function snapSurfacePosition(position,ratio=1){const scale=Number.isFinite(ratio)&&ratio>0?ratio:1;const snap=value=>Number.isFinite(value)?Math.round(value*scale)/scale:0;return {...position,left:snap(position.left),top:snap(position.top)}}

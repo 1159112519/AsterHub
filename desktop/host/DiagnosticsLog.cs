@@ -1,0 +1,7 @@
+using System;using System.IO;using System.Diagnostics;using System.Text;using System.Threading.Tasks;
+// Local diagnostics only: no terminal input, credentials, metrics or automatic uploads.
+internal static class DiagnosticsLog {
+ static readonly object gate=new object();static string directory;
+ internal static void Configure(string dataRoot){directory=Path.Combine(dataRoot,"Diagnostics");Write("session",null);AppDomain.CurrentDomain.UnhandledException+=delegate(object s,UnhandledExceptionEventArgs e){Write("unhandled",e.ExceptionObject as Exception);};TaskScheduler.UnobservedTaskException+=delegate(object s,UnobservedTaskExceptionEventArgs e){Write("unobserved-task",e.Exception);e.SetObserved();};}
+ internal static void Write(string area,Exception error){try{lock(gate){if(directory==null)return;Directory.CreateDirectory(directory);string path=Path.Combine(directory,"asterhub.log");if(File.Exists(path)&&new FileInfo(path).Length>1024*1024){for(int i=2;i>=1;i--){string from=path+"."+i,to=path+"."+(i+1);if(File.Exists(to))File.Delete(to);if(File.Exists(from))File.Move(from,to);}if(File.Exists(path+".1"))File.Delete(path+".1");File.Move(path,path+".1");}var text=new StringBuilder(DateTime.UtcNow.ToString("o")+" ["+Process.GetCurrentProcess().Id+"] "+area);for(int i=0;error!=null&&i<6;i++,error=error.InnerException){text.Append("\n").Append(error.GetType().FullName).Append(" [0x").Append(error.HResult.ToString("X8")).Append("]\n").Append(error.StackTrace);}File.AppendAllText(path,text+Environment.NewLine,Encoding.UTF8);}}catch{}}
+}

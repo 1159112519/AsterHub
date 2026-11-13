@@ -1,0 +1,69 @@
+/* Approved HTML typography; terminal/code content keeps its own user-selected font. */
+.native-workbench{font-family:var(--font-interface);font-synthesis:none}
+.native-workbench .number,.native-workbench .axis-label,.native-workbench .storage-tools,.native-workbench .storage-tile-name,.native-workbench .storage-tile-value{font-family:var(--font-interface)}
+.native-workbench .storage-tile-name{font-weight:550}
+.native-workbench .storage-tile-value{font-weight:600}
+.native-workbench .memory-area-option strong{font-size:15px;font-weight:550}
+.native-workbench .memory-process-name strong{font-size:14px;font-weight:500}
+.appearance-mode-fields{display:flex;gap:24px;align-items:end;flex-wrap:wrap;margin:16px 0 24px}
+.appearance-mode-fields>.field{min-width:160px}
+.appearance-mode-fields .native-setting-check{padding-bottom:10px}
+/* Abstract swatches reuse the theme roles without miniature content. */
+.skin-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:10px}
+.skin-choice{position:relative;display:block;width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);box-shadow:none;transition:border-color 160ms var(--ease),background-color 160ms var(--ease),transform 160ms var(--ease)}
+.skin-choice:hover{border-color:var(--muted);background:var(--hover)}
+.skin-choice.selected{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.skin-choice:focus-visible{outline-offset:3px}
+.skin-choice:active{transform:scale(.97)}
+.skin-choice>.skin-miniature{display:block;width:100%;height:auto;aspect-ratio:88/60;border-radius:6px;border:0;padding:0;margin:0;pointer-events:none}
+.skin-selected-check{position:absolute;top:4px;right:4px;width:17px;height:17px;padding:2px;border-radius:50%;background:var(--green);color:var(--bg);box-shadow:0 0 0 2px var(--surface)}
+.brand-icon-choice{position:relative;flex-direction:column;height:auto!important;min-height:78px;padding:14px 10px!important;justify-content:center;gap:0}.brand-icon-choice img{width:46px;height:46px}
+.brand-icon-number{display:block;font-size:14px;color:var(--muted);line-height:18px;font-weight:500}
+@media(prefers-reduced-motion:reduce){.skin-choice{transition:none}}
+
+/* Functional icon colors are independent of the selected control accent. */
+:root{
+ --icon-blue:var(--blue);--icon-purple:var(--purple);--icon-amber:var(--amber);
+ --icon-cyan:var(--blue);--icon-green:var(--success,var(--green));
+ --icon-pink:#d99bb8;--icon-indigo:var(--purple);--success:#79cda6;
+}
+:root[data-theme="light"]{--success:#28754e}
+:root[data-appearance-mode="light"]{--icon-pink:#9f4b73}
+:root[data-theme="graphite"]{
+ --icon-blue:#83b8ef;--icon-purple:#c4aaf0;--icon-amber:#e8c187;
+ --icon-cyan:#86c8c9;--icon-green:#98c9a2;--icon-pink:#e1a8bd;--icon-indigo:#aab1ed;
+ --success:#9bceac;--chart-gpu:#c4aaf0;
+}
+[data-functional-icon="appearance"],[data-functional-icon="gpu"]{--functional-icon:var(--icon-purple)}
+[data-functional-icon="recording"],[data-functional-icon="history"],[data-functional-icon="cpu"]{--functional-icon:var(--icon-blue)}
+[data-functional-icon="desktop"],[data-functional-icon="network"]{--functional-icon:var(--icon-cyan)}
+[data-functional-icon="taskbar"],[data-functional-icon="storage"],[data-functional-icon="files"]{--functional-icon:var(--icon-amber)}
+[data-functional-icon="terminal"]{--functional-icon:var(--icon-green)}
+[data-functional-icon="feedback"],[data-functional-icon="memory"]{--functional-icon:var(--icon-pink)}
+[data-functional-icon="about"],[data-functional-icon="overview"]{--functional-icon:var(--icon-indigo)}
+:root[data-theme="graphite"] :is(.sidebar .nav-item,.native-preferences-layout>nav>button)>[data-functional-icon]{color:var(--functional-icon)}
+.native-workbench :is(.sidebar .nav-item,.footer-metric-heading)>[data-functional-icon]:is([data-functional-icon="cpu"],[data-functional-icon="gpu"],[data-functional-icon="memory"],[data-functional-icon="network"],[data-functional-icon="storage"]){color:var(--functional-icon)}
+:root[data-theme="graphite"] .native-preferences-layout>nav{background:var(--sidebar)}
+:root[data-theme="graphite"] input[type="checkbox"]{accent-color:var(--green)}
+:root[data-theme="graphite"] .modal-backdrop{background:#08090a99}
+:root[data-theme="graphite"] .gpu-title>svg{color:var(--icon-purple)}
+:root[data-theme="graphite"] .pane-device-icon{color:var(--icon-cyan)}
+:root[data-theme="graphite"] .info-box>svg{color:var(--icon-blue)}
+:root[data-theme="graphite"] .transfer-item-title>svg{color:var(--icon-amber)}
+/* Keep healthy/connected and completed states green after the accent becomes gray. */
+:root[data-theme="graphite"] :is(.positive,.live-control.on,.recording-note,.applied-state,.native-test-result.success,.native-settings-result,.transfer-state.complete,.about-update-status.is-current,.state-label.busy,.inspector-state.busy){color:var(--success)}
+:where(:root[data-theme="graphite"]) .status-dot,
+:root[data-theme="graphite"] .native-terminal-status i:not(.ended){background:var(--success)}
+:root[data-theme="graphite"] .host-status-dot.live{background:var(--success);box-shadow:0 0 0 4px color-mix(in srgb,var(--success) 8%,transparent)}
+:root[data-theme="graphite"] .about-current-badge{color:var(--success);background:color-mix(in srgb,var(--success) 10%,transparent)}
+/* Library icons retain their metric identity; text, controls and focus keep the skin accent. */
+.tb42-library-item:is([data-metric="cpu"],[data-metric="gpuFrequency"],[data-metric="gpuMemory"],[data-metric="up"]){--metric-icon:var(--icon-blue)}
+.tb42-library-item:is([data-metric="gpu"],[data-metric="cpuFrequency"],[data-metric="memoryUsed"]){--metric-icon:var(--icon-purple)}
+.tb42-library-item:is([data-metric="cpuTemperature"],[data-metric="gpuPower"],[data-metric="storageWrite"],[data-metric="storage"],[data-metric="io"]){--metric-icon:var(--icon-amber)}
+.tb42-library-item:is([data-metric="gpuTemperature"],[data-metric="memory"]){--metric-icon:var(--icon-pink)}
+.tb42-library-item:is([data-metric="gpuFan"],[data-metric="down"],[data-metric="ping"],[data-metric="loss"]){--metric-icon:var(--icon-cyan)}
+.tb42-library-item[data-metric="storageRead"]{--metric-icon:var(--icon-green)}
+:root[data-theme="graphite"] .tb42-library-item .taskbar-metric-icon{color:var(--metric-icon,var(--icon-blue))}
+
+
+.appearance-disclosure>summary{display:flex;align-items:center;justify-content:space-between;min-height:30px;gap:10px;padding:0 2px;list-style:none;color:var(--text);font:600 15px/22px var(--font-interface);cursor:pointer;border-radius:6px}.appearance-disclosure>summary::-webkit-details-marker{display:none}.appearance-disclosure>summary svg{color:var(--muted);transition:transform 180ms var(--ease)}.appearance-disclosure[open]>summary svg{transform:rotate(180deg)}.appearance-disclosure-content{padding:10px 0 0}.appearance-disclosure:not([open]){margin-bottom:12px}@media(prefers-reduced-motion:reduce){.appearance-disclosure>summary svg{transition:none}}[data-motion=reduced] .appearance-disclosure>summary svg{transition:none}
