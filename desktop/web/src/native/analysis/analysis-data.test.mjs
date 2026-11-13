@@ -53,7 +53,7 @@ test('GPU total refuses partial coverage and process comparisons keep the same P
 });
 test('memory endpoints may use nearby captured process samples, but never cross a gap or reuse one sample',async()=>{
  const {memoryProcessEndpoints}=await import('./analysis-data.mjs');
- const data=[{time:0,processes:[{}]},{time:3000},{time:10000,processes:[{}]},{time:13000},{time:20000,gapBefore:true},{time:22000}];
+ const data=[{time:0,processes:[{Identity:"p:1",ResidentBytes:1}]},{time:3000},{time:10000,processes:[{Identity:"p:1",ResidentBytes:1}]},{time:13000},{time:20000,gapBefore:true},{time:22000}];
  assert.deepEqual(memoryProcessEndpoints(data,1,3),[0,2]);
  assert.deepEqual(memoryProcessEndpoints(data,0,1),null);
  assert.deepEqual(memoryProcessEndpoints(data,1,5),null);
@@ -70,4 +70,28 @@ test('GPU processes born at the same native timestamp remain separate by PID',()
  assert.deepEqual(processes('gpu',point,'all').map(p=>p.pid),['51','52']);
  const later={...point,gpuProcesses:[{Gpu:0,Pid:'51',IdentityToken:'win:200',Memory:'128 MiB'},{Gpu:0,Pid:'52',IdentityToken:'win:100',Memory:'512 MiB'}]};
  assert.deepEqual(rankChanges(processes('gpu',point,'all'),processes('gpu',later,'all')).map(p=>p.pid),['52']);
+});
+
+
+test('CPU clicks match nearby real snapshots, not fabricated values or reads beyond a disconnect',async()=>{
+ const {processSampleIndex}=await import('./analysis-data.mjs');
+ const sample=(time,cpu,gapBefore=false)=>({time,cpu,gapBefore,processes:cpu==null?null:[{Pid:42,Identity:'42:boot:100',Cpu:cpu,ResidentBytes:1024}]});
+ const points=[sample(0,20),sample(4000,null),sample(10000,30),sample(14000,null),sample(19000,null,true),sample(23000,40)];
+ assert.equal(processSampleIndex(points,1),0);
+ assert.equal(processSampleIndex(points,3),2);
+ assert.equal(points[processSampleIndex(points,3)].cpu,30);
+ assert.equal(processSampleIndex(points,4),5);
+ assert.equal(processSampleIndex(points,4,'memory'),5);
+ assert.equal(processSampleIndex([sample(0,20),sample(13000,null)],1),-1);
+ assert.equal(processSampleIndex([sample(0,20),sample(3000,null,true)],1),-1);
+ assert.equal(processSampleIndex(points,-1),-1);
+});
+test('memory compares captured endpoints despite an unrelated middle gap; near-endpoint gaps still block alignment',async()=>{
+ const {memoryProcessEndpoints}=await import('./analysis-data.mjs');
+ const snap=time=>({time,processes:[{Pid:7,Identity:'7:100',ResidentBytes:time+1024}]});
+ const points=[snap(0),{time:3000},{time:60000,gapBefore:true},snap(100000),{time:103000}];
+ assert.deepEqual(memoryProcessEndpoints(points,1,4),[0,3]);
+ assert.deepEqual(memoryProcessEndpoints(points,0,3),[0,3]);
+ points[4].gapBefore=true;
+ assert.equal(memoryProcessEndpoints(points,1,4),null);
 });

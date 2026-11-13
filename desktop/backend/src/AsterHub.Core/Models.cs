@@ -8,3 +8,16 @@ public class GpuProcess {public string Gpu,Pid,Type,Name,Memory,User="—",Share
 public class CpuCore {public int Index;public double Util;}
 public sealed class ResourceProcess {public int Pid;public string Name,Identity,Path;public double? Cpu;public long? ResidentBytes;}
 public class Metrics {public List<ResourceProcess> ResourceProcesses;public string CpuFrequencySource;public double? CpuFrequencyMHz;public List<DiskActivity> Storage=new List<DiskActivity>();public NetworkMetrics Network;public List<StorageVolume> Volumes=new List<StorageVolume>();public string PrimaryStoragePath;public HardwareInfo Hardware;public List<CpuCore> CpuCores=new List<CpuCore>();public List<Gpu> Gpus=new List<Gpu>();public List<GpuProcess> Processes=new List<GpuProcess>();public string Cpu="—",Cores="—",Mem="—",Disk="—",Raw="",Error="";}
+
+// NVIDIA's compute-app process_name is a reported executable path, not argv[0].
+// Recover this only for a remote Linux compute row with a verified birth identity.
+public static class GpuProcessPaths {
+ public static string Recorded(GpuProcess process,bool remote){
+  if(process==null)return null;
+  if(!string.IsNullOrEmpty(process.Path))return process.Path;
+  string value=process.Name;
+  if(!remote||process.Type!="C"||!System.Text.RegularExpressions.Regex.IsMatch(process.IdentityToken??"",@"^[a-fA-F0-9-]+:\d+:\d+$")||string.IsNullOrEmpty(value)||value.Length>32768||value.Length<2||value[0]!='/')return null;
+  foreach(char c in value)if(char.IsControl(c))return null;
+  return value;
+ }
+}

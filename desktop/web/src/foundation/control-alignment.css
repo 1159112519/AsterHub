@@ -7,8 +7,6 @@
 .native-workbench .icon-button{display:inline-flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box}
 .native-workbench .themed-select{display:inline-flex;align-items:center;gap:8px;line-height:24px}
 .native-workbench .themed-select>span{display:block;line-height:24px}
-.native-workbench .foundation-tool-navigation{align-items:center;width:max-content;max-width:100%;padding:3px;border-radius:14px}
-.native-workbench .foundation-tool-navigation>button{display:inline-flex;align-items:center;justify-content:center;line-height:22px;min-height:34px;padding:5px 16px;border-radius:10px}
 .native-workbench .sidebar .nav-item{display:flex;align-items:center;gap:12px;min-height:40px;line-height:22px;font-size:15px;font-weight:600;padding-block:6px;box-sizing:border-box}
 .native-workbench .sidebar .nav-item>span{display:flex;align-items:center;min-height:22px;line-height:22px;position:relative;top:var(--label-optical-y);opacity:1;transition:none}
 .native-workbench .sidebar .nav-item>svg{width:19px;height:19px;flex:0 0 19px;margin:0}
@@ -56,7 +54,7 @@
 .native-workbench .sidebar .nav-item>span:has(>small){flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
 .native-workbench .sidebar .nav-item>span>small{font:400 13px/20px var(--font-interface);margin:0}
 
-.native-workbench .foundation-tool-navigation .tool-label,.native-workbench .sidebar .task-navigation-label{position:relative;top:var(--label-optical-y)}
+.native-workbench .sidebar .task-navigation-label{position:relative;top:var(--label-optical-y)}
 .native-workbench .network-workspace>.foundation-tool-navigation{margin:0}
 .native-workbench .network-workspace{min-width:0}
 .native-workbench .network-workspace .ns-actions .button{min-height:32px;padding-block:4px}
@@ -93,7 +91,6 @@
 :is(.native-workbench,.modal) .dialog-actions>.button{min-height:32px;padding-block:4px}
 .native-preferences .dialog-actions{min-height:64px;padding-block:12px}
 .native-preferences .native-preferences-layout>nav>button{min-height:32px;padding-block:4px}
-.native-workbench .foundation-tool-navigation>button{min-height:34px;padding-block:5px}
 .native-workbench .network-workspace .ns-actions .button{min-height:32px;padding-block:4px}
 
 /* Header text is measured inside its own column without changing horizontal alignment. */

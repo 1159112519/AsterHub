@@ -7,7 +7,7 @@ import {ToolNavigation} from '../../foundation/ToolNavigation';
 import {useWorkspaceState} from '../../foundation/use-workspace-state';
 import {ThemedSelect} from '../../themed-select';
 import {native} from '../bridge';
-import {cardKey,finite,formatTraffic,gpuAggregate,gpuValues,memoryGiB,memoryProcessEndpoints,nearestIndex,networkChanges,processes,rankChanges,shiftRange,trafficScale} from './analysis-data.mjs';
+import {cardKey,finite,formatTraffic,gpuAggregate,gpuValues,memoryGiB,memoryProcessEndpoints,nearestIndex,networkChanges,processes,processSampleIndex,rankChanges,shiftRange,trafficScale} from './analysis-data.mjs';
 import {CoreHistory,GpuHeadroom,MemoryHistory,NetworkQuality,clock,gib} from './AnalysisDetails';
 import {CompareRange} from './CompareRange';
 import {createAnalysisQuery} from './analysis-query.mjs';
@@ -23,7 +23,7 @@ const timeLabel=(prior,point)=>point?(prior?`${clock(prior.time)}–${clock(poin
 
 export function AnalysisWorkspace({metric,deviceId,children}){useLocale();
  const [view,setView]=useWorkspaceState(deviceId,`${metric}-resource-tools`,()=>({tab:'monitor'}));
- return <div className="ev-analysis-workspace"><ToolNavigation label={tr(`${titles[metric][0]}工具`)} items={[["monitor","运行监测"],["analysis",titles[metric][0]]]} value={view.tab} onChange={tab=>setView({tab})}/>{tr(view.tab==='analysis'?<ResourceAnalysis metric={metric} deviceId={deviceId} key={`${deviceId}:${metric}`}/>:children)}</div>;
+ return <div className="ev-analysis-workspace"><ToolNavigation label={tr(`${titles[metric][0]}工具`)} items={[["monitor","运行监测"],["analysis",titles[metric][0]]]} value={view.tab} onChange={tab=>setView({tab})}>{tr(view.tab==='analysis'?<ResourceAnalysis metric={metric} deviceId={deviceId} key={`${deviceId}:${metric}`}/>:children)}</ToolNavigation></div>;
 }
 
 function Trend({series,points,selected,onSelect,unit,maxValue,from,to,markers,onMove}){useLocale();
@@ -103,7 +103,9 @@ export function ResourceAnalysis({metric,deviceId}){useLocale();
  const markers=point?[...(prior?[{key:'start',time:prior.time,displayTime:band?.[0],index:start,label:'起点',color:'var(--amber)'}]:[]),...(prior||cpu?[{key:'end',time:point.time,displayTime:band?.[1],index:end,label:current?'当前':'终点',color:'var(--blue)'}]:[])]:[];
  const unit=cpu||memory&&!memoryAbsolute?'%':net?rateScale.unit+'/s':'GiB';
  const max=unit==='%'?100:Math.max(unit==='GiB'?1:.1,...(gpu?gpuData.map(v=>v?.total??0):series.flatMap(s=>s.values.filter(finite))));
- const cpuRows=cpu?(processes(metric,point,cardId)??[]).sort((a,b)=>b.value-a.value):[];
+ const cpuSampleIndex=useMemo(()=>cpu?processSampleIndex(points,end,'cpu'):-1,[cpu,points,end]);
+ const cpuPoint=cpuSampleIndex>=0?points[cpuSampleIndex]:null;
+ const cpuRows=cpu?(processes(metric,cpuPoint,cardId)??[]).sort((a,b)=>b.value-a.value):[];
  const comparison=useMemo(()=>net?networkChanges(points,start,end):null,[net,points,start,end]);
  const processEndpoints=useMemo(()=>memory?memoryProcessEndpoints(points,start,end):null,[memory,points,start,end]);
  const processPrior=memory?(processEndpoints?points[processEndpoints[0]]:null):prior;
@@ -114,7 +116,7 @@ export function ResourceAnalysis({metric,deviceId}){useLocale();
  const amount=r=>cpu?r.value:net?r.down+r.up:Math.abs(r.change),magnitude=Math.max(.0001,...rows.map(amount));
  const format=unit==='%'?percent:gib,change=finite(values[end])&&finite(values[start])?values[end]-values[start]:null;
  const totals=cpuRows.length?cpuRows.reduce((sum,row)=>sum+row.value,0):null;
- const summary=cpu?[['总利用率',percent(values[end])],['已列进程',percent(totals)]]:net?[['下载',rows.length?volume(rows.reduce((sum,r)=>sum+r.down,0)):'—'],['上传',rows.length?volume(rows.reduce((sum,r)=>sum+r.up,0)):'—']]:[['起点占用',format(values[start])],[current?'当前占用':'终点占用',format(values[end])],[gpu?'显存增减':'内存增减',unit==='%'?(finite(change)?`${change>0?'+':''}${change.toFixed(1)} 个百分点`:'—'):signed(change)]];
+ const summary=cpu?[['总利用率',percent(cpuPoint?.cpu??point?.cpu)],['已列进程',percent(totals)]]:net?[['下载',rows.length?volume(rows.reduce((sum,r)=>sum+r.down,0)):'—'],['上传',rows.length?volume(rows.reduce((sum,r)=>sum+r.up,0)):'—']]:[['起点占用',format(values[start])],[current?'当前占用':'终点占用',format(values[end])],[gpu?'显存增减':'内存增减',unit==='%'?(finite(change)?`${change>0?'+':''}${change.toFixed(1)} 个百分点`:'—'):signed(change)]];
  const emptyRows=cpu?(deviceId==='local'?'该时刻没有进程 CPU 样本。':'此设备未记录进程 CPU 历史。'):net?'区间内无可比较的网卡计数。':gpu?'两个端点没有可匹配的进程显存样本。':deviceId==='local'?'两个端点没有可匹配的进程内存样本。':'此设备未记录进程内存历史。';
  function pick(time){setBand(null);setSelected(time);setManualStart(null);if(!memory)setExpanded(null);list.current?.scrollTo(0,0);}
  function setWindow(a,b){
@@ -150,10 +152,10 @@ export function ResourceAnalysis({metric,deviceId}){useLocale();
      <div className="ev-traffic-foot"><span>{tr(peak>=0?`${net?'下载峰值':'峰值'} ${clock(points[peak].time,false)} · ${net?formatTraffic(values[peak]*rateScale.divisor,true):format(values[peak])}`:'该时段无峰值记录')}</span><Button className="ev-action" tone="quiet" disabled={peak<0||end===peak} onClick={()=>pick(points[peak].time)}>{t("定位峰值")}</Button></div>
     </section>
     <section className="ev-traffic-rank" aria-label={tr(rankTitle)}>
-     <div className="ev-rank-head"><div><h3>{tr(rankTitle)}</h3><p data-selection>{tr(timeLabel(prior,point))}</p></div>{tr(end!==defaultEnd&&<Button tone="quiet" className="ev-action" onClick={()=>pick(null)}>{t("返回最近")}</Button>)}</div>
+     <div className="ev-rank-head"><div><h3>{tr(rankTitle)}</h3><p data-selection>{tr(timeLabel(cpu?null:prior,cpu?(cpuPoint??point):point))}</p></div>{tr(end!==defaultEnd&&<Button tone="quiet" className="ev-action" onClick={()=>pick(null)}>{t("返回最近")}</Button>)}</div>
      <dl className="ev-volume ev-resource-volume" aria-live="polite">{tr(summary.map(([name,value])=><div key={name}><dt>{tr(name)}</dt><dd>{tr(value)}</dd></div>))}</dl>
      <div ref={list} className="ev-app-list ev-analysis-scroll" tabIndex={0} role="region" aria-label={tr(rankTitle)}>{tr(rows.length?rows.map(row=><ReadingRow key={row.id} row={row} showGpu={gpu&&cardId==='all'} bar={amount(row)/magnitude*100} value={cpu?percent(row.value):net?volume(amount(row)):signed(row.change)} open={expanded?.id===row.id} onToggle={cpu||net?null:()=>setExpanded(expanded?.id===row.id?null:row)}><EndpointRows row={row} markers={processMarkers}/></ReadingRow>):<p className="ev-analysis-empty">{tr(emptyRows)}</p>)}</div>
-     {(cpu||net||memory&&rows.length>0&&(processPrior!==prior||processPoint!==point))&&<div className="ev-traffic-foot ev-traffic-rank-foot"><span>{cpu?t('以整机 CPU 为基准；仅列出已采样进程。'):net?t(comparison.complete?'按网卡累计计数差计算。':'区间含缺样或计数重置，仅统计有记录部分。'):t('进程采样：{0}–{1}',[clock(processPrior.time),clock(processPoint.time)])}</span></div>}
+     {(cpu||net||memory&&rows.length>0&&(processPrior!==prior||processPoint!==point))&&<div className="ev-traffic-foot ev-traffic-rank-foot"><span>{cpu?(cpuPoint&&cpuPoint!==point?t('已选 {0} · 进程采样 {1}',[clock(point.time),clock(cpuPoint.time)]):t('以整机 CPU 为基准；仅列出已采样进程。')):net?t(comparison.complete?'按网卡累计计数差计算。':'区间含缺样或计数重置，仅统计有记录部分。'):t('进程采样：{0}–{1}',[clock(processPrior.time),clock(processPoint.time)])}</span></div>}
     </section>
    </div>
    {tr(cpu?<CoreHistory points={points} from={snapshot.from} to={snapshot.to} selectedTime={point?.time} onPick={pick} thinned={snapshot.thinned}/>:gpu?<GpuHeadroom points={points} values={gpuData} from={snapshot.from} to={snapshot.to} prior={prior} point={point} onRange={setWindow}/>:memory?<MemoryHistory points={points} from={snapshot.from} to={snapshot.to} prior={processPrior} point={processPoint} process={process}/>:<NetworkQuality points={points} from={snapshot.from} to={snapshot.to} adapter={adapterId} prior={prior} point={point} onRange={setWindow}/>)}

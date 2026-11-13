@@ -43,7 +43,7 @@ public sealed partial class WorkbenchWindow {
       cores=metric=="cpu"?(record==null?null:record.CoreIds):null,coreValues=metric=="cpu"?(record==null?null:record.CoreUsage):null,
       processes=record!=null&&processTimes.Contains(point.T)&&record.ResourceProcesses!=null?record.ResourceProcesses.Where(p=>metric=="memory"?p.ResidentBytes.HasValue:p.Cpu.HasValue).OrderByDescending(p=>metric=="cpu"?p.Cpu.GetValueOrDefault():p.ResidentBytes.GetValueOrDefault()).Take(24).Select(p=>new{p.Pid,p.Identity,p.Cpu,p.ResidentBytes,p.Path,Name=AnalysisName(p.Name??p.Path)}).ToArray():null,
       gpus=metric=="gpu"&&record!=null&&record.Gpus!=null?record.Gpus.Select(g=>new{g.Index,g.Uuid,g.Name,g.Used,g.Total}).ToArray():null,
-      gpuProcesses=metric=="gpu"&&record!=null&&record.Processes!=null?AnalysisGpuProcesses(record).Select(p=>new{p.Gpu,p.Pid,Name=AnalysisName(p.Name??p.Path),p.IdentityToken,p.Memory,p.Path}).ToArray():null,
+      gpuProcesses=metric=="gpu"&&record!=null&&record.Processes!=null?AnalysisGpuProcesses(record).Select(p=>new{p.Gpu,p.Pid,Name=AnalysisName(p.Name??p.Path),p.IdentityToken,p.Memory,Path=GpuProcessPaths.Recorded(p,!device.IsLocal)}).ToArray():null,
       adapters=metric=="network"&&net!=null&&net.Interfaces!=null?record.Network.Interfaces.Select(n=>new{n.Id,n.Name,n.ReceivedBytes,n.SentBytes,n.ReceiveErrors,n.SendErrors,n.ReceiveDiscards,n.SendDiscards,n.DownloadBytesPerSecond,n.UploadBytesPerSecond}).ToArray():null};
      rows.Add(row);retained.Add(point);
      if(sizing!=null){int size=sizing.Serialize(row).Length+1;sizes.Add(size);payloadSize+=size;}

@@ -8,5 +8,5 @@
 
 /* Tool actions occupy the same row as the resource navigation. */
 .network-workspace{position:relative;display:flex;flex-direction:column;gap:24px;min-width:0}
-.network-workspace>.network-speed>.ns-heading{position:absolute;right:0;top:0;height:56px;min-height:0;margin:0;padding:0;z-index:1}
-.network-workspace>.network-speed>.ns-heading .button{height:36px;min-height:36px;padding:0 12px}
+.network-workspace>.foundation-tool-panel>.network-speed>.ns-heading{position:absolute;right:0;top:0;height:56px;min-height:0;margin:0;padding:0;z-index:1}
+.network-workspace>.foundation-tool-panel>.network-speed>.ns-heading .button{height:36px;min-height:36px;padding:0 12px}

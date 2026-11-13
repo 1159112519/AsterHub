@@ -97,7 +97,7 @@ const dateText=value=>new Date(value).toLocaleString(locale(),{hour12:false});
 export function NetworkWorkspace(props){useLocale();
  const [view,setView]=useWorkspaceState(props.deviceId,'network-tool',()=>({tab:'monitor'}));
  const local=props.deviceId==='local',tab=view.tab==='analysis'||(local&&view.tab==='speed')?view.tab:'monitor';
- return <div className="network-workspace"><ToolNavigation label={t("网络工具")} items={[["monitor","运行监测"],...(local?[["speed","网络测速"]]:[]),["analysis","流量分析"]]} value={tab} onChange={tab=>setView({tab})}/>{tr(tab==='speed'?<SpeedPanel/>:tab==='analysis'?<ResourceAnalysis key={props.deviceId} metric="network" deviceId={props.deviceId}/>:<NetworkPage {...props}/>)}</div>;
+ return <div className="network-workspace"><ToolNavigation label={t("网络工具")} items={[["monitor","运行监测"],...(local?[["speed","网络测速"]]:[]),["analysis","流量分析"]]} value={tab} onChange={tab=>setView({tab})}>{tr(tab==='speed'?<SpeedPanel/>:tab==='analysis'?<ResourceAnalysis key={props.deviceId} metric="network" deviceId={props.deviceId}/>:<NetworkPage {...props}/>)}</ToolNavigation></div>;
 }
 function SpeedPanel(){useLocale();
  const [history,setHistory]=useState(()=>{const x=read(historyKey,[]);return Array.isArray(x)?x.filter(r=>r?.samples?.down&&r?.samples?.up&&r?.id&&r?.at):[]});

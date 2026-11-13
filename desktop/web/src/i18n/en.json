@@ -1,4 +1,5 @@
-{  "操作后统计": "Reported after cleanup",
+{
+  "操作后统计": "Reported after cleanup",
   "仅返回状态": "Status only",
   "读数不可用": "Reading unavailable",
   "各进程工作集减少量之和 {0}": "Sum of process working-set reductions: {0}",
@@ -1610,5 +1611,10 @@
   "打开存储页面": "Open storage page",
   "打开内存页面": "Open memory page",
   "打开网络页面": "Open network page",
-  "清除已结束": "Clear finished"
+  "清除已结束": "Clear finished",
+  "已选 {0} · 进程采样 {1}": "Selected {0} · process sample {1}",
+  "最小化": "Minimize",
+  "最大化": "Maximize",
+  "还原窗口": "Restore window",
+  "窗口控制": "Window controls"
 }

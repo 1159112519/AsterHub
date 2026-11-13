@@ -42,7 +42,7 @@
 
 /* Match the existing Network workspace gap below tool navigation. */
 .ev-analysis-workspace{display:flex;flex-direction:column;gap:24px;min-width:0}
-.ev-analysis-workspace>.ev-resource-analysis{margin-top:0}
+.ev-analysis-workspace>.foundation-tool-panel>.ev-resource-analysis{margin-top:0}
 .ev-resource-analysis .ev-traffic-content{grid-auto-rows:auto}
 .ev-resource-analysis .ev-traffic-frame{flex-basis:308px}
 .ev-resource-analysis .ev-traffic-rank{min-height:0}
@@ -101,7 +101,7 @@
 .ev-app-static:hover{background:transparent}
 
 .ev-follow-axis>span{position:absolute;transform:translateX(var(--ev-axis-shift))}
-.network-workspace>.ev-resource-analysis,.memory-maintenance>.ev-resource-analysis{margin-top:0}
+.network-workspace>.foundation-tool-panel>.ev-resource-analysis,.memory-maintenance>.foundation-tool-panel>.ev-resource-analysis{margin-top:0}
 .ev-analysis-notice{color:var(--muted);font-size:14px;margin:0 0 12px}
 .ev-heat-missing{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line-soft) 3px 4px);border-radius:2px;min-width:0}
 .ev-net-quality{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;height:62px;border-bottom:1px solid var(--line-soft)}

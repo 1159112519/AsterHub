@@ -41,17 +41,28 @@ export function shiftRange(start,end,delta,min,max){
  const offset=Math.max(min-start,Math.min(max-end,delta));
  return [start+offset,end+offset];
 }
-// Local process snapshots are normally captured once every ten seconds. Never
-// use the same snapshot twice, extrapolate a read, or jump across a disconnect.
+// Match an independently captured process snapshot, not an interpolated read.
+// A gap between the chosen point and its snapshot is a hard boundary. A gap
+// elsewhere inside a comparison does not invalidate the two real endpoints.
+export function processSampleIndex(points,index,metric='cpu',card){
+ if(!Number.isInteger(index)||index<0||index>=points.length)return -1;
+ const time=points[index].time;
+ const valid=i=>processes(metric,points[i],card)?.length>0;
+ if(valid(index))return index;
+ let best=-1,distance=12000;
+ for(const direction of [-1,1]){
+  for(let i=index+direction;i>=0&&i<points.length;i+=direction){
+   if(points[direction<0?i+1:i].gapBefore)break;
+   const delta=Math.abs(points[i].time-time);
+   if(delta>12000)break;
+   if(valid(i)&&(delta<distance||delta===distance&&(best<0||points[i].time<points[best].time))){best=i;distance=delta;}
+  }
+ }
+ return best;
+}
 export function memoryProcessEndpoints(points,start,end){
- if(start<0||end<=start||end>=points.length||points.slice(start+1,end+1).some(p=>p.gapBefore))return null;
- const crosses=(a,b)=>{for(let i=Math.min(a,b)+1;i<=Math.max(a,b);i++)if(points[i].gapBefore)return true;return false;};
- const near=(index)=>{
-  const p=points[index];
-  if(p.processes?.length)return index;
-  return nearestIndex(points,p.time,(candidate,i)=>candidate.processes?.length&&Math.abs(candidate.time-p.time)<=12000&&!crosses(i,index));
- };
- const a=near(start),b=near(end);
+ if(start<0||end<=start||end>=points.length)return null;
+ const a=processSampleIndex(points,start,'memory'),b=processSampleIndex(points,end,'memory');
  return a>=0&&b>a?[a,b]:null;
 }
 export function trafficScale(max){

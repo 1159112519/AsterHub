@@ -57,6 +57,20 @@ public sealed partial class WorkbenchWindow {
    Check(gpuRows.Single(r=>(string)r["Gpu"]=="13"&&(string)r["Pid"]=="118")["Path"]==null,"display name is not an executable path");
    var cpu=Rows(host.Query("cpu"),"processes");var memory=Rows(host.Query("memory"),"processes");
    Check(cpu.Length==2&&memory.Length==1&&(string)memory[0]["Path"]==@"C:\two words\worker.exe","unknown working set is not zero or a condition for CPU ranking");
+   // Old remote NVIDIA compute rows already recorded an absolute process_name.
+   // Recover only this source with a verified Linux identity, never an arbitrary
+   // display label, argv[0], local row or a reused PID's current metadata.
+   var remoteProcess=record.Processes.Single(p=>p.Gpu=="13"&&p.Pid=="117");
+   remoteProcess.Type="C";remoteProcess.IdentityToken="1234-abcd:12345:1000";remoteProcess.Name="/srv/two words/python";
+   Check(GpuProcessPaths.Recorded(remoteProcess,true)=="/srv/two words/python","NVIDIA reported absolute executable");
+   Check(GpuProcessPaths.Recorded(remoteProcess,false)==null,"local label never becomes remote path");
+   remoteProcess.Type=null;Check(GpuProcessPaths.Recorded(remoteProcess,true)==null,"unattributed label stays unknown");remoteProcess.Type="C";
+   remoteProcess.IdentityToken="win:123";Check(GpuProcessPaths.Recorded(remoteProcess,true)==null,"non-Linux identity rejected");remoteProcess.IdentityToken="1234-abcd:12345:1000";
+   remoteProcess.Name="/srv/python\ninvalid";Check(GpuProcessPaths.Recorded(remoteProcess,true)==null,"control characters rejected");remoteProcess.Name="/srv/two words/python";
+   host.server.IsLocal=false;host.server.Host="fixture.invalid";host.server.User="fixture";
+   writer.Store.Append(host.server,record);
+   Check((string)Rows(host.Query("gpu"),"gpuProcesses").Single(p=>(string)p["Gpu"]=="13"&&(string)p["Pid"]=="117")["Path"]=="/srv/two words/python","remote old archive bridge returns its own recorded path");
+   host.server.IsLocal=true;
    // A long-query fixture must remain serializable, preserving the first/latest
    // sample and all four cards while reducing time density only when necessary.
    foreach(var p in record.Processes)p.Path="/srv/"+new string('x',1800)+"/worker";
