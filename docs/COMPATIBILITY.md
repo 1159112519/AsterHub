@@ -1,6 +1,6 @@
 # 历史兼容标识
 
-正式产品名是 AsterHub，正式源码目录为 `desktop/`，可执行文件为 `AsterHub.exe`。旧独立程序和 Preview 演示入口已删除。
+正式产品名是 AsterHub，正式源码目录为 `desktop/`，可执行文件为 `AsterHub.exe`。
 
 以下字符串仍是已发布版本的数据或协议的一部分，不是另一个产品入口。直接改名会影响旧设置、加密密码、历史文件或升级：
 
@@ -15,4 +15,4 @@
 | `AQSERVER_*` 环境变量与旧 Run 项 | 兼容原有启动/测试调用；无需用户新增设置 |
 | `.aqserver-test-` | 远端文件操作测试的清理边界，防止误删非测试目录 |
 
-当前构建使用 `AsterHub.Core`、`AsterHub.Storage`、`AsterHub.Platform.Windows`，不依赖旧 `AQServer.*` 程序集。首次启动默认仅本机，不预设私人服务器。更新清单与已有 Release 保持原样；本次没有迁移或删除个人数据，也不更改运行中的服务。
+当前构建使用 `AsterHub.Core`、`AsterHub.Storage`、`AsterHub.Platform.Windows`，不依赖旧 `AQServer.*` 程序集。首次启动默认仅本机，不预设私人服务器。维护兼容代码时，应保留已安装用户的配置、历史、凭据与升级路径。
