@@ -28,7 +28,7 @@ public sealed partial class WorkbenchWindow {
   string source=StorageFile(deviceId);if(!File.Exists(source))return null;
   StorageSnapshotSummary summary;lock(storageGate)storageSummaries.TryGetValue(deviceId,out summary);if(summary==null||!summary.Matches(source))summary=StorageSnapshotSummary.Read(source);if(summary==null||summary.Metadata.DeviceId!=deviceId||summary.Metadata.Endpoint!=StorageEndpoint(server))return null;
   string revision=StorageIndexRevision(source);
-  lock(storageGate){if(storageClosing)return null;StorageIndexPreparation old;if(storageIndexPreparations.TryGetValue(deviceId,out old)&&old.Revision==revision&&(!old.Work.IsCompleted||old.Ready||(old.CompletedReady&&storageQueries.CurrentCount==0)||(!retry&&!old.CompletedReady)))return old;
+  lock(storageGate){if(storageClosing)return null;StorageIndexPreparation old;if(storageIndexPreparations.TryGetValue(deviceId,out old)&&old.Source==source&&old.Revision==revision&&(!old.Work.IsCompleted||old.Ready||(old.CompletedReady&&storageQueries.CurrentCount==0)||(!retry&&!old.CompletedReady)))return old;
    if(!StoragePagedIndex.Supported(source))return null;
    if(old!=null&&!old.Work.IsCompleted)old.Cancel();
    foreach(var key in storageIndexPreparations.Where(x=>x.Value.Work.IsCompleted&&x.Key!=deviceId).Select(x=>x.Key).Take(Math.Max(0,storageIndexPreparations.Count-15)).ToArray())storageIndexPreparations.Remove(key);

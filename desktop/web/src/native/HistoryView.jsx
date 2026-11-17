@@ -16,6 +16,8 @@ import {orderedSamples,timelineSampleProps} from '../time-series';
 import {motionOptions,reducedMotion,subscribeReducedMotion} from '../motion';
 import {native} from './bridge';
 import {normalize,gpuAverage} from './telemetry';
+import {AxisLock} from '../foundation/AxisLock';
+import {valueExtent} from '../foundation/value-extent.mjs';
 import './history-layout.css';
 
 const metrics=[['cpu','CPU','var(--blue)'],['gpu','GPU','var(--green)'],['memory','内存','var(--purple)']];
@@ -31,15 +33,17 @@ function prepareArchive(rows,minutes){
 
 // Keep measured metric charts mounted. A metric click reuses exact SVG geometry
 // instead of rebuilding thousands of cubic segments or measuring hidden layouts.
-const HistoryMetricChart=memo(function HistoryMetricChart({archive,metric,onSelect,selected,popover,activeSnapshot}){useLocale();
+const HistoryMetricChart=memo(function HistoryMetricChart({archive,metric,onSelect,selected,popover,activeSnapshot,valueDomain}){useLocale();
  const pick=useCallback(i=>{if(Number.isFinite(archive.series[metric][0].values[i]))onSelect(archive.points[i],i)},[archive,metric,onSelect]);
- return <Chart series={archive.series[metric]} timestamps={archive.timestamps} height={240} calendarAxis scalable rangeMinutes={archive.minutes} live={false} breakBefore={archive.breakBefore} sampleIntervals={archive.sampleIntervals} expectedInterval={archive.interval} onSelect={pick} selected={selected} selectionPopover={popover} hideHoverTooltip={activeSnapshot}/>;
+ return <Chart series={archive.series[metric]} timestamps={archive.timestamps} height={240} valueDomain={valueDomain} calendarAxis scalable rangeMinutes={archive.minutes} live={false} breakBefore={archive.breakBefore} sampleIntervals={archive.sampleIntervals} expectedInterval={archive.interval} onSelect={pick} selected={selected} selectionPopover={popover} hideHoverTooltip={activeSnapshot}/>;
 });
 
 export const HistoryView=memo(function HistoryView({deviceId}){useLocale();return <HistoryWorkspace key={deviceId} deviceId={deviceId}/>});
 const HistoryWorkspace=memo(function HistoryWorkspace({deviceId}){useLocale();
  const [view,setView]=useWorkspaceState(deviceId,'history',()=>({...defaultHistoryRange(),...readHistoryRange(deviceId)}));
+ const [axisLocks,setAxisLocks]=useState({});
  const {minutes,metric,result}=view,rangeKey=historyRangeKey(view),custom=view.rangeMode==='custom',rangeMinutes=custom?(view.customTo-view.customFrom)/60000:minutes;
+ const lockedDomain=custom&&axisLocks[metric]?.key===rangeKey?axisLocks[metric].domain:null;
  const emptyArchive=useMemo(()=>prepareArchive([],rangeMinutes),[rangeMinutes]),archive=result?.archive||emptyArchive,total=result?.total||0;
  useEffect(()=>saveHistoryRange(deviceId,view),[deviceId,view.rangeMode,view.customStart,view.customEnd,view.customFrom,view.customTo]);
  const queryParams=useMemo(()=>historyQueryRange(view),[view.rangeMode,minutes,view.customFrom,view.customTo]);
@@ -79,13 +83,13 @@ const HistoryWorkspace=memo(function HistoryWorkspace({deviceId}){useLocale();
  const popover=open&&!reading&&(current||detailError)&&date&&Number.isFinite(value)?<HistoryPeek date={date.toLocaleDateString(locale(),{month:'numeric',day:'numeric'})} time={date.toLocaleTimeString(locale(),{hour12:false})} metric={metricLabel(metric)} value={value} error={detailError} rows={current?.processes||[]} gpuCount={current?.gpus.length||0} onClose={()=>close(true)} onViewProcesses={()=>{setFullDetails(true);close();requestAnimationFrame(()=>document.querySelector('.native-history-processes')?.scrollIntoView({behavior:preference?'instant':'smooth',block:'start'}))}}/>:null;
  return <>
   <div className="page-heading"><div><h1>{t("历史记录")}</h1>{tr(recorder?.installed&&recorder.lastTime&&Number.isFinite(new Date(recorder.lastTime).getTime())&&<p>{t("最近记录 ")}{tr(new Date(recorder.lastTime).toLocaleString(locale(),{hour12:false}))}</p>)}</div><Button onClick={query} disabled={busy}>{tr(busy?'正在读取…':'刷新存档')}</Button></div>
-  <div className="history-toolbar" data-custom={custom}><div className="history-range-controls"><label className="range-control"><Clock size={17}/><ThemedSelect aria-label={t("历史时间范围")} value={custom?'custom':minutes} onChange={event=>setMinutes(event.target.value)}>{tr([[15,'最近 15 分钟'],[60,'最近 1 小时'],[120,'最近 2 小时'],[1440,'最近 24 小时'],['custom','自定义时间']].map(([value,label])=><option key={value} value={value}>{tr(label)}</option>))}</ThemedSelect></label></div>{tr(custom&&<div className="history-custom-range"><HistoryDateTime label={t("开始时间")} value={view.customStart} onChange={value=>{setRangeError('');setView(v=>({...v,customStart:value}))}}/><HistoryDateTime label={t("结束时间")} value={view.customEnd} onChange={value=>{setRangeError('');setView(v=>({...v,customEnd:value}))}}/><Button className="history-apply" onClick={()=>{const range=validateHistoryRange(view.customStart,view.customEnd);if(range.error){setRangeError(range.error);return}setRangeError('');setView(v=>({...v,customFrom:range.fromUtc,customTo:range.toUtc}))}}>{t("应用时间")}</Button></div>)}</div>
+  <div className="history-toolbar" data-custom={custom}><div className="history-range-controls"><label className="range-control"><Clock size={17}/><ThemedSelect aria-label={t("历史时间范围")} value={custom?'custom':minutes} onChange={event=>setMinutes(event.target.value)}>{tr([[15,'最近 15 分钟'],[60,'最近 1 小时'],[120,'最近 2 小时'],[1440,'最近 24 小时'],['custom','自定义时间']].map(([value,label])=><option key={value} value={value}>{tr(label)}</option>))}</ThemedSelect></label></div>{tr(custom&&<div className="history-custom-range"><HistoryDateTime label={t("开始时间")} value={view.customStart} onChange={value=>{setRangeError('');setView(v=>({...v,customStart:value}))}}/><HistoryDateTime label={t("结束时间")} value={view.customEnd} onChange={value=>{setRangeError('');setView(v=>({...v,customEnd:value}))}}/><AxisLock locked={!!lockedDomain} disabled={busy||result?.key!==rangeKey||!archive.points.length} onClick={()=>setAxisLocks(old=>({...old,[metric]:lockedDomain?null:{key:rangeKey,domain:valueExtent(archive.series[metric])}}))}/><Button className="history-apply" onClick={()=>{const range=validateHistoryRange(view.customStart,view.customEnd);if(range.error){setRangeError(range.error);return}setRangeError('');setView(v=>({...v,customFrom:range.fromUtc,customTo:range.toUtc}))}}>{t("应用时间")}</Button></div>)}</div>
   <div className="history-range-status"><span className="history-archive-state"><i className="status-dot"/>{tr(total)}{t(" 个已存档采样")}{tr(total>archive.points.length?' · 显示 '+archive.points.length+' 个趋势点':'')}</span>{tr(busy&&<span className="history-query-pending" role="status">{t("正在读取存档…")}</span>)}{tr(rangeError&&<span className="history-range-error" role="alert">{tr(rangeError)}</span>)}</div>
   {tr(error&&<p role="alert" className="native-error">{tr(error)}{tr(result&&' · 仍显示上次成功读取的趋势')}</p>)}
   <section className="history-chart" ref={region}>
    <SectionTitle action={<div className="segmented history-metric-tabs" role="group" aria-label={t("历史资源指标")} style={{'--history-selection':metrics.findIndex(([id])=>id===metric)}}><span className="history-metric-selection" aria-hidden="true"/>{tr(metrics.map(([id,label])=><button key={id} type="button" className={metric===id?'active':''} aria-pressed={metric===id} onClick={()=>changeMetric(id)}><span className="control-label">{tr(label)}</span></button>))}</div>}>{t("利用率时间线")}</SectionTitle>
    <div className="history-trend-viewport" ref={viewport} aria-busy={busy} inert={busy?'':undefined} data-history-metric={metric} data-history-minutes={archive.minutes}>
-    {tr(metrics.map(([id])=><div key={id} className="history-trend-panel" aria-hidden={metric!==id} inert={metric!==id?'':undefined}><HistoryMetricChart archive={archive} metric={id} onSelect={choose} selected={metric===id?index:null} popover={metric===id?popover:null} activeSnapshot={metric===id&&open}/></div>))}
+    {tr(metrics.map(([id])=><div key={id} className="history-trend-panel" aria-hidden={metric!==id} inert={metric!==id?'':undefined}><HistoryMetricChart archive={archive} metric={id} onSelect={choose} selected={metric===id?index:null} popover={metric===id?popover:null} activeSnapshot={metric===id&&open} valueDomain={custom&&axisLocks[id]?.key===rangeKey?axisLocks[id].domain:null}/></div>))}
    </div>
    <div className="timeline-selection"><div><Clock size={16}/><span>{t("选中时间")}</span><strong>{tr(date?date.toLocaleString(locale(),{hour12:false}):'点击曲线查看完整快照')}</strong></div><span role="status" className="history-snapshot-status">{tr(open&&reading?'正在读取快照…':'')}</span></div>
   </section>

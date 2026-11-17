@@ -1,18 +1,20 @@
-.foundation-tool-navigation{position:relative;display:flex;align-items:stretch;align-self:flex-start;gap:8px;max-width:100%;width:max-content;padding:0 0 5px;border:0;border-radius:0;background:none;font-family:var(--font-interface,inherit);overflow-x:auto;scrollbar-width:none}
+.foundation-tool-navigation{position:relative;isolation:isolate;display:flex;align-items:stretch;align-self:flex-start;gap:0;max-width:100%;width:max-content;padding:3px;border:1px solid var(--line-soft);border-radius:999px;background:var(--hover);font-family:var(--font-interface,inherit);overflow-x:auto;scrollbar-width:none}
 .foundation-tool-navigation::-webkit-scrollbar{display:none}
-.foundation-tool-navigation>button{position:relative;flex-shrink:0;min-height:34px;display:inline-flex;align-items:center;justify-content:center;padding:5px 12px;border:0;border-radius:7px;background:none;color:var(--muted);font:inherit;font-size:14px;line-height:22px;white-space:nowrap;cursor:pointer;transition:color var(--motion-feedback,.14s) var(--ease,cubic-bezier(.22,1,.36,1)),background var(--motion-feedback,.14s) var(--ease,cubic-bezier(.22,1,.36,1))}
+.foundation-tool-navigation>button{position:relative;z-index:1;flex-shrink:0;min-height:30px;display:inline-flex;align-items:center;justify-content:center;padding:4px 14px;border:0;border-radius:999px;background:none;color:var(--muted);font:inherit;font-size:14px;line-height:22px;white-space:nowrap;cursor:pointer;transition:color var(--motion-feedback,.14s) var(--ease,cubic-bezier(.22,1,.36,1)),background var(--motion-feedback,.14s) var(--ease,cubic-bezier(.22,1,.36,1))}
 .foundation-tool-navigation>button:hover{color:var(--text)}
 .foundation-tool-navigation>button[aria-selected=true]{color:var(--text);font-weight:500}
 .foundation-tool-navigation>button:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
-.foundation-tool-navigation .tool-label{position:relative;top:var(--label-optical-y,0px)}
-.foundation-tool-indicator{position:absolute;bottom:0;left:0;height:2px;border-radius:2px;background:var(--text);pointer-events:none;transition:transform var(--motion-layout,.28s) var(--ease,cubic-bezier(.22,1,.36,1)),width var(--motion-layout,.28s) var(--ease,cubic-bezier(.22,1,.36,1))}
+.foundation-tool-navigation .tool-label{position:relative;display:block;line-height:22px}
+.foundation-tool-indicator{position:absolute;z-index:0;top:3px;bottom:3px;left:0;border:1px solid var(--line);border-radius:999px;background:var(--surface2);box-shadow:0 1px 3px #0002;pointer-events:none;transition:transform var(--motion-layout,.28s) var(--ease,cubic-bezier(.22,1,.36,1)),width var(--motion-layout,.28s) var(--ease,cubic-bezier(.22,1,.36,1))}
 .foundation-tool-row{display:flex;align-items:center;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;min-width:0}
 .foundation-tool-row>.foundation-tool-navigation{align-self:center}
 .foundation-tool-actions{min-width:0;max-width:100%;margin-left:auto}
 .foundation-tool-panel{min-width:0;animation:tool-panel-enter var(--motion-page,.24s) var(--ease,cubic-bezier(.22,1,.36,1))}
 .foundation-tool-panel[hidden]{display:none}
 @keyframes tool-panel-enter{from{opacity:0}to{opacity:1}}
-@media(max-width:760px){.foundation-tool-navigation{max-width:100%;gap:4px}.foundation-tool-navigation>button{padding-inline:10px}}
+@media(max-width:760px){.foundation-tool-navigation{max-width:100%;gap:0}.foundation-tool-navigation>button{padding-inline:10px}}
 @media(prefers-reduced-motion:reduce){.foundation-tool-indicator,.foundation-tool-navigation>button{transition:none}.foundation-tool-panel{animation:none}}
 [data-motion=reduced] .foundation-tool-indicator,[data-motion=reduced] .foundation-tool-navigation>button{transition:none}
 [data-motion=reduced] .foundation-tool-panel{animation:none}
+
+.foundation-tool-navigation[data-instant=true] .foundation-tool-indicator{transition:none}

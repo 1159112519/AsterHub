@@ -105,7 +105,7 @@
 .memory-policy-switch input:focus-visible+span{outline:2px solid var(--muted);outline-offset:3px}
 .memory-configure-areas{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 0;border:0;border-top:1px solid var(--line-soft);background:none;color:var(--muted);font-family:inherit;font-size:15px;cursor:pointer;width:100%;text-align:left}
 .memory-configure-areas strong{display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;font-weight:450}
-.memory-policy-tags{display:flex;flex-wrap:wrap;gap:8px}.memory-policy-tags>span{border:1px solid var(--line);border-radius:8px;padding:6px 9px;color:var(--muted);font-size:13px}
+.memory-policy-tags{display:flex;flex-wrap:wrap;gap:8px}.memory-policy-tags>span{display:inline-flex;align-items:center;justify-content:center;min-height:30px;box-sizing:border-box;line-height:18px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;color:var(--muted);font-size:13px}
 .memory-policy-save{display:flex;justify-content:flex-end;margin-top:20px}
 .memory-policy-reading{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:20px 0;color:var(--muted);font-size:14px}
 .memory-policy-reading>strong{font-size:28px;color:var(--text);font-weight:500}

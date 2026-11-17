@@ -1616,5 +1616,18 @@
   "最小化": "Minimize",
   "最大化": "Maximize",
   "还原窗口": "Restore window",
-  "窗口控制": "Window controls"
+  "窗口控制": "Window controls",
+  "解锁纵轴最高点和最低点": "Unlock axis maximum and minimum",
+  "锁定当前纵轴最高点和最低点": "Lock current axis maximum and minimum",
+  "已锁定极值": "Extremes locked",
+  "锁定极值": "Lock extremes",
+  "全盘扫描": "All drives",
+  "扫描所有可用磁盘，分别保留扫描记录": "Scan all available drives and keep separate records",
+  "扫描记录": "Scan history",
+  "在资源管理器中打开": "Open in File Explorer",
+  "扫描记录不存在": "Scan record is unavailable",
+  "扫描记录已更新，请重新选择": "Scan records have changed. Select a record again.",
+  "暂无可用磁盘": "No drives available",
+  "资源管理器仅支持本机文件": "File Explorer is available for local files only",
+  "此项目已不存在，请重新扫描": "This item no longer exists. Scan again."
 }

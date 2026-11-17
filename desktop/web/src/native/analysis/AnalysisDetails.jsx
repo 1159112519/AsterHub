@@ -1,9 +1,10 @@
 import {t,tr,useLocale,locale} from '../../i18n/index.js';
-import React,{useEffect,useMemo,useRef,useState} from 'react';
+import React,{memo,useEffect,useMemo,useRef,useState} from 'react';
 import {SectionTitle} from '../../components';
 import {axisTicks,coreBins,lowMemorySpans,finite,networkChanges,processes} from './analysis-data.mjs';
 
-export const clock=(t,seconds=true)=>new Date(t).toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit',...(seconds?{second:'2-digit'}:{}),hour12:false});
+const clocks=new Map();
+export const clock=(time,seconds=true)=>{const key=locale()+seconds;if(!clocks.has(key))clocks.set(key,new Intl.DateTimeFormat(locale(),{hour:'2-digit',minute:'2-digit',...(seconds?{second:'2-digit'}:{}),hour12:false}));return clocks.get(key).format(new Date(time))};
 export const gib=v=>finite(v)?`${v.toFixed(2)} GiB`:'—';
 const frac=(t,from,to)=>Math.max(0,Math.min(1,(t-from)/Math.max(1,to-from)));
 export function TimeAxis({from,to,className='',style}){useLocale();
@@ -11,10 +12,12 @@ export function TimeAxis({from,to,className='',style}){useLocale();
  useEffect(()=>{const el=host.current,ro=new ResizeObserver(([entry])=>setWidth(entry.contentRect.width));ro.observe(el);return()=>ro.disconnect()},[]);
  return <div ref={host} className={'ev-follow-axis '+className} style={style}>{tr(axisTicks(from,to,width).map(({time,at},i)=><span key={i} style={{left:`${at*100}%`,'--ev-axis-shift':`${at===0?0:at===1?-100:-50}%`}}>{tr(clock(time,false))}</span>))}</div>;
 }
-export function CoreHistory({points,from,to,selectedTime,onPick,thinned}){useLocale();
+export const CoreHistory=memo(function CoreHistory({points,from,to,selectedTime,onPick,thinned}){useLocale();
  const {bins,ids}=useMemo(()=>coreBins(points,from,to),[points,from,to]);
  const current=points.find(p=>p.time===selectedTime);
  const active=selectedTime==null?-1:Math.min(bins.length-1,Math.floor(frac(selectedTime,from,to)*bins.length));
+ const [scrollTop,setScrollTop]=useState(0);
+ const rowHeight=16,virtual=ids.length>32,firstRow=virtual?Math.max(0,Math.floor(scrollTop/rowHeight)-3):0,lastRow=virtual?Math.min(ids.length,firstRow+20):ids.length;
  const [selectedCore,setCore]=useState(null),[focus,setFocus]=useState(null),[gutter,setGutter]=useState(0),grid=useRef(null);
  useEffect(()=>{const el=grid.current;if(!el)return;const ro=new ResizeObserver(()=>setGutter(el.offsetWidth-el.clientWidth));ro.observe(el);return()=>ro.disconnect()},[ids.length]);
  const core=selectedCore??ids[0],coreValue=current?.coreValues?.[current?.cores?.indexOf(core)];
@@ -23,17 +26,17 @@ export function CoreHistory({points,from,to,selectedTime,onPick,thinned}){useLoc
  function arrow(e,r,c){
   const directions={ArrowLeft:[0,-1],ArrowRight:[0,1],ArrowUp:[-1,0],ArrowDown:[1,0]};const dir=directions[e.key];if(!dir)return;
   e.preventDefault();let nr=r+dir[0],nc=c+dir[1];
-  while(nr>=0&&nr<ids.length&&nc>=0&&nc<bins.length){const el=grid.current.querySelector(`[data-cell="${nr}-${nc}"]`);if(el){el.focus();return;}nr+=dir[0];nc+=dir[1];}
+  while(nr>=0&&nr<ids.length&&nc>=0&&nc<bins.length){const el=grid.current.querySelector(`[data-cell="${nr}-${nc}"]`);if(el){el.focus();return;}if(bins[nc].has(ids[nr])){grid.current.scrollTop=nr*rowHeight;setScrollTop(nr*rowHeight);requestAnimationFrame(()=>grid.current?.querySelector(`[data-cell="${nr}-${nc}"]`)?.focus({preventScroll:true}));return;}nr+=dir[0];nc+=dir[1];}
  }
  return <section className="ev-followup ev-core-history" aria-label={t("核心负载热图")}><SectionTitle meta={ids.length?`${ids.length} 个逻辑核心`:null}>{t("核心负载热图")}</SectionTitle>
  {tr(ids.length?<><div className="ev-follow-summary"><span>{tr(thinned?'每格取载入样本的峰值':'每格取该时段峰值')}</span><div className="ev-heat-key"><span>{t("低")}</span>{tr([0,1,2,3,4].map(i=><i key={i} data-level={i}/>))}<span>{t("高")}</span></div></div>
- <div className="ev-heat-scroll" ref={grid} role="group" aria-label={t("逐核历史峰值")} style={{'--ev-core-cols':bins.length}}>{tr(ids.map((id,r)=><div className="ev-heat-row" key={id}><span>CPU {tr(id)}</span><div className="ev-heat-track">{tr(bins.map((bin,c)=>{
+ <div className="ev-heat-scroll" ref={grid} onScroll={e=>setScrollTop(e.currentTarget.scrollTop)} role="group" aria-label={t("逐核历史峰值")} style={{'--ev-core-cols':bins.length}}>{firstRow>0&&<div aria-hidden="true" style={{height:firstRow*rowHeight}}/>}{tr(ids.slice(firstRow,lastRow).map((id,offset)=>{const r=firstRow+offset;return <div className="ev-heat-row" key={id}><span>CPU {tr(id)}</span><div className="ev-heat-track">{tr(bins.map((bin,c)=>{
   const p=bin.get(id);if(!p)return <span className="ev-heat-missing" key={c}/>;
   const label=`CPU ${id} · ${clock(p.time)} · ${p.value.toFixed(0)}%`;
   return <button key={c} type="button" data-cell={`${r}-${c}`} data-time={p.time} data-level={p.value>=85?4:p.value>=65?3:p.value>=40?2:p.value>=20?1:0} data-column={active===c} aria-label={tr(label)} title={tr(label)} aria-pressed={id===core&&p.time===selectedTime} tabIndex={focused?.r===r&&focused.c===c?0:-1} onFocus={()=>setFocus({id,c})} onKeyDown={e=>arrow(e,r,c)} onClick={()=>{setCore(id);onPick(p.time)}}/>;
- }))}</div></div>))}</div><TimeAxis from={from} to={to} className="ev-heat-axis" style={{'--ev-heat-gutter':`${gutter}px`}}/>
+ }))}</div></div>}))}{lastRow<ids.length&&<div aria-hidden="true" style={{height:(ids.length-lastRow)*rowHeight}}/>}</div><TimeAxis from={from} to={to} className="ev-heat-axis" style={{'--ev-heat-gutter':`${gutter}px`}}/>
  <div className="ev-follow-foot" aria-live="polite">{tr(finite(coreValue)?<><b>CPU {tr(core)}</b><span>{tr(clock(selectedTime))} · {tr(coreValue.toFixed(0))}%</span></>:<span>{t("该时刻无逐核读数")}</span>)}</div></>:<p className="ev-follow-empty">{t("所选时段没有逐核采样。")}</p>)}</section>;
-}
+});
 function trace(points,values,x,y){
  let open=false;const singleton=[];const path=points.map((p,i)=>{
   if(!finite(values[i])){open=false;return '';}if(p.gapBefore)open=false;

@@ -1,7 +1,9 @@
-# Resource tool tabs
+# Resource tool navigation
 
-Interaction reference: TUFFUI Tab Panels, official repository yurigdesigner/tuffui, tree 589cbb03ee1b06deaf02b78dde5395db99832397. Reviewed registry/tab-panels/tab-panels.tsx and docs.ts; its license is MIT (2026 TUFFUI contributors).
+Interaction reference: TUFFUI Segmented Control, official registry at https://tuffui.com/r/segmented-control.json (reviewed 2026-11-17), MIT License, copyright 2026 TUFFUI contributors.
 
-AsterHub uses its own React/CSS implementation in desktop/web/src/foundation/ToolNavigation.jsx. No TUFFUI source, assets, package, motion library or transitive dependency is bundled. The reference informs the moving underline, roving keyboard navigation and lazy panel behavior. Existing AsterHub workspace/query caches retain state; only the selected tool is rendered.
+AsterHub keeps its own React/CSS implementation in desktop/web/src/foundation/ToolNavigation.jsx. The reference informs the capsule container, sliding raised selection and instant keyboard selection. No additional motion package is required. Resource tabs retain tablist/tab/tabpanel semantics, Home/End and arrow navigation, a stable actions container, lazy panels and existing query caches. The system title bar is unchanged.
 
-Regression: sparse CPU sample matching, independent memory endpoint matching, remote historical NVIDIA path provenance, native tab keyboard and indicator alignment, DPI/window chrome interaction.
+CPU analysis measures chart geometry before rendering; static analysis is memoized across live captures. Core history uses bounded visible rows above 32 cores, cached locale formatters and keyboard scrolling. This avoids rendering thousands of offscreen cells.
+
+Regression covers sparse CPU samples, memory endpoint gaps, recorded remote GPU path provenance, tab keyboard/pill alignment, chart first-frame geometry and a 256-core replay. Custom-range axis bounds are copied when locked, isolated by metric/device/range and released on unlock.
