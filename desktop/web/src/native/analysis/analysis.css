@@ -118,3 +118,13 @@
 .ev-gpu-tag{flex:none;border-radius:4px;padding:0 5px;font-size:11px;line-height:16px;white-space:nowrap;color:var(--ev-series);background:color-mix(in srgb,var(--ev-series) 12%,transparent)}
 
 .ev-range-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}.axis-lock{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}.axis-lock[aria-pressed=true]{border-color:var(--line);background:var(--surface2)}
+
+/* Preserve the prior chart while the requested range is read. */
+.ev-analysis-controls{position:relative}
+.ev-query-pending{position:absolute;inset-inline-end:0;top:100%;margin-top:2px;white-space:nowrap;color:var(--muted);font-size:12px;line-height:16px;pointer-events:none}
+.ev-traffic-frame>.ev-chart-reveal{position:absolute;inset:0}
+.ev-chart-reveal>.chart{position:absolute;inset:0;margin:0}
+.ev-chart-reveal .data-stroke,.ev-chart-reveal .data-area{animation:ev-range-join .38s cubic-bezier(.22,1,.36,1) both;transform-box:fill-box;transform-origin:right center}
+@keyframes ev-range-join{from{opacity:0;clip-path:inset(0 0 0 100%);transform:scaleX(.96)}to{opacity:1;clip-path:inset(0);transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.ev-chart-reveal .data-stroke,.ev-chart-reveal .data-area{animation:none}}
+[data-motion=reduced] .ev-chart-reveal .data-stroke,[data-motion=reduced] .ev-chart-reveal .data-area{animation:none}

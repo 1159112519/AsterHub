@@ -12,7 +12,7 @@ import {CoreHistory,GpuHeadroom,MemoryHistory,NetworkQuality,clock,gib} from './
 import {CompareRange} from './CompareRange';
 import {createAnalysisQuery} from './analysis-query.mjs';
 import {AxisLock} from '../../foundation/AxisLock';
-import {valueExtent} from '../../foundation/value-extent.mjs';
+import {extremaRange} from './extrema-range.mjs';
 import './analysis.css';
 
 const titles={cpu:['占用分析','CPU 利用率','进程占用'],gpu:['显存分析','显存占用','显存变化排行'],memory:['内存分析','内存使用','内存变化排行'],network:['流量分析','网络速率','网卡流量排行']};
@@ -28,11 +28,11 @@ export function AnalysisWorkspace({metric,deviceId,children}){useLocale();
  return <div className="ev-analysis-workspace"><ToolNavigation label={tr(`${titles[metric][0]}工具`)} items={[["monitor","运行监测"],["analysis",titles[metric][0]]]} value={view.tab} onChange={tab=>setView({tab})}>{tr(view.tab==='analysis'?<ResourceAnalysis metric={metric} deviceId={deviceId} key={`${deviceId}:${metric}`}/>:children)}</ToolNavigation></div>;
 }
 
-function Trend({series,points,selected,onSelect,unit,maxValue,valueDomain,from,to,markers,onMove}){useLocale();
+function Trend({series,points,selected,onSelect,unit,maxValue,transitionKey,from,to,markers,onMove}){useLocale();
  const frame=useRef(null),[size,setSize]=useState(null);
  useLayoutEffect(()=>{const host=frame.current;const measure=()=>{const next={height:Math.max(196,Math.floor(host.clientHeight)),width:host.clientWidth};setSize(old=>old?.width===next.width&&old?.height===next.height?old:next)};measure();const ro=new ResizeObserver(measure);ro.observe(host);return()=>ro.disconnect()},[]);
  const times=useMemo(()=>points.map(p=>p.time),[points]),breaks=useMemo(()=>points.map(p=>p.gapBefore),[points]);
- return <div ref={frame} className="ev-traffic-frame">{size&&<Chart series={series} height={size.height} measuredWidth={size.width} valueDomain={valueDomain} timestamps={times} timeDomain={[from,to]} breakBefore={breaks} unit={unit} maxValue={maxValue} selected={selected} onSelect={onSelect} calendarAxis renderOverlay={markers.length?geometry=><CompareRange {...geometry} markers={markers} onChange={onMove}/>:undefined}/>}</div>;
+ return <div ref={frame} className="ev-traffic-frame">{size&&<div key={transitionKey} className="ev-chart-reveal"><Chart series={series} height={size.height} measuredWidth={size.width} timestamps={times} timeDomain={[from,to]} breakBefore={breaks} unit={unit} maxValue={maxValue} selected={selected} onSelect={onSelect} calendarAxis renderOverlay={markers.length?geometry=><CompareRange {...geometry} markers={markers} onChange={onMove}/>:undefined}/></div>}</div>;
 }
 function ReadingRow({row,bar,value,children,onToggle,open,showGpu}){useLocale();
 
@@ -51,22 +51,28 @@ const analysisQuery=createAnalysisQuery(params=>native.request('analysis.query',
 export const ResourceAnalysis=memo(function ResourceAnalysis({metric,deviceId}){useLocale();
  const cpu=metric==='cpu',gpu=metric==='gpu',net=metric==='network',memory=metric==='memory';
  const [title,trendTitle,rankTitle]=titles[metric],color=colors[metric];
- const [range,setRange]=useState(30),[duration,setDuration]=useState(2),[epoch,refresh]=useState(0),[error,setError]=useState('');
+ const [range,setRange]=useState(30),[duration,setDuration]=useState(2),[epoch,refresh]=useState(0);
  const [selected,setSelected]=useState(null),[manualStart,setManualStart]=useState(null),[band,setBand]=useState(null),[expanded,setExpanded]=useState(null),[card,setCard]=useState(null),[adapter,setAdapter]=useState('all');
  const list=useRef(null),appliedRefresh=useRef(0);
- const [axisLock,setAxisLock]=useState(null);
+ const [extremes,setExtremes]=useState(null);
  const cacheKey=JSON.stringify([deviceId,metric,range]);
  const [result,setResult]=useState(()=>({key:cacheKey,snapshot:analysisQuery.peek(cacheKey)?.value??null}));
- const [busy,setBusy]=useState(()=>!result.snapshot);
- const snapshot=result.key===cacheKey?result.snapshot:analysisQuery.peek(cacheKey)?.value;
+ const [request,setRequest]=useState({key:cacheKey,epoch:0,pending:!result.snapshot,error:""});
+ const resolved=result.key===cacheKey?result.snapshot:analysisQuery.peek(cacheKey)?.value;
+ const sameRequest=request.key===cacheKey&&request.epoch===epoch;
+ const error=sameRequest?request.error:"";
+ const loading=(sameRequest?request.pending:!resolved||request.epoch!==epoch)||(!resolved&&!error);
+ // Keep the previous result visible until the requested range resolves, like History.
+ const snapshot=resolved??result.snapshot;
+ const displayedKey=resolved?cacheKey:result.key;
  useEffect(()=>{
   let active=true;
   const force=appliedRefresh.current!==epoch;appliedRefresh.current=epoch;
   const cached=analysisQuery.peek(cacheKey);
-  setBusy(force||!cached);setError('');
+  setRequest({key:cacheKey,epoch,pending:force||!cached,error:''});
   analysisQuery.query(cacheKey,{deviceId,metric,minutes:range},{force}).then(value=>{
-   if(active){setResult({key:cacheKey,snapshot:value});setBusy(false);}
-  },err=>{if(active){setError(err.message);setBusy(false);}});
+   if(active){setResult({key:cacheKey,snapshot:value});setRequest({key:cacheKey,epoch,pending:false,error:""});}
+  },err=>{if(active)setRequest({key:cacheKey,epoch,pending:false,error:err.message});});
   return()=>{active=false;};
  },[cacheKey,deviceId,metric,range,epoch]);
  const points=snapshot?.points??noPoints;
@@ -100,13 +106,19 @@ export const ResourceAnalysis=memo(function ResourceAnalysis({metric,deviceId}){
   const matching=nearestIndex(points,desired,(p,i)=>i<index&&selectable(i)&&(!preferProcess||Boolean(p.processes)));
   return matching<0?nearestIndex(points,desired,(_,i)=>i<index&&selectable(i)):matching;
  };
- const start=cpu||!point?-1:manualStart==null?before(point):nearestIndex(points,manualStart,(_,i)=>i<end&&selectable(i));
+ const start=!point?-1:manualStart==null?before(point):nearestIndex(points,manualStart,(_,i)=>i<end&&selectable(i));
  const prior=points[start];
  const current=end>=0&&end===latest&&snapshot.to-point.time<=Math.max(15000,point.interval*3000);
  const markers=point?[...(prior?[{key:'start',time:prior.time,displayTime:band?.[0],index:start,label:'起点',color:'var(--amber)'}]:[]),...(prior||cpu?[{key:'end',time:point.time,displayTime:band?.[1],index:end,label:current?'当前':'终点',color:'var(--blue)'}]:[])]:[];
  const unit=cpu||memory&&!memoryAbsolute?'%':net?rateScale.unit+'/s':'GiB';
  const max=unit==='%'?100:Math.max(unit==='GiB'?1:.1,...(gpu?gpuData.map(v=>v?.total??0):series.flatMap(s=>s.values.filter(finite))));
- const axisKey=JSON.stringify([metric,range,cardId,adapterId,unit]),lockedDomain=manualStart!=null&&axisLock?.key===axisKey?axisLock.domain:null;
+ const extremaKey=JSON.stringify([metric,range,cardId,adapterId,unit]),lockedExtremes=manualStart!=null&&extremes?.key===extremaKey;
+ const intervalExtrema=useMemo(()=>manualStart==null?null:extremaRange(values,start,end),[values,start,end,manualStart]);
+ function toggleExtremes(){
+  if(lockedExtremes){setManualStart(extremes.restore[0]);setSelected(extremes.restore[1]);setExtremes(null);return;}
+  if(!intervalExtrema)return;const [a,b]=intervalExtrema;
+  setExtremes({key:extremaKey,restore:[prior.time,point.time]});setBand(null);setManualStart(points[a].time);setSelected(points[b].time);
+ }
  const cpuSampleIndex=useMemo(()=>cpu?processSampleIndex(points,end,'cpu'):-1,[cpu,points,end]);
  const cpuPoint=cpuSampleIndex>=0?points[cpuSampleIndex]:null;
  const cpuRows=cpu?(processes(metric,cpuPoint,cardId)??[]).sort((a,b)=>b.value-a.value):[];
@@ -122,37 +134,39 @@ export const ResourceAnalysis=memo(function ResourceAnalysis({metric,deviceId}){
  const totals=cpuRows.length?cpuRows.reduce((sum,row)=>sum+row.value,0):null;
  const summary=cpu?[['总利用率',percent(cpuPoint?.cpu??point?.cpu)],['已列进程',percent(totals)]]:net?[['下载',rows.length?volume(rows.reduce((sum,r)=>sum+r.down,0)):'—'],['上传',rows.length?volume(rows.reduce((sum,r)=>sum+r.up,0)):'—']]:[['起点占用',format(values[start])],[current?'当前占用':'终点占用',format(values[end])],[gpu?'显存增减':'内存增减',unit==='%'?(finite(change)?`${change>0?'+':''}${change.toFixed(1)} 个百分点`:'—'):signed(change)]];
  const emptyRows=cpu?(deviceId==='local'?'该时刻没有进程 CPU 样本。':'此设备未记录进程 CPU 历史。'):net?'区间内无可比较的网卡计数。':gpu?'两个端点没有可匹配的进程显存样本。':deviceId==='local'?'两个端点没有可匹配的进程内存样本。':'此设备未记录进程内存历史。';
- const pick=useCallback(time=>{setAxisLock(null);setBand(null);setSelected(time);setManualStart(null);if(!memory)setExpanded(null);list.current?.scrollTo(0,0);},[memory]);
+ const pick=useCallback(time=>{setExtremes(null);setBand(null);setSelected(time);setManualStart(null);if(!memory)setExpanded(null);list.current?.scrollTo(0,0);},[memory]);
  function setWindow(a,b){
-  setBand(null);
+  setExtremes(null);setBand(null);
   if(a===b){let preceding=a-1;while(preceding>=0&&!selectable(preceding))preceding--;if(preceding>=0&&!points[b].gapBefore)a=preceding;else{let following=b+1;while(following<points.length&&!selectable(following))following++;if(following<points.length&&!points[following].gapBefore)b=following;}}
   if(a===b){pick(points[b].time);return;}
   if(!points[a]||!points[b]||a>b)return;setManualStart(points[a].time);setSelected(points[b].time);if(!memory)setExpanded(null);
  }
  function move(key,next){
+  if(lockedExtremes||loading)return;
   if(key==='band'){
    const first=firstSelectable;if(first<0||latest<=first)return;
    const target=shiftRange(next.start,next.end,next.delta,points[first].time,points[latest].time);
    setBand(target);setManualStart(target[0]);setSelected(target[1]);return;
   }
-  const eligible=nearestIndex(points,points[next]?.time,(_,i)=>selectable(i)&&(cpu||(key==='start'?i<end:i>start)));
-  if(eligible>=0){setBand(null);if(cpu)pick(points[eligible].time);else if(key==='start')setManualStart(points[eligible].time);else{setManualStart(prior.time);setSelected(points[eligible].time);}}
+  const eligible=nearestIndex(points,points[next]?.time,(_,i)=>selectable(i)&&(key==='start'?i<end:i>start));
+  if(eligible>=0){setBand(null);if(key==='start')setManualStart(points[eligible].time);else{setManualStart(prior.time);setSelected(points[eligible].time);}}
  }
  const peak=useMemo(()=>points.reduce((best,p,i)=>finite(values[i])&&(best<0||values[i]>values[best])?i:best,-1),[points,values]);
- return <section className="ev-analysis ev-traffic ev-resource-analysis" data-resource-analysis={metric} style={{'--ev-series':color}} aria-busy={busy}>
+ return <section className="ev-analysis ev-traffic ev-resource-analysis" data-resource-analysis={metric} style={{'--ev-series':color}} aria-busy={loading} data-loading={loading}>
   <div className="ev-traffic-head"><h2>{tr(title)}</h2><div className="ev-analysis-controls">
    {tr(gpu&&cards.length>1&&<ThemedSelect aria-label={t("分析显卡")} menuMinWidth={138} compact value={cardId} onChange={e=>{setCard(e.target.value);pick(null)}}><option value="all">{t("全部 GPU")}</option>{tr(cards.map(([key,g])=><option key={key} value={key}>GPU {tr(g.Index)}</option>))}</ThemedSelect>)}
    {tr(net&&adapters.length>1&&<ThemedSelect aria-label={t("分析网卡")} compact value={adapterId} onChange={e=>{setAdapter(e.target.value);pick(null)}}><option value="all">{t("全部网卡")}</option>{tr(adapters.map(([key,name])=><option key={key} value={key}>{name}</option>))}</ThemedSelect>)}
    <ThemedSelect aria-label={t("趋势时段")} menuMinWidth={128} compact value={String(range)} onChange={e=>{setRange(Number(e.target.value));pick(null)}}>{tr(windows.map(([v,label])=><option key={v} value={v}>{tr(label)}</option>))}</ThemedSelect>
-   <Button tone="quiet" className="ev-action" disabled={busy} onClick={()=>refresh(n=>n+1)}>{t("刷新")}</Button>
+   {loading&&<span className="ev-query-pending" role="status">{t("正在读取监测记录…")}</span>}
+   <Button tone="quiet" className="ev-action" disabled={loading} onClick={()=>refresh(n=>n+1)}>{t("刷新")}</Button>
   </div></div>
   {tr(error&&<p className="ev-analysis-notice" role="status">{t("读取存档失败：")}{tr(error)}{tr(snapshot?'。保留上一次结果。':'')}</p>)}
-  {tr(busy&&!snapshot&&<p className="ev-analysis-notice" role="status">{t("正在读取监测记录…")}</p>)}
-  {tr(!snapshot?null:latest<0?<p className="ev-analysis-notice">{t("所选时段暂无")}{tr(gpu?'显存':net?'网络':'该资源的')}{t("历史读数。监测记录保存后可刷新查看。")}</p>:<>
-   <div className="ev-traffic-content">
+  {loading&&(!snapshot||latest<0)&&<div className="ev-traffic-content ev-analysis-placeholder" aria-label={t("正在读取监测记录…")}><section className="resource-chart ev-traffic-plot"><SectionTitle>{tr(trendTitle)}</SectionTitle><div className="ev-traffic-frame"/><div className="ev-traffic-foot"/></section><section className="ev-traffic-rank"><div className="ev-rank-head"><h3>{tr(rankTitle)}</h3></div><div className="ev-loading-rows" aria-hidden="true"><i/><i/><i/></div></section></div>}
+  {tr(!snapshot||loading&&latest<0?null:latest<0?<p className="ev-analysis-notice">{t("所选时段暂无")}{tr(gpu?'显存':net?'网络':'该资源的')}{t("历史读数。监测记录保存后可刷新查看。")}</p>:<>
+   <div className="ev-traffic-content" inert={loading?'':undefined}>
     <section className="resource-chart ev-traffic-plot" aria-label={tr(trendTitle)}>
-     <SectionTitle meta={gpu?(cardId==='all'?t("全部 GPU"):cards.find(([key])=>key===cardId)?.[1]?.Name):null} action={!cpu?<div className="ev-range-actions">{manualStart!=null&&<AxisLock locked={!!lockedDomain} onClick={()=>setAxisLock(lockedDomain?null:{key:axisKey,domain:valueExtent(series,start,end)})}/>}<ThemedSelect aria-label={t("对比时长")} compact menuMinWidth={154} value={manualStart==null?String(duration):'custom'} onChange={e=>{setDuration(Number(e.target.value));setAxisLock(null);setBand(null);setManualStart(null)}}>{tr(manualStart!=null&&<option value="custom" disabled>{t("自定义区间")}</option>)}{tr([2,5,15].map(v=><option value={v} key={v}>{t("对比前 ")}{tr(v)}{t(" 分钟")}</option>))}</ThemedSelect></div>:null}>{tr(trendTitle)}</SectionTitle>
-     <Trend series={series} points={points} selected={end} onSelect={i=>{const j=nearestIndex(points,points[i]?.time,(_,k)=>selectable(k));if(j>=0)pick(points[j].time)}} unit={unit} maxValue={max} valueDomain={lockedDomain} from={snapshot.from} to={snapshot.to} markers={markers} onMove={move}/>
+     <SectionTitle meta={gpu?(cardId==='all'?t("全部 GPU"):cards.find(([key])=>key===cardId)?.[1]?.Name):null} action={<div className="ev-range-actions">{manualStart!=null&&<AxisLock mode="time" locked={!!lockedExtremes} disabled={!lockedExtremes&&!intervalExtrema} onClick={toggleExtremes}/>}<ThemedSelect aria-label={t("对比时长")} compact menuMinWidth={154} value={manualStart==null?String(duration):'custom'} onChange={e=>{setDuration(Number(e.target.value));setExtremes(null);setBand(null);setManualStart(null)}}>{tr(manualStart!=null&&<option value="custom" disabled>{t("自定义区间")}</option>)}{tr([2,5,15].map(v=><option value={v} key={v}>{t("对比前 ")}{tr(v)}{t(" 分钟")}</option>))}</ThemedSelect></div>}>{tr(trendTitle)}</SectionTitle>
+     <Trend series={series} points={points} selected={end} onSelect={i=>{const j=nearestIndex(points,points[i]?.time,(_,k)=>selectable(k));if(j>=0)pick(points[j].time)}} unit={unit} maxValue={max} transitionKey={displayedKey} from={snapshot.from} to={snapshot.to} markers={markers} onMove={move}/>
      <div className="ev-traffic-foot"><span>{tr(peak>=0?`${net?'下载峰值':'峰值'} ${clock(points[peak].time,false)} · ${net?formatTraffic(values[peak]*rateScale.divisor,true):format(values[peak])}`:'该时段无峰值记录')}</span><Button className="ev-action" tone="quiet" disabled={peak<0||end===peak} onClick={()=>pick(points[peak].time)}>{t("定位峰值")}</Button></div>
     </section>
     <section className="ev-traffic-rank" aria-label={tr(rankTitle)}>
@@ -162,7 +176,7 @@ export const ResourceAnalysis=memo(function ResourceAnalysis({metric,deviceId}){
      {(cpu||net||memory&&rows.length>0&&(processPrior!==prior||processPoint!==point))&&<div className="ev-traffic-foot ev-traffic-rank-foot"><span>{cpu?(cpuPoint&&cpuPoint!==point?t('已选 {0} · 进程采样 {1}',[clock(point.time),clock(cpuPoint.time)]):t('以整机 CPU 为基准；仅列出已采样进程。')):net?t(comparison.complete?'按网卡累计计数差计算。':'区间含缺样或计数重置，仅统计有记录部分。'):t('进程采样：{0}–{1}',[clock(processPrior.time),clock(processPoint.time)])}</span></div>}
     </section>
    </div>
-   {tr(cpu?<CoreHistory points={points} from={snapshot.from} to={snapshot.to} selectedTime={point?.time} onPick={pick} thinned={snapshot.thinned}/>:gpu?<GpuHeadroom points={points} values={gpuData} from={snapshot.from} to={snapshot.to} prior={prior} point={point} onRange={setWindow}/>:memory?<MemoryHistory points={points} from={snapshot.from} to={snapshot.to} prior={processPrior} point={processPoint} process={process}/>:<NetworkQuality points={points} from={snapshot.from} to={snapshot.to} adapter={adapterId} prior={prior} point={point} onRange={setWindow}/>)}
+   {tr(<div inert={loading?'':undefined}>{cpu?<CoreHistory points={points} from={snapshot.from} to={snapshot.to} selectedTime={point?.time} onPick={pick} thinned={snapshot.thinned}/>:gpu?<GpuHeadroom points={points} values={gpuData} from={snapshot.from} to={snapshot.to} prior={prior} point={point} onRange={setWindow}/>:memory?<MemoryHistory points={points} from={snapshot.from} to={snapshot.to} prior={processPrior} point={processPoint} process={process}/>:<NetworkQuality points={points} from={snapshot.from} to={snapshot.to} adapter={adapterId} prior={prior} point={point} onRange={setWindow}/>}</div>)}
   </>)}
  </section>;
 });

@@ -7,3 +7,5 @@ AsterHub keeps its own React/CSS implementation in desktop/web/src/foundation/To
 CPU analysis measures chart geometry before rendering; static analysis is memoized across live captures. Core history uses bounded visible rows above 32 cores, cached locale formatters and keyboard scrolling. This avoids rendering thousands of offscreen cells.
 
 Regression covers sparse CPU samples, memory endpoint gaps, recorded remote GPU path provenance, tab keyboard/pill alignment, chart first-frame geometry and a 256-core replay. Custom-range axis bounds are copied when locked, isolated by metric/device/range and released on unlock.
+
+资源工具切换栏按 2026-11-12 修订4：38px 总高、30px 选项、14/20 常规文字；暗轨道与亮选中块，选中背景滑动，文字不位移。

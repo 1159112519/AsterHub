@@ -1629,5 +1629,7 @@
   "扫描记录已更新，请重新选择": "Scan records have changed. Select a record again.",
   "暂无可用磁盘": "No drives available",
   "资源管理器仅支持本机文件": "File Explorer is available for local files only",
-  "此项目已不存在，请重新扫描": "This item no longer exists. Scan again."
+  "此项目已不存在，请重新扫描": "This item no longer exists. Scan again.",
+  "恢复原自定义区间": "Restore custom interval",
+  "将时间选择线锁定到区间最高点和最低点": "Pin the time markers to the interval maximum and minimum"
 }
