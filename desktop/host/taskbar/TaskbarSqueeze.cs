@@ -29,13 +29,13 @@ internal sealed class TaskbarSqueezeLayout {
   }
  }
  float Width(int count,float gap){return Start+Edge+prefix[count]+Math.Max(0,count-1)*gap;}
- internal TaskbarSqueezeFrame Frame(float room,bool reduced){
+ internal TaskbarSqueezeFrame Frame(float room,bool reduced,bool recovering=false){
   int count=Columns;float gap=0,fade=0;
   while(count>0){
-   float minimum=Width(count,MinGap);
-   if(room>=minimum){gap=count<2?0:Math.Min(MaxGap,MinGap+(room-minimum)/(count-1));break;}
-   if(!reduced&&room>minimum-FadeSpan){gap=count<2?0:MinGap;fade=Smooth((minimum-room)/FadeSpan);break;}
-   if(!reduced&&count>2&&room>Width(count-1,MaxGap)){
+   float minimum=Width(count,recovering?MaxGap:MinGap);
+   if(room>=minimum){gap=count<2?0:recovering?MaxGap:Math.Min(MaxGap,MinGap+(room-minimum)/(count-1));break;}
+   if(!reduced&&room>minimum-FadeSpan){gap=count<2?0:recovering?MaxGap:MinGap;fade=Smooth((minimum-room)/FadeSpan);break;}
+   if(!recovering&&!reduced&&count>2&&room>Width(count-1,MaxGap)){
     float end=minimum-FadeSpan,next=Width(count-1,MaxGap);
     gap=MinGap+(MaxGap-MinGap)*Smooth((end-room)/Math.Max(1,end-next));count--;break;
    }
@@ -101,19 +101,24 @@ internal sealed class TaskbarSqueezeFrame {
 // Sensor distance is not animation time. Keep every column's visual state when Explorer
 // jumps across several layout thresholds, and retarget from the currently displayed frame.
 internal sealed class TaskbarSqueezeMotion {
- float from,to;long start;int duration;bool ready;
+ float from,to;long start;int duration;bool ready,recovering;
  TaskbarSqueezeFrame origin,last;
- internal void ResetVisual(){origin=last=null;}
+ internal void ResetVisual(){origin=last=null;recovering=false;}
  internal bool Active(long now){return duration>0&&now-start<duration;}
  internal float Value(long now){return Active(now)?from+(to-from)*(float)TaskbarPainter.Ease(Math.Max(0,now-start)/(double)duration):to;}
  internal void Set(float room,long now,bool reduced){
-  if(!ready||reduced){ready=true;from=to=room;duration=0;origin=last=null;return;}
+  if(!ready||reduced){ready=true;from=to=room;duration=0;origin=last=null;recovering=false;return;}
   if(Math.Abs(to-room)<.25f)return;
-  from=Value(now);origin=last;to=room;start=now;
+  recovering=room>to;from=Value(now);origin=last;to=room;start=now;
   duration=from==to?0:420;
  }
  internal TaskbarSqueezeFrame Frame(TaskbarSqueezeLayout layout,float room,long now,bool reduced){
-  var target=layout.Frame(room,reduced);
+  // Retain survivor spacing while restoring columns; reversing the compression curve
+  // would tighten it again before each new column and visibly bounce.
+  var target=layout.Frame(room,reduced,recovering);
+  // A release can interrupt a retirement before the next full column fits. Preserve
+  // its current visibility instead of first fading it out and bringing it back.
+  if(recovering&&last!=null&&last.Layout.Columns==layout.Columns)for(int i=0;i<layout.Columns;i++)if(target.Alpha[i]<last.Alpha[i]){target.Alpha[i]=last.Alpha[i];target.X[i]=last.X[i];target.Blur[i]=last.Blur[i];target.Departing[i]=last.Departing[i];}
   if(reduced||!Active(now)||origin==null||origin.Layout.Columns!=layout.Columns)return last=target;
   float time=TaskbarSqueezeLayout.Clamp((now-start)/(float)duration);
   bool exiting=false,entering=false;
@@ -124,7 +129,7 @@ internal sealed class TaskbarSqueezeMotion {
    float sourceX=a>0?origin.X[i]:target.X[i]-7;
    float targetX=b>0?target.X[i]:Math.Min(sourceX,compact.X[i])-3;
    float movement=(float)TaskbarPainter.Ease(time);
-   if(exiting&&!entering){
+   if(!recovering&&exiting&&!entering){
     // First tighten the gaps, then retire entire columns, then settle the survivors.
     float tighten=(float)TaskbarPainter.Ease(Math.Min(1,time/.24f));
     float settle=(float)TaskbarPainter.Ease(Math.Max(0,(time-.78f)/.22f));
@@ -141,5 +146,21 @@ internal sealed class TaskbarSqueezeMotion {
    if(!result.Departing[i])result.X[i]=Math.Min(result.X[i],room-layout.Right[i]-TaskbarSqueezeLayout.InkPadding);
   }
   return last=result;
+ }
+}
+
+// Explorer can briefly move its first button backwards while a group closes.
+// Reclaim confirmed free pixels after a short stable window; pressure is immediate.
+internal sealed class TaskbarRoomStability {
+ float accepted,candidate;long since;bool ready,pending;
+ internal void Reset(){ready=pending=false;}
+ internal float Accept(float room,long now){
+  if(!ready){ready=true;accepted=room;return room;}
+  if(room<accepted){accepted=room;pending=false;return room;}
+  if(room<=accepted+.25f){pending=false;return accepted;}
+  if(!pending){pending=true;candidate=room;since=now;}
+  else if(room<candidate-.25f){candidate=room;since=now;}
+  if(now-since>=160){accepted=Math.Min(room,candidate);pending=false;}
+  return accepted;
  }
 }

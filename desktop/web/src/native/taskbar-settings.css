@@ -241,11 +241,11 @@
 
 /* Empty targets and populated readouts share the visible content's hit geometry. */
 .tb42-slot[data-empty=true] .tb42-cell::before{left:calc(50% - 12px);width:24px}
-.tb43-monitor-options .tb43-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;align-items:center;padding-block:3px 1px}
-.tb43-monitor-options .tb43-checks .native-setting-check{white-space:normal;min-width:0}
-.tb43-checks .taskbar-auto-row{grid-column:1/-1;min-height:30px;gap:14px}
-.tb43-checks .taskbar-auto-row>.themed-select{width:108px;flex:0 0 108px;min-height:30px}
-@container(max-width:330px){.tb43-monitor-options .tb43-checks{grid-template-columns:minmax(0,1fr)}}
+.tb43-monitor-options .tb43-checks{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;justify-content:flex-start;padding-block:3px 1px}
+.tb43-monitor-options .tb43-checks .native-setting-check{white-space:nowrap;min-width:0}
+.tb43-checks .taskbar-auto-row{min-height:30px;gap:10px}
+.tb43-checks .taskbar-auto-row>.themed-select{width:90px;flex:0 0 90px;min-height:30px}
+@container(max-width:480px){.tb43-monitor-options .tb43-checks{column-gap:16px}}
 
 /* Pagination and the visible readouts share the same horizontal center. */
 .tb42-grid{translate:var(--tb-content-offset,0px) 0}
