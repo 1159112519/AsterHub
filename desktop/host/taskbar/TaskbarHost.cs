@@ -20,14 +20,16 @@ internal sealed class TaskbarController:IDisposable {
  void Run(){var context=TaskbarLocator.SetThreadDpiAwarenessContext((IntPtr)(-4));try{using(var host=new TaskbarLoop(this))Application.Run(host);}catch(Exception ex){DiagnosticsLog.Write("taskbar-loop",ex);state="unavailable";reason=ex.Message;}finally{if(context!=IntPtr.Zero)TaskbarLocator.SetThreadDpiAwarenessContext(context);}}
  public void Dispose(){stop=true;if(Thread.CurrentThread!=thread)thread.Join(1500);}
  sealed class TaskbarLoop:ApplicationContext {
-  readonly TaskbarController owner;readonly Timer watch=new Timer{Interval=160};readonly Stopwatch clock=Stopwatch.StartNew();readonly object probeGate=new object();TaskbarLocator.Layout pending,last;TaskbarSurface surface;volatile bool probing,disposed;long nextProbe,nextRead,nextDisplay,nextFlip;TaskbarSettings applied;int page=-1,probeGeneration,pendingGeneration;
-  internal TaskbarLoop(TaskbarController owner){this.owner=owner;watch.Tick+=(s,e)=>Tick();watch.Start();}
+  readonly TaskbarController owner;readonly Timer watch=new Timer{Interval=160};readonly Stopwatch clock=Stopwatch.StartNew();readonly object probeGate=new object();TaskbarLocator.Layout pending,last;TaskbarSurface surface;volatile bool probing,disposed;long nextProbe,nextRead,nextDisplay,nextFlip;TaskbarSettings applied;int page=-1,probeGeneration,pendingGeneration;TaskbarLayoutEvents layoutEvents;long layoutBurstUntil;
+  internal TaskbarLoop(TaskbarController owner){this.owner=owner;layoutEvents=new TaskbarLayoutEvents();watch.Tick+=(s,e)=>Tick();watch.Start();}
   void Flip(int delta,TaskbarSettings options){int count=options.PageCount;if(count<2)return;page=(page+delta%count+count)%count;string active=options.PageId(page);owner.visiblePage=page;if(surface!=null)surface.SetPage(page);if(owner.pageChanged!=null)owner.pageChanged(active,options.Revision);nextFlip=clock.ElapsedMilliseconds+options.intervalSeconds*1000L;}
   void Drop(){if(surface!=null){surface.Dispose();surface=null;}last=null;}
   void Tick(){
    if(owner.stop){watch.Stop();Drop();ExitThread();return;}
    TaskbarSettings options;lock(owner.gate)options=owner.options;
-   if(!options.enabled){watch.Interval=750;Drop();owner.state="disabled";owner.reason="";return;}watch.Interval=160;
+   if(!options.enabled){watch.Interval=750;Drop();owner.state="disabled";owner.reason="";return;}
+   long tickNow=clock.ElapsedMilliseconds;if(layoutEvents.Consume()){layoutBurstUntil=tickNow+900;nextProbe=Math.Min(nextProbe,tickNow);}
+   watch.Interval=tickNow<layoutBurstUntil?32:160;
    if(!ReferenceEquals(options,applied)){applied=options;nextRead=nextDisplay=0;page=options.page;probeGeneration++;lock(probeGate)pending=null;if(surface!=null)surface.Configure(options,page);nextProbe=0;nextFlip=clock.ElapsedMilliseconds+options.intervalSeconds*1000L;}
    if(surface!=null&&(!TaskbarSurface.IsWindow(surface.Handle)||TaskbarLocator.FindWindow("Shell_TrayWnd",null)!=last.Parent||!TaskbarLocator.IsWindowVisible(last.Parent)||!surface.IsAttachedTo(last.Parent)))Drop();
    TaskbarLocator.Layout proof;lock(probeGate){proof=pendingGeneration==probeGeneration?pending:null;pending=null;}
@@ -39,13 +41,13 @@ internal sealed class TaskbarController:IDisposable {
      catch(Exception ex){Drop();owner.state="waiting";owner.reason="任务栏暂不可用："+ex.Message;}
     }
    }
-   if(!probing&&clock.ElapsedMilliseconds>=nextProbe){probing=true;nextProbe=clock.ElapsedMilliseconds+250;int generation=probeGeneration;ThreadPool.QueueUserWorkItem(_=>{try{var result=TaskbarLocator.Read(options);lock(probeGate)if(!disposed){pending=result;pendingGeneration=generation;}}catch(Exception ex){lock(probeGate)if(!disposed){pending=new TaskbarLocator.Layout{Reason="discovery: "+ex.GetType().Name};pendingGeneration=generation;}}finally{probing=false;}});}
+   if(!probing&&clock.ElapsedMilliseconds>=nextProbe){probing=true;nextProbe=clock.ElapsedMilliseconds+(clock.ElapsedMilliseconds<layoutBurstUntil?64:250);int generation=probeGeneration;ThreadPool.QueueUserWorkItem(_=>{try{var result=TaskbarLocator.Read(options);lock(probeGate)if(!disposed){pending=result;pendingGeneration=generation;}}catch(Exception ex){lock(probeGate)if(!disposed){pending=new TaskbarLocator.Layout{Reason="discovery: "+ex.GetType().Name};pendingGeneration=generation;}}finally{probing=false;}});}
    int manual=Interlocked.Exchange(ref owner.pendingFlip,0);if(surface!=null&&manual!=0)Flip(manual,options);
    if(surface!=null&&options.autoPage&&clock.ElapsedMilliseconds>=nextFlip)Flip(1,options);
    if(surface!=null)surface.AdvanceIdle();
    if(surface!=null&&clock.ElapsedMilliseconds>=nextRead){long now=clock.ElapsedMilliseconds;nextRead=now+TaskbarSettings.DefaultRefreshMs;try{var snapshot=owner.read();surface.Observe(snapshot);if(now>=nextDisplay){nextDisplay=now+Math.Max(TaskbarSettings.DefaultRefreshMs,options.refreshMs);surface.Sample(snapshot,false);}}catch(Exception ex){owner.reason="监测数据尚未就绪："+ex.Message;}}
   }
-  protected override void Dispose(bool disposing){disposed=true;watch.Stop();watch.Dispose();Drop();base.Dispose(disposing);}
+  protected override void Dispose(bool disposing){disposed=true;watch.Stop();watch.Dispose();if(layoutEvents!=null)layoutEvents.Dispose();Drop();base.Dispose(disposing);}
  }
 }
 internal sealed class TaskbarSurface:NativeWindow,IDisposable {
@@ -64,14 +66,10 @@ internal sealed class TaskbarSurface:NativeWindow,IDisposable {
  TaskbarHoverWheel hoverWheel;readonly Action<int> flip;readonly Action settings;readonly Action<string,string> detail;readonly TaskbarFrameClock frames;readonly Stopwatch motion=new Stopwatch();TaskbarSettings options;int page,w,h,x=-1,y=-1,wheel,hover=-1;bool dark,disposed,pageMotion;Bitmap oldPage,newPage,oldBlur,newBlur,pageBase;int direction=1;TaskbarSnapshot current,previous,queued;string fingerprint="";TaskbarPainter painter;TaskbarLocator.Layout display;readonly TaskbarHistory history=new TaskbarHistory();readonly bool interactiveDetails,reuseDetails;
  readonly Stopwatch uiClock=Stopwatch.StartNew();readonly TaskbarRailMotion rail=new TaskbarRailMotion();TaskbarMetricPopup popup,detailRenderer;
  readonly TaskbarSqueezeMotion squeeze=new TaskbarSqueezeMotion();TaskbarSqueezeLayout squeezeLayout;TaskbarSqueezeFrame paintedLayout;float dpiScale=1,paintedShift;bool shown;
- internal bool HasRoom{get{return display!=null&&Room>TaskbarSqueezeLayout.Start&&squeezeLayout!=null&&(options.reduced?Room>=squeezeLayout.MinimumRoom(true):Math.Max(Room,squeeze.Value(uiClock.ElapsedMilliseconds))>squeezeLayout.MinimumRoom(false));}}
+ internal bool HasRoom{get{return display!=null&&Room>TaskbarSqueezeLayout.Start&&squeezeLayout!=null&&(options.reduced?Room>=squeezeLayout.MinimumRoom(true):(squeeze.Active(uiClock.ElapsedMilliseconds)||Room>squeezeLayout.MinimumRoom(false)));}}
  float Room{get{return display==null?0:display.W/dpiScale;}}
  float PresentationRoom(long now){return Math.Min(squeezeLayout.FullWidth,squeeze.Value(now));}
- TaskbarSqueezeFrame Geometry(float room){
-  var frame=squeezeLayout.Frame(room,options.reduced);
-  for(int col=0;col<squeezeLayout.Columns;col++)if(frame.Alpha[col]>0&&!squeezeLayout.Fits(frame,col,0,Room))return squeezeLayout.Frame(Room,options.reduced);
-  return frame;
- }
+ TaskbarSqueezeFrame Geometry(float room){return squeeze.Frame(squeezeLayout,Room,uiClock.ElapsedMilliseconds,options.reduced);}
  void ResetPageGeometry(){squeezeLayout=painter==null||current==null?options.SqueezePage(page):painter.MeasurePage(current,options,page);paintedLayout=null;}
 
  internal TaskbarSurface(TaskbarLocator.Layout layout,TaskbarSettings options,int page,Action<int> flip,Action settings,Action restore,Action<string,string> detail=null,bool interactiveDetails=true,bool? reuseDetails=null){this.interactiveDetails=interactiveDetails;this.reuseDetails=reuseDetails??interactiveDetails;this.flip=flip;this.detail=detail;this.settings=settings;this.options=options;this.page=page;
@@ -81,7 +79,7 @@ internal sealed class TaskbarSurface:NativeWindow,IDisposable {
  }
  internal bool IsAttachedTo(IntPtr parent){return !disposed&&IsWindow(Handle)&&GetParent(Handle)==parent;}
  static bool Dark(){return !TaskbarSettings.SystemLight();}
- internal void Configure(TaskbarSettings value,int selected){CloseDetail();if(value.PageCount<2)rail.Reset();if(options.deviceId!=value.deviceId){history.Clear();latestDetail=null;}options=value;QueueDetailWarmup();page=selected;hover=-1;fingerprint="";previous=null;current=null;queued=null;ResetPageGeometry();pageMotion=false;waitingPage=-1;ClearPages();frames.Stop();motion.Reset();}
+ internal void Configure(TaskbarSettings value,int selected){CloseDetail();if(value.PageCount<2)rail.Reset();if(options.deviceId!=value.deviceId){history.Clear();latestDetail=null;}options=value;squeeze.ResetVisual();QueueDetailWarmup();page=selected;hover=-1;fingerprint="";previous=null;current=null;queued=null;ResetPageGeometry();pageMotion=false;waitingPage=-1;ClearPages();frames.Stop();motion.Reset();}
  internal void Place(TaskbarLocator.Layout layout){
   bool theme=Dark();float scale=layout.Scale>0?layout.Scale:layout.H/38f;long now=uiClock.ElapsedMilliseconds;
   bool first=display==null,resize=first||w!=Math.Max(1,layout.W)||h!=layout.H||dpiScale!=scale;
@@ -120,7 +118,7 @@ internal sealed class TaskbarSurface:NativeWindow,IDisposable {
  int waitingPage=-1;
  internal void SetPage(int value){if(value==page)return;CloseDetail();ShowRail();Bitmap outgoing=null;if(pageMotion&&motion.IsRunning&&painter!=null&&current!=null){double progress=TaskbarPainter.Ease(Math.Min(1,motion.Elapsed.TotalMilliseconds/420));outgoing=RenderFrame(progress);}
   waitingPage=-1;ClearPages();direction=(value-page+options.PageCount)%options.PageCount==1?1:-1;
-  oldPage=outgoing??(painter==null||current==null||!HasRoom||squeeze.Active(uiClock.ElapsedMilliseconds)?null:NeutralPage());page=value;ResetPageGeometry();hover=-1;fingerprint=current==null?"":Key(current);previous=null;queued=null;
+  squeeze.ResetVisual();oldPage=outgoing??(painter==null||current==null||!HasRoom||squeeze.Active(uiClock.ElapsedMilliseconds)?null:NeutralPage());page=value;ResetPageGeometry();hover=-1;fingerprint=current==null?"":Key(current);previous=null;queued=null;
   if(!options.reduced&&oldPage!=null){newPage=NeutralPage();oldBlur=TaskbarPainter.BlurPage(oldPage);newBlur=TaskbarPainter.BlurPage(newPage);pageBase=PaintLive(1,Geometry(PresentationRoom(uiClock.ElapsedMilliseconds)),0,true,false);pageMotion=true;motion.Restart();frames.Start();Present(0);}else {pageMotion=false;motion.Stop();if(!OtherMoving())frames.Stop();Present(1);ClearPages();}
  }
  bool ChartsMoving(){if(!HasRoom||squeezeLayout==null||options.reduced)return false;var frame=Geometry(PresentationRoom(uiClock.ElapsedMilliseconds));for(int i=0;i<squeezeLayout.Modules.Length;i++){var m=squeezeLayout.Modules[i];if(frame.Alpha[i%squeezeLayout.Columns]>0&&m!=null&&m.Parts.Any(p=>p!="number")&&history.Moving(m.Metric))return true;}return false;}

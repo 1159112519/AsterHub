@@ -49,3 +49,15 @@ test('clear finished preserves live resumable update downloads and only archives
  assert.deepEqual(taskInboxGroups(groups,cleared).flatMap(group=>group.jobs.map(job=>job.latest)),['0.4.3.4']);
  assert.equal(cleared['update:0.4.3.3'].dismissed,true);
 });
+
+import {filterTaskGroups} from './task-center-model.js';
+test('category changes retain real task identity, action payloads and pending-update semantics',()=>{
+ const active={id:'a',status:'running',deviceId:'remote'},finished={id:'b',status:'completed',bytes:42},ready={id:'update',status:'ready',latest:{version:'0.4.3.8'}};
+ const groups=[{kind:'transfer',jobs:[active,finished]},{kind:'update',jobs:[ready]}];
+ assert.equal(filterTaskGroups(groups),groups);
+ assert.deepEqual(filterTaskGroups(groups,'running'),[{kind:'transfer',jobs:[active]}]);
+ assert.deepEqual(filterTaskGroups(groups,'done'),[{kind:'transfer',jobs:[finished]},{kind:'update',jobs:[ready]}]);
+ assert.equal(filterTaskGroups(groups,'done')[0].jobs[0],finished);
+ assert.deepEqual(groups[0].jobs,[active,finished]);
+ assert.deepEqual(filterTaskGroups([{kind:'scan',jobs:[{status:'running'}]}],'done'),[]);
+});

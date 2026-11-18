@@ -1,4 +1,4 @@
-import {isCleanupActive} from './task-inbox.js';
+import {isCleanupActive,isTaskRunning} from './task-inbox.js';
 const updateStates=new Set(['downloading','cancelling','ready','installing','cancelled','error']);
 const pendingUpdate=new Set(['downloading','cancelling','ready','installing']);
 const pendingScan=new Set(['queued','running','enumerating','aggregating','paused']);
@@ -18,3 +18,9 @@ export function buildTaskGroups(update={},transfers=[],scans=[],cleanup=[]){
  ].filter(group=>group.jobs.length);
 }
 export function countPendingTasks(groups){return groups.reduce((total,{kind,jobs})=>total+jobs.filter(job=>kind==='cleanup'?isCleanupActive(job.status):(kind==='update'?pendingUpdate:kind==='transfer'?pendingTransfer:pendingScan).has(job.status)).length,0);}
+
+// Preserve task identities, group order and all action fields when filtering the inbox.
+export function filterTaskGroups(groups,filter='all'){
+ if(filter==='all')return groups;
+ return groups.map(group=>({...group,jobs:group.jobs.filter(job=>filter==='running'?isTaskRunning(group.kind,job):!isTaskRunning(group.kind,job))})).filter(group=>group.jobs.length);
+}

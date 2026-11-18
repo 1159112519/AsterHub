@@ -204,3 +204,8 @@
 :is(.native-workbench,.modal) .themed-select:not(.themed-select--compact)>span{line-height:20px}
 :is(.native-workbench,.modal) .button,.native-preferences .dialog-actions>.button{height:32px;min-height:32px;padding-block:4px;line-height:20px;box-sizing:border-box}
 :is(.native-workbench,.modal) .button-content{min-height:20px;line-height:20px}
+
+.themed-select-menu{animation:select-surface-in .18s var(--ease,cubic-bezier(.22,1,.36,1)) both;transform-origin:top center}
+@keyframes select-surface-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.themed-select-menu{animation:none}}
+[data-motion=reduced] .themed-select-menu{animation:none}

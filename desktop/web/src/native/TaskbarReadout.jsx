@@ -112,6 +112,7 @@ export function Readout({id,module,peer,snapshot,numberMotion='direct',chartMoti
   slot.style.setProperty('--tb-ink-width',`${right-left+6}px`);
   for(let i=0;i<2;i++){const previous=ranges[i-1],next=ranges[i];const from=next?Math.max(0,next[0]-2):previous?previous[0]+previous[1]+4:0;
    slot.style.setProperty(`--tb-track${i}-x`,`${Math.min(width-14,from+2)}px`);slot.style.setProperty(`--tb-track${i}-w`,`${Math.min(Math.max(14,width-from-3),next?Math.max(14,next[1]+4):14)}px`);}
+  return()=>{for(const name of ['--tb-ink-left','--tb-ink-width','--tb-track0-x','--tb-track0-w','--tb-track1-x','--tb-track1-w'])slot.style.removeProperty(name);};
  },[hitTracks,width,mode,left,right]);
  const visibleWidth=nameOnly?Math.ceil(Math.max(14,labelWidth+4)):partOnly?Math.ceil((numeric?readWidth:graphWidth)+2):width;
  const namePosition=nameOnly&&!Icon?centerTaskbarInk(label,labelFont,visibleWidth/2,8.5):null;

@@ -3,21 +3,21 @@
 .native-workbench .sidebar .task-center-trigger:focus-visible{outline-offset:-2px}
 .sidebar-collapsed .task-center-trigger.has-tasks{position:relative}
 .sidebar-collapsed .task-center-trigger.has-tasks::after{content:"";position:absolute;top:9px;right:9px;width:5px;height:5px;border-radius:50%;background:var(--blue)}
-.task-center-panel{position:fixed;z-index:66;display:flex;flex-direction:column;width:min(390px,calc(100vw - 24px));max-height:min(510px,calc(100dvh - 112px));border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);font:400 14px/20px var(--font-interface);box-shadow:0 14px 38px #0004;overflow:hidden;animation:task-center-in 140ms ease-out both}
-.task-center-panel>header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 11px 16px;border-bottom:1px solid var(--line-soft);flex:none}
+.task-center-panel{position:fixed;z-index:66;display:flex;flex-direction:column;width:min(372px,calc(100vw - 24px));height:min(472px,calc(100dvh - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);font:400 14px/20px var(--font-interface);box-shadow:0 14px 38px #0004;overflow:hidden;animation:task-center-in 140ms ease-out both}
+.task-center-panel>header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--line-soft);flex:none}
 .task-center-header-actions{display:flex;align-items:center;gap:8px}
 .task-center-panel h2{margin:0;font:650 18px/24px var(--font-interface)}
 .task-center-panel .icon-button{width:28px;height:28px;min-width:28px;padding:0;display:grid;place-items:center;border-radius:8px}
 .task-center-panel .icon-button svg{width:16px;height:16px}
 .task-center-panel :is(button,.button):focus-visible{outline-offset:-1px}
-.task-center-content{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding:4px 16px 12px}
+.task-center-content{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding:0 10px 14px;flex:1}
 .task-center-group{padding:13px 0 0}
 .task-center-group+.task-center-group{margin-top:7px;border-top:1px solid var(--line-soft)}
 .task-center-group h3{display:flex;align-items:center;gap:8px;margin:0 0 3px;font:600 14px/20px var(--font-interface);color:var(--text)}
 .task-center-group[data-kind=update] h3 svg{color:var(--icon-blue)}
 .task-center-group[data-kind=transfer] h3 svg{color:var(--icon-purple)}
 .task-center-group[data-kind=scan] h3 svg{color:var(--icon-amber)}
-.task-center-row{min-width:0;padding:8px 0 7px 24px}
+.task-center-row{min-width:0;padding:10px 0}
 .task-center-row+.task-center-row{border-top:1px solid var(--line-soft)}
 .task-center-task-title,.task-center-task-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0}
 .task-center-task-title strong,.task-center-task-foot>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -43,7 +43,7 @@
 :root[data-motion=reduced] .task-center-panel,:root[data-motion=reduced] .task-center-progress[data-indeterminate=true] i{animation:none}
 :root[data-motion=reduced] .task-center-progress i{transition:none}
 .task-center-group[data-kind=cleanup] h3 svg{color:var(--icon-amber,var(--muted))}
-.task-center-content{scrollbar-gutter:stable}
+.task-center-content{scrollbar-gutter:stable both-edges}
 .task-center-status-actions{display:flex;align-items:center;gap:6px;flex:none}
 .task-center-status-actions .icon-button{width:24px;min-width:24px;height:24px;color:var(--muted)}
 .task-center-status-actions .icon-button svg{width:14px;height:14px}
@@ -51,3 +51,34 @@
 .task-center-failures{font-size:13px;color:var(--muted);margin:5px 0 0}
 .task-center-failures summary{cursor:pointer}
 .task-center-failures ul{margin:4px 0;padding-left:18px;max-height:180px;overflow:auto;overflow-wrap:anywhere}
+
+/* The shell never resizes when a category, empty state or task details changes. */
+.task-center-panel>.foundation-tool-row{flex:none;margin:0;padding:0 16px 12px}
+.task-center-panel .foundation-tool-tabs{min-width:0}
+.task-center-group h3{font-size:12px;line-height:20px;color:var(--muted);font-weight:500;margin-bottom:2px}
+.task-center-group{padding-top:12px}.task-center-group+.task-center-group{margin-top:2px}
+.task-center-empty{display:grid;place-items:center;min-height:100%;padding:24px 8px;box-sizing:border-box}
+.task-center-content{animation:task-center-filter-in 160ms var(--ease,cubic-bezier(.22,1,.36,1)) both}
+.task-center-task-title{gap:10px}.task-center-status-actions{gap:4px}
+.task-center-task-foot{gap:8px}.task-center-task-foot>span{flex:1}
+.task-center-panel .task-center-header-actions>.button{height:28px;min-height:28px;padding:0 8px;font-size:12px;white-space:nowrap}
+@keyframes task-center-filter-in{from{opacity:.35}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.task-center-content{animation:none}}
+:root[data-motion=reduced] .task-center-content{animation:none}
+
+.task-center-row{position:relative;padding:12px 0 12px 40px}
+.task-center-group h3{display:none}.task-center-group{padding-top:2px}
+.task-center-job-icon{position:absolute;left:0;top:14px;display:grid;place-items:center;width:28px;height:28px;border-radius:8px;color:var(--icon-blue);background:color-mix(in srgb,var(--icon-blue) 11%,transparent)}
+.task-center-row[data-kind=transfer] .task-center-job-icon{color:var(--icon-purple);background:color-mix(in srgb,var(--icon-purple) 11%,transparent)}
+.task-center-row:is([data-kind=scan],[data-kind=cleanup]) .task-center-job-icon{color:var(--icon-amber);background:color-mix(in srgb,var(--icon-amber) 11%,transparent)}
+.task-center-row[data-state=success] .task-center-job-icon{color:var(--success,var(--green));background:color-mix(in srgb,var(--success,var(--green)) 11%,transparent)}
+.task-center-row[data-state=error] .task-center-job-icon{color:var(--red);background:color-mix(in srgb,var(--red) 11%,transparent)}
+.task-center-task-title strong{font-size:14px;line-height:22px;font-weight:500}
+.task-center-state{font-size:12px}.task-center-task-foot{font-size:12px;line-height:20px}
+.task-center-task-foot .button{font-size:12px}.task-center-task-foot .button[aria-expanded=true] svg{rotate:180deg}.task-center-task-foot .button svg{transition:rotate .2s var(--ease)}
+.task-center-details{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .25s var(--ease),opacity .18s var(--ease)}
+.task-center-details[data-expanded=true]{grid-template-rows:1fr;opacity:1}
+.task-center-details>div{min-height:0;overflow:hidden}
+.task-center-details p{font-size:12px;line-height:20px;margin:6px 0;color:var(--muted);overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.task-center-details,.task-center-task-foot .button svg{transition:none}}
+[data-motion=reduced] :is(.task-center-details,.task-center-task-foot .button svg){transition:none}

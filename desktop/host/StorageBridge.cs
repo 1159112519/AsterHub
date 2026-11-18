@@ -65,7 +65,11 @@ public sealed partial class WorkbenchWindow {
    await storageQueries.WaitAsync(fileLifetime.Token);try{string selected=await Task.Run(()=>StorageScopes.Find(deviceId,StorageEndpoint(server),FileText(p,"id")));if(selected==null)throw new IOException("扫描记录已更新，请重新选择");StorageScopes.Activate(deviceId,selected);lock(storageGate){storageSnapshots.Remove(deviceId);storageSummaries.Remove(deviceId);}}finally{storageQueries.Release();}return await Task.Run(()=>StorageStatus(server,deviceId));
   }
   if(method=="storage.scan"){
-   string[] scanRoots=null;if(FileText(p,"all").Equals("true",StringComparison.OrdinalIgnoreCase)){
+   string[] scanRoots=null;object chosenRoots;if(p.TryGetValue("paths",out chosenRoots)){
+    var sequence=chosenRoots as IEnumerable;if(sequence==null||chosenRoots is string||chosenRoots is IDictionary)throw new IOException("请选择要扫描的磁盘");
+    var supplied=sequence.Cast<object>().Take(65).ToArray();if(supplied.Length==0||supplied.Length>64||supplied.Any(value=>!(value is string)||string.IsNullOrWhiteSpace((string)value)))throw new IOException("请选择要扫描的磁盘");
+    scanRoots=supplied.Cast<string>().Distinct(server.IsLocal?StringComparer.OrdinalIgnoreCase:StringComparer.Ordinal).ToArray();
+   }else if(FileText(p,"all").Equals("true",StringComparison.OrdinalIgnoreCase)){
     if(server.IsLocal)scanRoots=DriveInfo.GetDrives().Where(d=>d.DriveType!=DriveType.Network&&d.DriveType!=DriveType.NoRootDirectory&&d.IsReady).Select(d=>d.RootDirectory.FullName).ToArray();
     else{await fileReadSlots.WaitAsync(fileLifetime.Token);try{using(var c=new FileConnection(server)){await c.Connect(fileLifetime.Token).ConfigureAwait(false);scanRoots=StoragePaths.WindowsSftp(c.Home)?c.Enumerate("/",fileLifetime.Token).Where(x=>x.IsDirectory&&System.Text.RegularExpressions.Regex.IsMatch(x.FullPath,@"^/[A-Za-z]:/?$")).Select(x=>x.FullPath).ToArray():new[]{"/"};}}finally{fileReadSlots.Release();}}
     if(scanRoots.Length==0)throw new IOException("暂无可用磁盘");

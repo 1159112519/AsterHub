@@ -16,3 +16,13 @@
 .terminal-color-settings{display:grid;gap:14px;margin:18px 0 22px;padding:16px;border:1px solid var(--line);border-radius:14px}.terminal-color-settings>header{display:flex;align-items:center;justify-content:space-between;gap:12px}.preview5-preferences .terminal-color-settings h4{margin:0}.terminal-color-settings .button{min-height:32px;padding:3px 12px}.terminal-base-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.terminal-color-field{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.terminal-color-settings input[type=color]{width:32px;height:28px;min-width:0;min-height:0;padding:0;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:transparent;cursor:pointer;flex:none}.terminal-color-settings input[type=color]::-webkit-color-swatch-wrapper{padding:2px}.terminal-color-settings input[type=color]::-webkit-color-swatch{border:0;border-radius:4px}.terminal-palette-colors{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px 8px}.terminal-palette-colors>label{display:grid;justify-items:center;gap:4px;color:var(--muted);font-size:13px}.terminal-palette-colors>label:nth-child(n+9)>span{display:none}
 
 .appearance-effect-toggles{display:flex;align-items:center;flex-wrap:wrap;gap:12px 32px;margin-block:22px}.appearance-effect-toggles>.native-setting-check{margin:0;display:inline-flex;align-items:center}
+
+/* Only the selected plate travels; text is laid out at its final coordinates. */
+.settings-navigation{position:relative;isolation:isolate}
+.settings-navigation-marker{position:absolute;z-index:0;left:10px;top:0;width:var(--settings-marker-w,0);height:var(--settings-marker-h,0);transform:translateY(var(--settings-marker-y,0));background:var(--hover);border-radius:10px;pointer-events:none;transition:transform var(--motion-layout,.28s) var(--ease),width var(--motion-layout,.28s) var(--ease),height var(--motion-layout,.28s) var(--ease)}
+.native-preferences-layout>.settings-navigation>button{position:relative;z-index:1}
+.native-preferences-layout>.settings-navigation>button.active{background:transparent}
+.settings-category-content{min-width:0;animation:settings-category-in .18s var(--ease) both}
+@keyframes settings-category-in{from{opacity:.45}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.settings-navigation-marker{transition:none}.settings-category-content{animation:none}}
+[data-motion=reduced] .settings-navigation-marker{transition:none}[data-motion=reduced] .settings-category-content{animation:none}

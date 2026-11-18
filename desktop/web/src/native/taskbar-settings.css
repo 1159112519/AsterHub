@@ -238,3 +238,14 @@
 .tb42-library-item:is([data-metric=memory],[data-metric=storage]) .tb42-library-names{grid-template-columns:repeat(4,minmax(0,1fr))}
 .tb42-library-names>:is([data-variant=ram],[data-variant=ssd]){grid-column:3}
 .tb42-library-item:is([data-metric=memory],[data-metric=storage]) .tb42-library-names>[data-variant=icon]{grid-column:4}
+
+/* Empty targets and populated readouts share the visible content's hit geometry. */
+.tb42-slot[data-empty=true] .tb42-cell::before{left:calc(50% - 12px);width:24px}
+.tb43-monitor-options .tb43-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;align-items:center;padding-block:3px 1px}
+.tb43-monitor-options .tb43-checks .native-setting-check{white-space:normal;min-width:0}
+.tb43-checks .taskbar-auto-row{grid-column:1/-1;min-height:30px;gap:14px}
+.tb43-checks .taskbar-auto-row>.themed-select{width:108px;flex:0 0 108px;min-height:30px}
+@container(max-width:330px){.tb43-monitor-options .tb43-checks{grid-template-columns:minmax(0,1fr)}}
+
+/* Pagination and the visible readouts share the same horizontal center. */
+.tb42-grid{translate:var(--tb-content-offset,0px) 0}

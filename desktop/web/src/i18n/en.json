@@ -1629,5 +1629,17 @@
   "扫描记录已更新，请重新选择": "Scan records have changed. Select a record again.",
   "暂无可用磁盘": "No drives available",
   "资源管理器仅支持本机文件": "File Explorer is available for local files only",
-  "此项目已不存在，请重新扫描": "This item no longer exists. Scan again."
+  "此项目已不存在，请重新扫描": "This item no longer exists. Scan again.",
+  "恢复原自定义区间": "Restore custom interval",
+  "将时间选择线锁定到区间最高点和最低点": "Pin the time markers to the interval maximum and minimum",
+  "任务分类": "Task categories",
+  "进行中": "In progress",
+  "当前没有进行中的任务": "No tasks in progress",
+  "暂无已结束的任务": "No finished tasks",
+  "详情": "Details",
+  "磁盘": "Disks",
+  "可用磁盘": "Available disks",
+  "请选择要扫描的磁盘": "Select the disks to scan",
+  "暂无可用磁盘，请选择文件夹。": "No disks available. Choose a folder.",
+  "修复任务栏空间变化时组件直接跳位的问题，列间距收缩、整列模糊退场和恢复支持连续过渡。": "Fixed taskbar widgets jumping as available space changes; column spacing, blurred exits and restoration now transition continuously."
 }

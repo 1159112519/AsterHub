@@ -53,6 +53,7 @@ internal sealed class TaskbarSqueezeLayout {
   }
   return frame;
  }
+ internal TaskbarSqueezeFrame CompactFrame(){return Frame(Width(Columns,MinGap),false);}
  internal bool Fits(TaskbarSqueezeFrame frame,int column,float shift,float room){
   return frame.Alpha[column]>0&&frame.X[column]+shift+Left[column]>=InkPadding&&frame.X[column]+shift+Right[column]+InkPadding<=room;
  }
@@ -97,14 +98,48 @@ internal sealed class TaskbarSqueezeFrame {
  internal readonly bool[] Departing;
  internal TaskbarSqueezeFrame(TaskbarSqueezeLayout layout){Layout=layout;int n=layout.Columns;X=new float[n];Alpha=new float[n];Blur=new float[n];Departing=new bool[n];}
 }
+// Sensor distance is not animation time. Keep every column's visual state when Explorer
+// jumps across several layout thresholds, and retarget from the currently displayed frame.
 internal sealed class TaskbarSqueezeMotion {
  float from,to;long start;int duration;bool ready;
+ TaskbarSqueezeFrame origin,last;
+ internal void ResetVisual(){origin=last=null;}
  internal bool Active(long now){return duration>0&&now-start<duration;}
  internal float Value(long now){return Active(now)?from+(to-from)*(float)TaskbarPainter.Ease(Math.Max(0,now-start)/(double)duration):to;}
  internal void Set(float room,long now,bool reduced){
-  if(!ready||reduced){ready=true;from=to=room;duration=0;return;}
-  if(to==room)return;
-  from=Value(now);to=room;start=now;
-  duration=from==to?0:Math.Min(360,110+(int)(Math.Abs(to-from)*1.25f));
+  if(!ready||reduced){ready=true;from=to=room;duration=0;origin=last=null;return;}
+  if(Math.Abs(to-room)<.25f)return;
+  from=Value(now);origin=last;to=room;start=now;
+  duration=from==to?0:420;
+ }
+ internal TaskbarSqueezeFrame Frame(TaskbarSqueezeLayout layout,float room,long now,bool reduced){
+  var target=layout.Frame(room,reduced);
+  if(reduced||!Active(now)||origin==null||origin.Layout.Columns!=layout.Columns)return last=target;
+  float time=TaskbarSqueezeLayout.Clamp((now-start)/(float)duration);
+  bool exiting=false,entering=false;
+  for(int i=0;i<layout.Columns;i++){exiting|=origin.Alpha[i]>target.Alpha[i]+.001f;entering|=origin.Alpha[i]+.001f<target.Alpha[i];}
+  var compact=layout.CompactFrame();var result=new TaskbarSqueezeFrame(layout);
+  for(int i=0;i<layout.Columns;i++){
+   float a=origin.Alpha[i],b=target.Alpha[i];
+   float sourceX=a>0?origin.X[i]:target.X[i]-7;
+   float targetX=b>0?target.X[i]:Math.Min(sourceX,compact.X[i])-3;
+   float movement=(float)TaskbarPainter.Ease(time);
+   if(exiting&&!entering){
+    // First tighten the gaps, then retire entire columns, then settle the survivors.
+    float tighten=(float)TaskbarPainter.Ease(Math.Min(1,time/.24f));
+    float settle=(float)TaskbarPainter.Ease(Math.Max(0,(time-.78f)/.22f));
+    float tightX=Math.Min(sourceX,compact.X[i]);
+    result.X[i]=sourceX+(tightX-sourceX)*tighten+(targetX-tightX)*settle;
+    movement=(float)TaskbarPainter.Ease(TaskbarSqueezeLayout.Clamp((time-.16f)/.68f));
+    if(b<a)result.X[i]-=3*movement*(1-settle);
+   }else result.X[i]=sourceX+(targetX-sourceX)*movement;
+   result.Alpha[i]=a+(b-a)*movement;
+   result.Blur[i]=2.8f*(1-result.Alpha[i]);
+   result.Departing[i]=result.Alpha[i]<.9999f||target.Departing[i]||b<a;
+   // Survivors must fit the new proven free area even if Explorer moved in one step.
+   // Only retiring columns may be squashed by the compositor; active glyphs stay unchanged.
+   if(!result.Departing[i])result.X[i]=Math.Min(result.X[i],room-layout.Right[i]-TaskbarSqueezeLayout.InkPadding);
+  }
+  return last=result;
  }
 }

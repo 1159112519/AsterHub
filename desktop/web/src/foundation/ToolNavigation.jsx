@@ -7,14 +7,14 @@ import './tool-navigation.css';
 export function ToolNavigation({label,items,value,onChange,actions,children}){
  useLocale();
  const base=useId(),list=useRef(null),buttons=useRef(new Map());
- const [indicator,setIndicator]=useState(null),[instant,setInstant]=useState(false);
+ const [indicator,setIndicator]=useState(null);
  const signature=items.map(([id,name])=>id+':'+tr(name)).join('|');
  const tabId=id=>base+'-tab-'+encodeURIComponent(id);
  const panelId=id=>base+'-panel-'+encodeURIComponent(id);
  useLayoutEffect(()=>{
   const host=list.current;
-  const measure=()=>{const button=buttons.current.get(value),text=button;if(!text)return;
-   const rect=text.getBoundingClientRect(),frame=host.getBoundingClientRect();
+  const measure=()=>{const button=buttons.current.get(value);if(!button)return;
+   const rect=button.getBoundingClientRect(),frame=host.getBoundingClientRect();
    // offsetLeft uses CSS pixels even when the application is scaled.
    const scale=host.offsetWidth?frame.width/host.offsetWidth:1;
    setIndicator(old=>{const next={left:(rect.left-frame.left)/scale-host.clientLeft+host.scrollLeft,width:button.offsetWidth};return old&&Math.abs(old.left-next.left)<.1&&Math.abs(old.width-next.width)<.1?old:next});
@@ -28,10 +28,10 @@ export function ToolNavigation({label,items,value,onChange,actions,children}){
   const index=items.findIndex(([id])=>buttons.current.get(id)===document.activeElement);
   if(index<0)return;
   const next=event.key==='ArrowRight'?(index+1)%items.length:event.key==='ArrowLeft'?(index-1+items.length)%items.length:event.key==='Home'?0:event.key==='End'?items.length-1:-1;
-  if(next<0)return;event.preventDefault();setInstant(true);const id=items[next][0];buttons.current.get(id)?.focus({preventScroll:true});if(id!==value)onChange(id);
+  if(next<0)return;event.preventDefault();const id=items[next][0];buttons.current.get(id)?.focus({preventScroll:true});if(id!==value)onChange(id);
  }
- const navigation=<nav ref={list} className="foundation-tool-navigation" role="tablist" data-instant={instant} aria-label={tr(label)} onKeyDown={keyDown}>
-  {items.map(([id,name])=><button type="button" role="tab" key={id} id={tabId(id)} ref={node=>{node?buttons.current.set(id,node):buttons.current.delete(id)}} aria-selected={value===id} aria-controls={panelId(id)} tabIndex={value===id?0:-1} onClick={event=>{setInstant(event.detail===0);if(id!==value)onChange(id)}}><span className="tool-label">{tr(name)}</span></button>)}
+ const navigation=<nav ref={list} className="foundation-tool-navigation" role="tablist" aria-label={tr(label)} onKeyDown={keyDown}>
+  {items.map(([id,name])=><button type="button" role="tab" key={id} id={tabId(id)} ref={node=>{node?buttons.current.set(id,node):buttons.current.delete(id)}} aria-selected={value===id} aria-controls={panelId(id)} tabIndex={value===id?0:-1} onClick={()=>{if(id!==value)onChange(id)}}><span className="tool-label">{tr(name)}</span></button>)}
   <span className="foundation-tool-indicator" aria-hidden="true" style={indicator?{width:indicator.width,transform:'translateX('+indicator.left+'px)'}:{visibility:'hidden'}}/>
  </nav>;
  return <><div className="foundation-tool-row">{navigation}{actions&&<div className="foundation-tool-actions">{actions}</div>}</div>

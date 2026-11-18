@@ -1,8 +1,9 @@
 import {t,tr,useLocale,locale} from '../i18n/index.js';
 import React,{useId,useEffect,useLayoutEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
-import {ArrowUpRight,Check,Download,ListChecks,ScanLine,ArrowRightLeft,X,Trash2} from 'lucide-react';
+import {ArrowUpRight,Check,Download,ListChecks,ScanLine,ArrowRightLeft,X,Trash2,ChevronDown} from 'lucide-react';
 import {Button,IconButton} from '../components';
+import {ToolNavigation} from '../foundation/ToolNavigation';
 import {TaskNavigationItem} from '../foundation/TaskNavigationItem';
 import {useDismissableLayer} from '../foundation/overlay';
 import {native} from './bridge';
@@ -10,7 +11,7 @@ import {useFileTransfers,refreshFileTransfers} from './file-transfers';
 import {storageJobs,cleanupJobs} from './storage-jobs';
 import {readTaskInbox,writeTaskInbox,recordTaskInbox,dismissTask,clearFinishedTasks,canClearFinishedTask,taskInboxGroups,isTaskRunning,taskIdentity} from './task-inbox';
 import {updateStore,useUpdateTask} from './update-task';
-import {buildTaskGroups,countPendingTasks,formatTransferSize,transferLabels,isActiveScan} from './task-center-model';
+import {buildTaskGroups,countPendingTasks,formatTransferSize,transferLabels,isActiveScan,filterTaskGroups} from './task-center-model';
 import './task-center.css';
 
 const sections={update:['应用更新',Download],transfer:['文件传输',ArrowRightLeft],scan:['扫描与索引',ScanLine],cleanup:['存储清理',Trash2]};
@@ -23,6 +24,7 @@ const integer=new Intl.NumberFormat();
 export function TaskCenter({devices,onOpenStorage,onOpenUpdates}){useLocale();
  const timeFormat=useMemo(()=>new Intl.DateTimeFormat(locale(),{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}),[locale()]);
  const triggerId='tasks-'+useId(),anchor=useRef(null),panel=useRef(null),closeButton=useRef(null),inFlight=useRef(new Set());
+ const [filter,setFilter]=useState('all'),[expanded,setExpanded]=useState(null);
  const [open,setOpen]=useState(false),[pending,setPending]=useState({}),[errors,setErrors]=useState({});
  const update=useUpdateTask(),{jobs:transfers,error:transferError}=useFileTransfers();
  const scans=useSyncExternalStore(storageJobs.subscribe,storageJobs.getSnapshot);
@@ -32,6 +34,7 @@ export function TaskCenter({devices,onOpenStorage,onOpenUpdates}){useLocale();
  useEffect(()=>setInbox(old=>recordTaskInbox(old,live)),[live]);
  useEffect(()=>writeTaskInbox(globalThis.localStorage,inbox),[inbox]);
  const groups=useMemo(()=>taskInboxGroups(live,inbox),[live,inbox]);
+ const filteredGroups=useMemo(()=>filterTaskGroups(groups,filter),[groups,filter]);
  const canClear=groups.some(({kind,jobs})=>jobs.some(job=>canClearFinishedTask(kind,job)));
  const count=countPendingTasks(groups),labels=new Map(devices.map(({device})=>[device.id,device.name]));
  const deviceName=id=>labels.get(id)||(id==='local'?'本机':id?'原设备':'');
@@ -42,9 +45,10 @@ export function TaskCenter({devices,onOpenStorage,onOpenUpdates}){useLocale();
   const position=()=>{
    const source=anchor.current?.getBoundingClientRect(),layer=panel.current;
    if(!source||!layer)return;
-   const width=Math.min(390,window.innerWidth-24);
+   const width=Math.min(372,window.innerWidth-24);
    layer.style.left=Math.max(12,Math.min(source.right+14,window.innerWidth-width-12))+'px';
-   layer.style.bottom=Math.max(12,window.innerHeight-source.bottom)+'px';
+   const bottom=Math.max(12,Math.min(64,window.innerHeight-source.bottom));
+   layer.style.bottom=bottom+'px';layer.style.maxHeight=Math.max(0,window.innerHeight-bottom-12)+'px';
   };
   position();closeButton.current?.querySelector('button')?.focus({preventScroll:true});
   const sidebar=anchor.current?.closest('.sidebar'),observer=new ResizeObserver(position);
@@ -97,12 +101,15 @@ export function TaskCenter({devices,onOpenStorage,onOpenUpdates}){useLocale();
   }
   const error=errors[key]||job.error;
   const failures=kind==='cleanup'?job.failures||[]:[];
+  const Icon=state==='success'?Check:sections[kind][1];
   const dismiss=()=>setInbox(old=>dismissTask(recordTaskInbox(old,[{kind,jobs:[job]}]),kind,job));
-  return <article key={key} className="task-center-row" data-state={state}>
+  return <article key={key} className="task-center-row" data-kind={kind} data-task-id={key} data-state={state}>
+   <div className="task-center-job-icon"><Icon size={17} aria-hidden="true"/></div>
    <div className="task-center-task-title"><strong title={tr(name)}>{tr(name)}</strong><div className="task-center-status-actions"><span className="task-center-state">{tr(state==='success'&&<Check size={13} aria-hidden="true"/>)}{tr(statusText)}</span>{tr(!running&&<IconButton icon={X} label={tr('关闭任务通知：'+name)} onClick={dismiss}/>)}</div></div>
-   {tr((meta||actions.length>0)&&<div className="task-center-task-foot"><span title={tr(meta)}>{tr(meta)}</span><div>{tr(actions.map(([label,run,icon])=><Button key={label} disabled={blocked} onClick={run} icon={icon}>{tr(label)}</Button>))}</div></div>)}
+   {tr((meta||actions.length>0)&&<div className="task-center-task-foot"><span title={tr(meta)}>{tr(meta)}</span><div>{tr(actions.map(([label,run,icon])=><Button key={label} disabled={blocked} onClick={run} icon={icon}>{tr(label)}</Button>))}{meta&&<Button aria-expanded={expanded===key} onClick={()=>setExpanded(old=>old===key?null:key)} icon={ChevronDown}>{t("详情")}</Button>}</div></div>)}
    {tr((Number.isFinite(progress)||indeterminate)&&<div className="task-center-progress" role="progressbar" aria-label={tr(name+'进度')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={indeterminate?undefined:Math.round(Math.max(0,Math.min(100,progress)))} data-indeterminate={indeterminate}><i style={indeterminate?undefined:{width:Math.max(0,Math.min(100,progress))+'%'}}/></div>)}
    {tr(stamp&&Number.isFinite(Date.parse(stamp))&&<time className="task-center-time" dateTime={stamp} title={tr(new Date(stamp).toLocaleString(locale()))}>{tr(timeFormat.format(new Date(stamp)))}</time>)}
+   <div className="task-center-details" data-expanded={expanded===key}><div><p>{tr(meta)}</p></div></div>
    {tr(error&&<p className="task-center-error" role="status">{tr(error)}</p>)}
    {tr(!!failures.length&&<details className="task-center-failures"><summary>{tr(failures.length)}{t(" 项未处理")}</summary><ul>{failures.map((item,i)=><li key={item.id||i}>{item.name}：{tr(item.error)}</li>)}</ul></details>)}
   </article>;
@@ -111,9 +118,10 @@ export function TaskCenter({devices,onOpenStorage,onOpenUpdates}){useLocale();
   <TaskNavigationItem id={triggerId} className={'task-center-trigger'+(count?' has-tasks':'')} icon={ListChecks} label={t("任务")} detail={count||undefined} title={tr(count?`任务，${count} 项待处理`:'任务')} expanded={open} onClick={toggle}/>
   {tr(open&&createPortal(<section className="task-center-panel" ref={panel} role="dialog" aria-modal="false" aria-labelledby={triggerId+'-title'} id={triggerId+'-panel'}>
    <header><h2 id={triggerId+'-title'}>{t("任务")}</h2><div className="task-center-header-actions"><Button disabled={!canClear} onClick={()=>{closeButton.current?.querySelector('button')?.focus({preventScroll:true});setInbox(old=>clearFinishedTasks(old,live))}}>{t("清除已结束")}</Button><div ref={closeButton}><IconButton icon={X} label={t("收起任务")} onClick={()=>close(true)}/></div></div></header>
-   <div className="task-center-content">
-    {tr(groups.map(({kind,jobs})=>{const [title,Icon]=sections[kind];return <section key={kind} aria-label={tr(title)} className="task-center-group" data-kind={kind}><h3><Icon size={16} aria-hidden="true"/>{tr(title)}</h3>{tr(jobs.map(job=>row(kind,job)))}</section>}))}
-    {tr((transferError||scans.error||cleanup.error)?<p className="task-center-error" role="status">{t("部分任务状态暂时无法读取")}</p>:!groups.length&&<p className="task-center-empty">{tr(!scans.data&&scans.loading?'正在读取任务…':'暂无任务')}</p>)}
+   <ToolNavigation label={t("任务分类")} items={[["all",t("全部")],["running",t("进行中")],["done",t("已结束")]]} value={filter} onChange={setFilter}/>
+   <div className="task-center-content" key={filter}>
+    {tr(filteredGroups.map(({kind,jobs})=>{const [title,Icon]=sections[kind];return <section key={kind} aria-label={tr(title)} className="task-center-group" data-kind={kind}><h3><Icon size={16} aria-hidden="true"/>{tr(title)}</h3>{tr(jobs.map(job=>row(kind,job)))}</section>}))}
+    {tr((transferError||scans.error||cleanup.error)?<p className="task-center-error" role="status">{t("部分任务状态暂时无法读取")}</p>:!filteredGroups.length&&<p className="task-center-empty">{tr(!scans.data&&scans.loading?'正在读取任务…':filter==='running'?'当前没有进行中的任务':filter==='done'?'暂无已结束的任务':'暂无任务')}</p>)}
    </div>
   </section>,document.body))}
  </div>;

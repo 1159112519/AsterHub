@@ -169,15 +169,25 @@ internal sealed class TaskbarPainter:IDisposable {
   var layout=frame.Layout;var modules=layout.Modules;
   var output=RenderCore(sample,previous,options,progress,chrome,content,modules,scale,shift,frame,-1);
   if(content)for(int i=0;i<layout.Columns;i++){
-   if(!frame.Departing[i]||!layout.Fits(frame,i,shift,width/scale))continue;
+   if(!frame.Departing[i]||frame.Alpha[i]<=0)continue;
    float x=frame.X[i]+shift+layout.Left[i],end=frame.X[i]+shift+layout.Right[i];
-   using(var layer=RenderCore(sample,previous,options,progress,false,true,modules,scale,shift,frame,i)){
-    int pad=(int)Math.Ceiling(frame.Blur[i]*scale*3)+2;
-    var bounds=Rectangle.Intersect(new Rectangle(0,0,width,height),Rectangle.FromLTRB((int)Math.Floor(x*scale)-pad,0,(int)Math.Ceiling(end*scale)+pad,height));
-    // Clip only the blurred halo, outside the departing column's own ink and clear of survivors.
-    float mask=i==0?float.NegativeInfinity:(frame.X[i-1]+shift+layout.Right[i-1])*scale;
-    FilterMotion(layer,bounds,frame.Blur[i]*scale,frame.Alpha[i],mask,scale);
-    using(var g=Graphics.FromImage(output))g.DrawImageUnscaled(layer,0,0);
+   int pad=(int)Math.Ceiling(frame.Blur[i]*scale*3)+2;
+   int savedWidth=width;Bitmap layer;
+   // Render the entire retiring column before fitting it into the proven free lane.
+   // Cropping a narrow HWND first loses its title and makes the exit look like a jump.
+   try{width=Math.Max(width,(int)Math.Ceiling(end*scale)+pad);layer=RenderCore(sample,previous,options,progress,false,true,modules,scale,shift,frame,i);}
+   finally{width=savedWidth;}
+   using(layer){
+    var bounds=Rectangle.Intersect(new Rectangle(0,0,layer.Width,height),Rectangle.FromLTRB((int)Math.Floor(x*scale)-pad,0,(int)Math.Ceiling(end*scale)+pad,height));
+    float laneLeft=0;
+    for(int prior=0;prior<i;prior++)if(frame.Alpha[prior]>0)laneLeft=Math.Max(laneLeft,(frame.X[prior]+shift+layout.Right[prior]+TaskbarSqueezeLayout.MinGap)*scale);
+    float left=Math.Max(laneLeft,bounds.Left),right=Math.Min(width-1,bounds.Right);
+    if(right<=left||bounds.Width<=0)continue;
+    FilterMotion(layer,bounds,frame.Blur[i]*scale,frame.Alpha[i],float.NegativeInfinity,scale);
+    using(var g=Graphics.FromImage(output)){
+     g.InterpolationMode=InterpolationMode.HighQualityBicubic;
+     g.DrawImage(layer,RectangleF.FromLTRB(left,0,right,height),bounds,GraphicsUnit.Pixel);
+    }
    }
   }
   return output;
@@ -192,7 +202,7 @@ internal sealed class TaskbarPainter:IDisposable {
     g.Clear(Color.Transparent);g.ScaleTransform(scale*supersample,height*supersample/38f);g.SmoothingMode=SmoothingMode.AntiAlias;g.InterpolationMode=InterpolationMode.HighQualityBicubic;
     if(content)for(int i=0;i<modules.Length;i++){
      int col=i%cols;
-     if(frame!=null&&((movingColumn<0?frame.Departing[col]:col!=movingColumn)||!frame.Layout.Fits(frame,col,shift,width/scale)))continue;
+     if(frame!=null&&((movingColumn<0?frame.Departing[col]:col!=movingColumn)||(movingColumn<0&&!frame.Layout.Fits(frame,col,shift,width/scale))))continue;
      var module=modules[i];if(module==null)continue;string id=module.Metric;
      var now=sample.Read(id);var old=previous==null?null:previous.Read(id);var label=module.Label(now.label??"");
      var cell=frame!=null&&frame.Layout.Cells!=null?frame.Layout.Cells[i]:MeasureCell(sample,options,modules,i);

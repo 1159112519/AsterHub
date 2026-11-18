@@ -10,6 +10,7 @@ import './taskbar-settings.css';
 import './taskbar-colors.css';
 import {tabs,moveTab,withColor} from './taskbar-colors.mjs';
 import {ColorPane} from './TaskbarColorPane';
+import {previewContentOffset} from './taskbar-preview-geometry.mjs';
 import {createTaskbarPreviewFeed} from './taskbar-preview';
 import {Readout,taskbarPreviewFootprint,taskbarLabelFont,taskbarDigitFont,taskbarUnitFont} from './TaskbarReadout';
 import {centerTaskbarInk} from './taskbar-ink';
@@ -214,6 +215,18 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
  const offsets=typeMetric?layout.typography?.metrics?.[typeMetric]:layout.typography?.global;
  const draft=tuningDraft?.metric===typeMetric?tuningDraft:null;
  const previewTypography=draft?editLayout(layout,page.id,{type:'typography',metric:typeMetric,part:draft.part,value:draft.value}).layout.typography:layout.typography;
+ useLayoutEffect(()=>{
+  for(const grid of carousel.current?.querySelectorAll('.tb42-grid')??[]){
+   const ranges=[];
+   for(const slot of grid.children){
+    const cell=slot.querySelector('.tb42-cell'),svg=cell?.querySelector('.taskbar-mini-cell'),empty=cell?.querySelector('.tb42-empty');
+    const lane=Number.parseFloat(slot.style.getPropertyValue('--tb-lane-x'))||0;
+    if(svg){const b=svg.getBBox(),left=slot.offsetLeft+lane+cell.offsetLeft+b.x;ranges.push({left,right:left+b.width});}
+    else if(empty){const left=slot.offsetLeft+lane+empty.offsetLeft;ranges.push({left,right:left+empty.offsetWidth});}
+   }
+   grid.style.setProperty('--tb-content-offset',previewContentOffset(grid.clientWidth,ranges)+'px');
+  }
+ },[page.id,page.slots,snapshot,previewTypography,fontsReady,previewScale]);
  const tuningKeys=tuningParts.map(([part])=>part);
  const canResetTuning=tuningKeys.some(part=>Number(offsets?.[part])!==0&&Number.isFinite(Number(offsets?.[part])));
  function resetTuning(){setTuningDraft(null);commit({type:'resetTypographyX',from:selected.id,metric:typeMetric});}
@@ -234,7 +247,7 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
     <label className="native-setting-check"><input type="checkbox" checked={config.clickDetails===true} onChange={e=>update({clickDetails:e.target.checked})}/>{t("点击打开资源详情")}</label>
   <div className="taskbar-auto-row">
    <label className="native-setting-check"><input type="checkbox" checked={config.autoPage} disabled={!canAutoPage} onChange={e=>update({autoPage:e.target.checked})}/>{t("自动切页")}</label>
-   {tr(config.autoPage&&canAutoPage&&<ThemedSelect compact aria-label={t("自动切页间隔")} value={taskbarAutoPageIntervals.includes(config.intervalSeconds)?config.intervalSeconds:taskbarAutoPageIntervals[0]} onChange={e=>update({intervalSeconds:Number(e.target.value)})}>{tr(taskbarAutoPageIntervals.map(seconds=><option key={seconds} value={seconds}>{tr(seconds<60?`${seconds} 秒`:`${seconds/60} 分钟`)}</option>))}</ThemedSelect>)}
+   {tr(<ThemedSelect compact disabled={!config.autoPage||!canAutoPage} aria-label={t("自动切页间隔")} value={taskbarAutoPageIntervals.includes(config.intervalSeconds)?config.intervalSeconds:taskbarAutoPageIntervals[0]} onChange={e=>update({intervalSeconds:Number(e.target.value)})}>{tr(taskbarAutoPageIntervals.map(seconds=><option key={seconds} value={seconds}>{tr(seconds<60?`${seconds} 秒`:`${seconds/60} 分钟`)}</option>))}</ThemedSelect>)}
   </div>
 </div>
    {tr(error&&<p className="native-error" role="alert">{tr(error)}</p>)}
@@ -246,8 +259,8 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
     <div className="tb42-carousel" ref={carousel} style={{'--tb-scale':previewScale}}>
     {tr(layout.pages.map((slide,slideIndex)=>{const active=slide.id===page.id,cellWidth=pageCellWidth(slide),columnFrames=previewColumns(slide,cellWidth);return <div className="tb42-slide" key={slide.id} data-active={active} data-adjacent={Math.abs(slideIndex-pageIndex)===1} aria-hidden={!active||undefined} inert={active?undefined:''} style={{'--tb-shift':`${offsetsX[slideIndex]}px`}}>
     <div className="tb42-grid" ref={active?preview:null} data-background={false} style={{'--tb-columns':slide.grid.columns,'--tb-cell':`${cellWidth}px`}}>
-     {tr(slide.slots.map((slot,i)=>{const module=displayModule(slot.module,slide.grid.columns),col=columnFrames[slot.column];return <div style={{'--tb-lane-x':`${col.x}px`,'--tb-lane-alpha':col.opacity,'--tb-lane-blur':`${col.blur}px`}} inert={col.hidden?'':undefined} aria-hidden={col.hidden||undefined} className={active?'tb42-slot':'tb42-ghost-slot'} key={slot.id} data-slot={slot.id} data-selected={selected.id===slot.id} data-over={over===slot.id} data-moving={moveFrom===slot.id} draggable={active&&!!module} onDragStart={e=>active&&module&&start(e,{kind:'slot',from:slot.id},e.currentTarget)} onDragEnd={clearDrag} onDragOver={e=>accept(e,slot.id)} onDrop={e=>dropTarget(e,slot)}>
-      <button type="button" className="tb42-cell" aria-pressed={selected.id===slot.id} aria-label={tr(`位置 ${i+1}，${module?title(module):'空位置'}`)} onClick={()=>chooseSlot(slot.id)}>
+     {tr(slide.slots.map((slot,i)=>{const module=displayModule(slot.module,slide.grid.columns),col=columnFrames[slot.column];return <div style={{'--tb-lane-x':`${col.x}px`,'--tb-lane-alpha':col.opacity,'--tb-lane-blur':`${col.blur}px`}} inert={col.hidden?'':undefined} aria-hidden={col.hidden||undefined} className={active?'tb42-slot':'tb42-ghost-slot'} key={slot.id} data-slot={slot.id} data-selected={active&&slotId===slot.id} data-empty={!module} data-over={over===slot.id} data-moving={moveFrom===slot.id} draggable={active&&!!module} onDragStart={e=>active&&module&&start(e,{kind:'slot',from:slot.id},e.currentTarget)} onDragEnd={clearDrag} onDragOver={e=>accept(e,slot.id)} onDrop={e=>dropTarget(e,slot)}>
+      <button type="button" className="tb42-cell" aria-pressed={active&&slotId===slot.id} aria-label={tr(`位置 ${i+1}，${module?title(module):'空位置'}`)} onClick={()=>chooseSlot(slot.id)}>
        {tr(module?<span className="tb42-ink" data-module={module.id}>{tr(widget(module,cellWidth,displayModule(slide.slots.find(other=>other.column===slot.column&&other.row!==slot.row)?.module,slide.grid.columns)))}</span>:<span className="tb42-empty">＋</span>)}
       </button>
       {tr(active&&module&&<div className="tb42-parts">{tr((slide.grid.columns===3?[0]:[0,1]).map(index=>{
@@ -266,7 +279,7 @@ export function TaskbarSettings({value,savedValue,reduceMotion=false,onChange}){
    <div className="tb43-mode-bar">
     <div ref={modeRail} role="tablist" className="tb43-modes" data-reduced={reduced} aria-label={t("任务栏编辑方式")} onKeyDown={e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();tabTo(moveTab(editorMode,e.key),true)}}>
      <span className="tb43-mode-indicator" aria-hidden="true"/>
-     {tr(tabs.map(([mode,label])=><button type="button" key={mode} role="tab" id={tabsId+'-'+mode} aria-controls={tabsId+'-pane-'+mode} aria-selected={mode===editorMode} tabIndex={mode===editorMode?0:-1} onClick={()=>tabTo(mode,false)}>{tr(label)}</button>))}
+     {tr(tabs.map(([mode,label])=><button type="button" key={mode} role="tab" id={tabsId+'-'+mode} aria-controls={tabsId+'-pane-'+mode} aria-selected={mode===editorMode} tabIndex={mode===editorMode?0:-1} onClick={()=>tabTo(mode,false)}><span className="control-label">{tr(label)}</span></button>))}
     </div>
     <div className="tb42-edit-actions" hidden={editorMode!=='components'}>
      {tr(selected.module&&<><button type="button" aria-label={t("交换位置")} title={tr(moveFrom?'选目标位置':'交换位置')} aria-pressed={!!moveFrom} onClick={()=>setMoveFrom(moveFrom?null:selected.id)}><Grip size={14}/></button>{tr(parts.length===2&&<button type="button" aria-label={t("换序")} title={t("数字与图形换序")} onClick={()=>commit({type:'order',from:selected.id})}><ArrowLeftRight size={13}/></button>)}<button type="button" aria-label={t("移除")} title={t("移除选中的模块")} onClick={()=>commit({type:'remove',from:selected.id})}><X size={14}/></button></>)}

@@ -87,7 +87,7 @@
 
 /* One optical-label contract for workbench controls and every body portal. */
 :is(.native-workbench,.modal) .button{min-height:32px;padding-block:4px;line-height:22px}
-:is(.native-workbench,.modal) .button-content,.control-label,.themed-select-option>span{position:relative;top:var(--label-optical-y,0px)}
+.button-content,.control-label,.themed-select>span,.themed-select-option>span,.foundation-tool-navigation .tool-label{position:relative;top:var(--label-optical-y,0px)}
 :is(.native-workbench,.modal) .dialog-actions>.button{min-height:32px;padding-block:4px}
 .native-preferences .dialog-actions{min-height:64px;padding-block:12px}
 .native-preferences .native-preferences-layout>nav>button{min-height:32px;padding-block:4px}
