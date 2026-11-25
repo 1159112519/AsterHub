@@ -25,25 +25,47 @@
 
 ## 主要功能
 
-- **随时看负载。** 任务栏可显示 CPU、GPU、内存和网速，支持自选指标、顺序和颜色。
+以下界面使用示例设备和数据。点击截图可查看原尺寸。
 
-- **回查性能峰值。** 选一段时间，对照 CPU、GPU、内存曲线和已记录的进程占用。网络页也能分析区间流量或单独测速。
+### 排查资源峰值
 
-- **比较多张显卡。** 逐卡看利用率和显存，或汇总多卡趋势。
-
-- **找出空间占用。** 扫描磁盘或文件夹，逐层查看目录大小、定位大文件。移入回收区的项目可以恢复。
-
-- **排查远端设备。** 通过 SSH 看服务器运行状态、打开终端、浏览和传输文件。下载、传输和扫描进度集中在任务中心。
-
-<details>
-<summary><strong>展开多卡 GPU 界面</strong></summary>
+发现负载异常后，选定时间区间，对照 CPU 曲线和当时记录的进程占用。GPU、内存和网络也有各自的分析页，可分别回查显存、内存和流量变化。
 
 <p align="center">
-  <a href="docs/screenshots/multi-gpu.webp"><img src="docs/screenshots/multi-gpu.webp" width="760" alt="多卡 GPU 页面：逐卡对照利用率与显存"></a><br>
-  <sub>多卡监测页面局部 · 示例数据；可见的指标取决于设备、驱动与访问权限。</sub>
+  <a href="docs/screenshots/cpu-analysis.webp"><img src="docs/screenshots/cpu-analysis.webp" width="760" alt="CPU 占用分析：左侧为带时间区间和峰值的趋势图，右侧为所选时刻的进程占用"></a>
 </p>
 
-</details>
+### 对比多张显卡
+
+同屏查看每张卡的利用率和显存，找出哪张卡最忙、哪张还有余量。温度和功耗等指标视设备和驱动支持而定。
+
+<p align="center">
+  <a href="docs/screenshots/multi-gpu.webp"><img src="docs/screenshots/multi-gpu.webp" width="760" alt="多卡 GPU 页面：并排对照三张显卡的利用率、显存、温度与功耗"></a>
+</p>
+
+### 定位磁盘空间占用
+
+扫描磁盘或文件夹，按面积看各目录占了多少空间。点击目录逐层查看，也可以切到大文件清理，直接定位占空间的文件。
+
+<p align="center">
+  <a href="docs/screenshots/storage-analysis.webp"><img src="docs/screenshots/storage-analysis.webp" width="760" alt="磁盘空间分析：左侧是目录树，右侧按面积显示各文件夹的占用"></a>
+</p>
+
+### 管理远端设备和文件
+
+连上服务器后，可以打开 SSH 终端执行命令，也可以在双栏文件页里并排浏览本机和远端目录，拖拽文件进行复制。
+
+<p align="center">
+  <a href="docs/screenshots/file-transfer.webp"><img src="docs/screenshots/file-transfer.webp" width="760" alt="双栏文件传输：左侧为本机目录，右侧为远端 SFTP 目录"></a>
+</p>
+
+### 日常监测与任务
+
+- **任务栏监测**：把 CPU、GPU、内存或网速放在任务栏，按自己的习惯调整指标、顺序和颜色。
+
+- **网络测速**：随时测一次连接速度，也可以到流量分析查看指定时段的上传和下载。
+
+- **任务中心**：集中查看更新下载、文件传输和磁盘扫描的进度与结果。
 
 ## 下载安装
 
