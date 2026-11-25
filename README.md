@@ -20,12 +20,10 @@
 
 <p align="center">
   <a href="docs/screenshots/overview.webp"><img src="docs/screenshots/overview.webp" width="760" alt="AsterHub 资源概览：在同一窗口查看 CPU、内存、网络、GPU 和存储"></a><br>
-  <sub>资源概览 · 演示设备与示例数据</sub>
+  <sub>示例数据</sub>
 </p>
 
 ## 主要功能
-
-以下界面使用示例设备和数据。点击截图可查看原尺寸。
 
 ### 排查资源峰值
 
