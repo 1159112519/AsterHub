@@ -67,17 +67,14 @@ export function ResourceInspector({id,anchor,sample,samples,lightSamples=[],onCl
 function ResourceMetricSparkline({rows,metric,color,spanMs}){useLocale();
  return <Sparkline values={rows.map(row=>row[metric])} timestamps={rows.map(row=>row.time)} color={color} spanMs={spanMs} expectedMs={rows.at(-1)?.interval*1000} {...timelineSampleProps(rows)} bounds/>;
 }
-// The strip remains mounted while overview folds it away, preserving curve continuity.
+// Each page uses its own resting layout; the footer does not travel.
 export function ResourceFooter(props) {useLocale();
- const collapsed=props.page==='overview',last=useRef(null),[retain,setRetain]=useState(false);
- if(!collapsed)last.current=props;
- useEffect(()=>{if(!collapsed){setRetain(true);return}if(!retain)return;const timer=setTimeout(()=>setRetain(false),450);return()=>clearTimeout(timer)},[collapsed,retain]);
- return <div className="resource-footer-fold" data-collapsed={collapsed} aria-hidden={collapsed}><div className="resource-footer-clip">{tr((!collapsed||retain)&&last.current&&<FooterContents {...last.current} collapsed={collapsed}/>)}</div></div>;
+ return props.page==='overview'?null:<FooterContents {...props}/>;
 }
 const footerIds=['cpu','gpu','memory','network','storage'];
-function FooterContents({page,onSelect,sample,samples,cpuSamples,memorySamples,collapsed}) {useLocale();
+function FooterContents({page,onSelect,sample,samples,cpuSamples,memorySamples}) {useLocale();
  const root=useRef(null),[indicator,setIndicator]=useState(null),g=gpuSummary(sample);
- useLayoutEffect(()=>{const bar=root.current;if(bar)bar.inert=collapsed;function place(){const active=bar?.querySelector('[aria-current="page"]');if(!active){setIndicator(null);return}setIndicator({left:active.offsetLeft,top:active.offsetTop,width:active.offsetWidth,height:active.offsetHeight})}place();const observer=new ResizeObserver(place);if(bar)observer.observe(bar);window.addEventListener('resize',place);return()=>{observer.disconnect();window.removeEventListener('resize',place)}},[page,collapsed]);
+ useLayoutEffect(()=>{const bar=root.current;function place(){const active=bar?.querySelector('[aria-current="page"]');if(!active){setIndicator(null);return}setIndicator({left:active.offsetLeft,top:active.offsetTop,width:active.offsetWidth,height:active.offsetHeight})}place();const observer=new ResizeObserver(place);if(bar)observer.observe(bar);window.addEventListener('resize',place);return()=>{observer.disconnect();window.removeEventListener('resize',place)}},[page]);
  const fullWindow=liveSparkWindow(samples),networkScale=useNetworkScale(fullWindow.visible),storageScaleRows=useMemo(()=>storageRateSamples(fullWindow.visible),[samples]),storageScale=useNetworkScale(storageScaleRows);
  const aux=id=>id==='cpu'?(sample?.cpuFrequencyMHz>0?<FrequencyValue value={sample.cpuFrequencyMHz}/>:null):id==='gpu'?(g.used?.toFixed(1)??'—')+' / '+(g.total?.toFixed(1)??'—')+' GiB':id==='memory'?(sample?.memUsed?.toFixed(1)??'—')+' / '+(sample?.memTotal?.toFixed(1)??'—')+' GiB':null;
  return <footer ref={root} className="resource-footer preview5-resource-footer" aria-label={t("常驻资源状态")}>{tr(indicator&&<span className="resource-selection-indicator" aria-hidden="true" style={indicator}/>)}
