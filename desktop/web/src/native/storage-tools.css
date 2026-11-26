@@ -87,9 +87,10 @@
 .storage-tools .storage-map-column>.storage-file-table{flex:1;overflow:auto;border:0;border-radius:0}
 .storage-tools .storage-map-column:has(>.storage-file-table){padding:0}
 /* The result surface fills the available workspace; only its body scrolls. */
-.native-workbench .main-content[data-page=storage]:has(>.storage-tools[data-tool=large]:not([hidden])){display:flex;flex-direction:column}
+.native-workbench .main-content[data-page=storage]:has(>.storage-tools[data-tool=large]:not([hidden]) .storage-large-table){display:flex;flex-direction:column;padding-block-end:0}
+.storage-tools[data-tool=large]:has(.storage-large-table){padding-block-end:0}
 .storage-tools[data-tool=large]:not([hidden]),.storage-tools[data-tool=large] :is(.foundation-tool-panel:not([hidden]),.foundation-tool-view,.storage-explorer,.storage-large-results,.storage-large-table){display:flex;flex:1;flex-direction:column;min-height:0}
-.storage-tools[data-tool=large] .storage-explorer{min-height:270px}
+.storage-tools[data-tool=large] .storage-explorer{min-height:270px;border-end-start-radius:0;border-end-end-radius:0}
 .storage-large-table>.storage-table-scroll{display:flex;flex:1;flex-direction:column;min-height:85px;overflow:auto;scrollbar-gutter:stable}
 .storage-large-table>.storage-table-scroll>:not(.empty-state),.storage-large-table>.storage-pagination{flex-shrink:0}
 .storage-large-table>.storage-table-scroll>.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:84px;box-sizing:border-box;padding:12px}
