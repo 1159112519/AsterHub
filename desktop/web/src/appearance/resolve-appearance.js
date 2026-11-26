@@ -8,7 +8,10 @@ export const mix=(a,b,t)=>hex(rgb(a).map((v,i)=>v*(1-t)+rgb(b)[i]*t));
 const luminance=h=>rgb(h).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
 export const contrast=(a,b)=>(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
 function readable(a,b){const dest=luminance(b)>.4?'#172137':'#ffffff';for(let i=0;i<=40;i++){const v=mix(a,dest,i/40);if(contrast(v,b)>=4.5)return v}return dest}
+export function workbenchAppearanceMode(settings={}){return ['light','dark','system'].includes(settings.appearanceMode)?settings.appearanceMode:['light','marcel-light'].includes(settings.theme)?'light':settings.theme?'dark':'system';}
+export function resolveWorkbenchAppearance(settings,systemDark){const mode=workbenchAppearanceMode(settings);return resolveAppearance({theme:(mode==='system'?systemDark:mode==='dark')?'graphite':'marcel-light'});}
 export function resolveAppearance(settings={},systemDark=true,iconId){
+ if(settings.theme==='marcel-light')return {id:'marcel-light',mode:'light',tokens:{bg:'#f1f2f3',sidebar:'#eff0f1',surface:'#ffffff',surface2:'#f7f8f9',text:'#20262e',muted:'#606b78',subtle:'#667281',line:'#dee2e7','line-soft':'#e8ebef',green:'#14649e','green-soft':'#e8f3fc',hover:'#edf0f3',input:'#f8f9fa',terminal:'#f8f9fa',blue:'#1975b8',purple:'#7055a8',amber:'#8d6027','chart-gpu':'#755ab2',danger:'#b43e53',red:'#b43e53',success:'#28754e'}};
  let id=validTheme(settings.theme),mode=['dark','light','system'].includes(settings.appearanceMode)?settings.appearanceMode:'dark';
  const pack=packs.find(p=>p.id===id);if(!pack)return {id,mode:id==='light'?'light':'dark',tokens:null};
  mode=mode==='system'?(systemDark?'dark':'light'):mode;const base=pack.appearance[mode],light=mode==='light',solid=pack.renderStyle==='solid';

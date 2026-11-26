@@ -13,3 +13,13 @@ test('complete skins vary surfaces and functional colors; clean light colors do 
 test('return to classic clears all inline numbered-skin color overrides',()=>{const values=new Map(),root={dataset:{},style:{setProperty:(k,v)=>values.set(k,v),removeProperty:k=>values.delete(k)}};applyAppearance(resolveAppearance({theme:'03'}),root);assert(values.size>0);applyAppearance(resolveAppearance({theme:'graphite'}),root);assert.equal(values.size,0);assert.equal(root.dataset.theme,'graphite')});
 
 test('obsolete icon follow cannot silently replace an independently selected skin',()=>{for(const theme of ['graphite','slate','forest','ocean','light','03'])for(const iconId of ['01','06','09'])assert.equal(resolveAppearance({theme,followIcon:true},false,iconId).id,theme)});
+
+test('workbench appearance distinguishes explicit modes from live system selection',async()=>{
+ const {resolveWorkbenchAppearance,workbenchAppearanceMode}=await import('./resolve-appearance.js');
+ assert.equal(workbenchAppearanceMode({}),'system');assert.equal(workbenchAppearanceMode({theme:'light'}),'light');
+ for(const dark of [false,true]){
+  assert.equal(resolveWorkbenchAppearance({appearanceMode:'system'},dark).mode,dark?'dark':'light');
+  assert.equal(resolveWorkbenchAppearance({appearanceMode:'light'},dark).tokens.bg,'#f1f2f3');
+  assert.equal(resolveWorkbenchAppearance({appearanceMode:'dark'},dark).id,'graphite');
+ }
+});

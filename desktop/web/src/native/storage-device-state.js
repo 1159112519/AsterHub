@@ -32,7 +32,7 @@ export function createStorageDeviceState({request, limit = 8, workspace = null})
   },
   resource(deviceId) {
    const value = entry(deviceId);
-   if (!value.resource) value.resource = createPollingResource({interval: 900, load: signal => request('storage.status', {deviceId}, {signal})});
+   if (!value.resource) value.resource = createPollingResource({interval: 900, nextInterval: data=>[data?.job,data?.preparation].some(task=>task&&['queued','running','enumerating','aggregating','paused'].includes(task.status))?900:15000, load: signal => request('storage.status', {deviceId}, {signal})});
    return value.resource;
   },
   diagnostics: () => ({devices: devices.size})

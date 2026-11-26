@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[1];anchor=root/'VERSION';old=anchor.read_t
 pattern=r'[0-9]+\.[0-9]+\.[0-9]+(?:\.[0-9]+)?'
 if not all(re.fullmatch(pattern,v) for v in (old,new)) or tuple(map(int,new.split('.'))) <= tuple(map(int,old.split('.'))):p.error('Expected an increasing Windows release version')
 changes={}
-for name,count in [('host/AssemblyInfo.cs',3),('installer/notice.txt',1)]:
+for name,count in [('host/AssemblyInfo.cs',3)]:
  f=root/name;s=f.read_text(encoding='utf-8');assert s.count(old)==count,name;changes[f]=s.replace(old,new)
 for f,s in changes.items():f.write_text(s,encoding='utf-8')
 (root/'backend/Properties/AssemblyInfo.cs').write_text((root/'backend/Properties/AssemblyInfo.cs').read_text(encoding='utf-8').replace(old,new),encoding='utf-8')

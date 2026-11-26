@@ -1,9 +1,5 @@
 /* Preview 5: content owns its space; the footer uses one shared selection surface. */
 .preview5-workbench .sidebar-bottom{display:flex;flex-direction:column;gap:5px}
-.preview5-workbench .native-about-entry{align-items:flex-start}
-.preview5-workbench .native-about-entry>svg{margin-top:2px}
-.preview5-workbench .native-about-entry>span{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;min-width:0}
-.preview5-workbench .native-about-entry small{font-size:14px;line-height:16px;font-weight:400;color:var(--muted);overflow-wrap:anywhere}
 .preview5-workbench .core-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 .preview5-workbench .core-cell{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;min-width:0;min-height:66px;padding:12px;box-sizing:border-box}
 .preview5-workbench .core-cell span,.preview5-workbench .core-cell strong{position:static;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:18px}

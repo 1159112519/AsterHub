@@ -49,9 +49,9 @@ export function textInkBounds(node,context){
 }
 export function useOpticalAlignment(){useLayoutEffect(()=>{
  let alive=true;const queue=new Set(),context=document.createElement('canvas').getContext('2d');
- const measure=node=>{if(!node.isConnected||!context)return;const anchor=node.classList.contains('table-optical-label')?node.closest('th'):node.closest('button,a,[role=option]');if(!anchor)return;const box=anchor.getBoundingClientRect();if(!box.width||!box.height)return;
+ const measure=node=>{if(!node.isConnected||!context)return;const anchor=node.classList.contains('table-optical-label')?node.closest('th'):(node.closest('button,a,[role=option]')||node.closest('[data-optical-anchor]'));if(!anchor)return;const box=anchor.getBoundingClientRect();if(!box.width||!box.height)return;
   const ink=textInkBounds(node,context);if(!ink)return;const current=parseFloat(getComputedStyle(node).top)||0;
-  const offset=node.classList.contains('preferences-nav-label')?centeredInkOffset(ink,box,current,window.devicePixelRatio||1):baselineCenteredOffset(ink,box,current,window.devicePixelRatio||1),value=offset+'px';if(node.style.getPropertyValue('--label-optical-y')!==value)return [node,value];
+  const offset=(node.classList.contains('preferences-nav-label')||node.classList.contains('path-address-label'))?centeredInkOffset(ink,box,current,window.devicePixelRatio||1):baselineCenteredOffset(ink,box,current,window.devicePixelRatio||1),value=offset+'px';if(node.style.getPropertyValue('--label-optical-y')!==value)return [node,value];
  };
  const flush=()=>{if(!alive||!queue.size)return;const changes=[...queue].map(measure);queue.clear();for(const change of changes)if(change)change[0].style.setProperty('--label-optical-y',change[1]);};
  const own=node=>{const label=node?.closest?.(selectors);if(label)queue.add(label);};

@@ -23,20 +23,18 @@ internal sealed class StorageIndexPreparation {
 public sealed partial class WorkbenchWindow {
  readonly Dictionary<string,StorageIndexPreparation> storageIndexPreparations=new Dictionary<string,StorageIndexPreparation>();
  readonly CancellationTokenSource storageIndexLifetime=new CancellationTokenSource();Task storageIndexStartup;
- static string StorageIndexRevision(string path){var info=new FileInfo(path);return info.Length+":"+info.LastWriteTimeUtc.Ticks;}
  StorageIndexPreparation QueueStorageIndex(Server server,string deviceId,bool retry=false){
-  string source=StorageFile(deviceId);if(!File.Exists(source))return null;
+  string source=StorageFile(deviceId);string revision=StorageIndexPreparation.FileRevision(source);if(revision=="missing")return null;
   StorageSnapshotSummary summary;lock(storageGate)storageSummaries.TryGetValue(deviceId,out summary);if(summary==null||!summary.Matches(source))summary=StorageSnapshotSummary.Read(source);if(summary==null||summary.Metadata.DeviceId!=deviceId||summary.Metadata.Endpoint!=StorageEndpoint(server))return null;
-  string revision=StorageIndexRevision(source);
-  lock(storageGate){if(storageClosing)return null;StorageIndexPreparation old;if(storageIndexPreparations.TryGetValue(deviceId,out old)&&old.Source==source&&old.Revision==revision&&(!old.Work.IsCompleted||old.Ready||(old.CompletedReady&&storageQueries.CurrentCount==0)||(!retry&&!old.CompletedReady)))return old;
-   if(!StoragePagedIndex.Supported(source))return null;
+  lock(storageGate){if(storageClosing)return null;StorageIndexPreparation old;if(storageIndexPreparations.TryGetValue(source,out old)&&old.Source==source&&old.Revision==revision&&(!old.Work.IsCompleted||old.Ready||(old.CompletedReady&&storageQueries.CurrentCount==0)||(!retry&&!old.CompletedReady)))return old;
+   if(!StoragePagedIndex.Supported(source)||StoragePagedIndex.HasCurrentHeader(source,storageIndexLifetime.Token))return null;
    if(old!=null&&!old.Work.IsCompleted)old.Cancel();
-   foreach(var key in storageIndexPreparations.Where(x=>x.Value.Work.IsCompleted&&x.Key!=deviceId).Select(x=>x.Key).Take(Math.Max(0,storageIndexPreparations.Count-15)).ToArray())storageIndexPreparations.Remove(key);
-   var job=new StorageIndexPreparation(deviceId,source,revision,summary.Metadata.Root,storageIndexLifetime.Token);storageIndexPreparations[deviceId]=job;job.Start(storageQueries);return job;
+   foreach(var key in storageIndexPreparations.Where(x=>x.Value.Work.IsCompleted&&x.Key!=source).Select(x=>x.Key).Take(Math.Max(0,storageIndexPreparations.Count-15)).ToArray())storageIndexPreparations.Remove(key);
+   var job=new StorageIndexPreparation(deviceId,source,revision,summary.Metadata.Root,storageIndexLifetime.Token);storageIndexPreparations[source]=job;job.Start(storageQueries);return job;
   }
  }
- void NoteStorageIndexRead(string deviceId){lock(storageGate){StorageIndexPreparation job;if(storageIndexPreparations.TryGetValue(deviceId,out job)&&job.Revision==StorageIndexRevision(job.Source))job.RememberValidatedRevision();}}
- object StorageIndexState(string deviceId){lock(storageGate){StorageIndexPreparation job;return storageIndexPreparations.TryGetValue(deviceId,out job)?job.View():null;}}
+ void NoteStorageIndexRead(string deviceId){lock(storageGate){StorageIndexPreparation job;if(storageIndexPreparations.TryGetValue(StorageFile(deviceId),out job)&&job.Revision==StorageIndexPreparation.FileRevision(job.Source))job.RememberValidatedRevision();}}
+ object StorageIndexState(string deviceId){lock(storageGate){StorageIndexPreparation job;string source=StorageFile(deviceId);return storageIndexPreparations.TryGetValue(source,out job)&&job.Revision==StorageIndexPreparation.FileRevision(source)?job.View():null;}}
  void StartStorageIndexWarmup(){if(storageIndexStartup!=null)return;storageIndexStartup=Task.Run(async()=>{try{await Task.Delay(2000,storageIndexLifetime.Token).ConfigureAwait(false);foreach(var server in devices.All()){storageIndexLifetime.Token.ThrowIfCancellationRequested();try{var job=QueueStorageIndex(server.Copy(),DeviceRegistry.Id(server));if(job!=null)await job.Work.ConfigureAwait(false);}catch(OperationCanceledException){throw;}catch(Exception e){DiagnosticsLog.Write("storage-index-startup",e);}}}catch(OperationCanceledException){}catch(Exception e){DiagnosticsLog.Write("storage-index-startup",e);}});}
  async Task PrepareStorageIndex(Server server,string deviceId){var job=await Task.Run(()=>QueueStorageIndex(server,deviceId,true));if(job!=null){await job.Work.ConfigureAwait(false);job.ThrowIfFailed();}}
 }

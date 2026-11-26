@@ -86,6 +86,7 @@ public sealed partial class WorkbenchWindow {
      var metadata=pages.Metadata;if(metadata.DeviceId!=deviceId||metadata.Endpoint!=StorageEndpoint(server))throw new IOException("请先扫描一个文件夹");if(metadata.Id!=FileText(p,"snapshotId"))throw new IOException("扫描结果已更新，请重新选择项目");
      await Task.Run(()=>pages.ApplyRemoved(ReadStorageTrash().Where(x=>x.DeviceId==deviceId&&x.Endpoint==metadata.Endpoint&&!x.Restored&&(x.State=="moved"||x.State=="deleted")&&x.Created>=metadata.Created).Select(x=>new StorageSummaryRemoval{Path=x.Original,Bytes=x.Bytes,Directory=x.Directory}),fileLifetime.Token));NoteStorageIndexRead(deviceId);
      if(method=="storage.query")return await Task.Run(()=>pages.Query(p,fileLifetime.Token));
+     if(method=="storage.locate")return await Task.Run(()=>pages.DirectoryAt(FileText(p,"path")).View());
      return await StorageAction(server,deviceId,metadata,p,method,pages.Node);
     }
    }
@@ -93,6 +94,7 @@ public sealed partial class WorkbenchWindow {
    if(snapshot!=null&&snapshot.Endpoint!=StorageEndpoint(server))snapshot=null;
    if(snapshot==null)throw new IOException("请先扫描一个文件夹");if(snapshot.Id!=FileText(p,"snapshotId"))throw new IOException("扫描结果已更新，请重新选择项目");
    if(method=="storage.query")return await Task.Run(()=>QueryStorage(snapshot,p));
+   if(method=="storage.locate"){string wanted=StoragePagedIndex.PathKey(StoragePaths.Resolve(snapshot.IsLocal,snapshot.Root,FileText(p,"path")),snapshot.IsLocal);var found=await Task.Run(()=>snapshot.Nodes.Values.FirstOrDefault(n=>n.Directory&&!n.Removed&&StoragePagedIndex.PathKey(n.Path,snapshot.IsLocal)==wanted));if(found==null)throw new IOException("此目录不在扫描记录中");return found.View();}
    return await StorageAction(server,deviceId,snapshot,p,method,snapshot.Node);
   }finally{storageQueries.Release();}
  }
@@ -263,7 +265,7 @@ public sealed partial class WorkbenchWindow {
  }
  void CancelStorageForDevice(string deviceId){
   StorageScanJob job;
-  lock(storageGate){storageScans.TryGetValue(deviceId,out job);StorageIndexPreparation preparation;if(storageIndexPreparations.TryGetValue(deviceId,out preparation))preparation.Cancel();}
+  lock(storageGate){storageScans.TryGetValue(deviceId,out job);foreach(var preparation in storageIndexPreparations.Values.Where(p=>p.DeviceId==deviceId).ToArray())preparation.Cancel();}
   if(job==null)return;
   lock(job.Gate){job.Cancel.Cancel();job.Resume.Set();}
  }

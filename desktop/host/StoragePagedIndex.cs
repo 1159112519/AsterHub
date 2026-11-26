@@ -20,6 +20,10 @@ internal sealed class StoragePagedIndex:IDisposable {
  const string FromNodes=" FROM nodes n LEFT JOIN nodes p ON n.parent=p.id ";
  StoragePagedIndex(string file,CancellationToken token){db=new PageSql(file,token);try{using(var q=db.Prepare("SELECT header FROM meta WHERE id=1")){if(!q.Row())throw new IOException("分页索引缺少元数据");Metadata=StorageSnapshot.ReadHeader(new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(q.Text(0)));}}catch{db.Dispose();throw;}}
  internal static bool Supported(string file){if(!File.Exists(file))return false;using(var input=File.OpenRead(file))using(var zip=new GZipStream(input,CompressionMode.Decompress))return zip.ReadByte()=='{'&&zip.ReadByte()=='\n';}
+ internal static bool HasCurrentHeader(string source,CancellationToken token){
+  string index=source+".pages.sqlite";if(!File.Exists(source)||!File.Exists(index))return false;
+  var info=new FileInfo(source);try{using(var sql=new PageSql(index,token))using(var q=sql.Prepare("SELECT version,source_length,source_stamp FROM meta WHERE id=1"))return q.Row()&&q.Int64(0)==3&&q.Int64(1)==info.Length&&q.Int64(2)==info.LastWriteTimeUtc.Ticks;}catch(PageSqlException e){if(e.Code==1||e.Code==11||e.Code==17||e.Code==26)return false;throw;}
+ }
  internal static bool IsCurrent(string source,CancellationToken token){
   string index=source+".pages.sqlite";if(!File.Exists(source)||!File.Exists(index))return false;
   var info=new FileInfo(source);try{using(var sql=new PageSql(index,token))using(var q=sql.Prepare("SELECT version,source_length,source_stamp FROM meta WHERE id=1"))return q.Row()&&q.Int64(0)==3&&q.Int64(1)==info.Length&&q.Int64(2)==info.LastWriteTimeUtc.Ticks&&ValidateDerived(sql,index,token);}catch(PageSqlException e){if(e.Code==1||e.Code==11||e.Code==17||e.Code==26)return false;throw;}
@@ -41,7 +45,7 @@ internal sealed class StoragePagedIndex:IDisposable {
   using(var schema=sql.Prepare("SELECT id,parent,name,path,path_key,directory,bytes,base_bytes,stamp,ticks,incomplete,count,base_count,removed,kind FROM nodes LIMIT 0"))schema.Row();
   using(var indexes=sql.Prepare("SELECT count(*) FROM sqlite_master WHERE type='index' AND name IN ('children','paths','largest')")){indexes.Row();if(indexes.Int64(0)!=3)return false;}
   using(var check=sql.Prepare("PRAGMA quick_check(1)")){if(!check.Row()||check.Text(0)!="ok")return false;}
-  token.ThrowIfCancellationRequested();lock(verifyGate){if(verified.Count>=16)verified.Clear();verified[path]=revision;}return true;
+  token.ThrowIfCancellationRequested();lock(verifyGate){if(verified.Count>=64&&!verified.ContainsKey(path))verified.Remove(verified.Keys.First());verified[path]=revision;}return true;
  }
  sealed class DirectoryCount {internal long Parent;internal int Count;internal bool Defined;}
  static void Build(string source,string target,long length,long stamp,CancellationToken token,Action<long,string> progress){
@@ -65,9 +69,10 @@ internal sealed class StoragePagedIndex:IDisposable {
    if(progress!=null)progress(rows,"正在整理查询目录");token.ThrowIfCancellationRequested();db.Exec("CREATE INDEX children ON nodes(parent,removed,bytes DESC,id);CREATE INDEX paths ON nodes(path_key) WHERE directory=1;CREATE INDEX largest ON nodes(directory,removed,bytes DESC);COMMIT;");
   }
  }
- static string PathKey(string path,bool local){string p=(local?(path??"").Replace('\\','/'):(path??"")).TrimEnd('/');return local?p.ToUpperInvariant():p;}
+ internal static string PathKey(string path,bool local){string p=(local?(path??"").Replace('\\','/'):(path??"")).TrimEnd('/');return local?p.ToUpperInvariant():p;}
  internal static string Kind(string name,bool directory){if(directory)return "folder";string ext=System.IO.Path.GetExtension(name).ToLowerInvariant();if(new[]{".zip",".7z",".tar",".gz",".rar",".xz"}.Contains(ext))return "archive";if(new[]{".pt",".pth",".onnx",".safetensors",".ckpt",".bin"}.Contains(ext))return "model";if(new[]{".mp4",".mkv",".mov",".png",".jpg",".jpeg",".webp"}.Contains(ext))return "media";if(new[]{".db",".sqlite",".sqlite3",".mdb",".mdf",".log"}.Contains(ext))return "data";return "file";}
  StorageNode Read(PageSql.Statement q){return new StorageNode{Id=q.Text(0),Parent=q.Text(1),Name=q.Text(2),Path=q.Text(3),Directory=q.Int64(4)!=0,Bytes=q.Int64(5),Stamp=DateTime.Parse(q.Text(6),null,System.Globalization.DateTimeStyles.RoundtripKind),Incomplete=q.Int64(7)!=0,Count=(int)q.Int64(8)};}
+ internal StorageNode DirectoryAt(string path){string normalized=StoragePaths.Resolve(Metadata.IsLocal,Metadata.Root,path);using(var q=db.Prepare("SELECT "+Columns+FromNodes+"WHERE n.directory=1 AND n.path_key=? AND n.removed=0")){q.Bind(1,PathKey(normalized,Metadata.IsLocal));if(!q.Row())throw new IOException("此目录不在扫描记录中");return Read(q);}}
  internal StorageNode Node(string id){using(var q=db.Prepare("SELECT "+Columns+FromNodes+"WHERE n.id=? AND n.removed=0")){q.Bind(1,id??"0");if(!q.Row())throw new IOException("此项目已不在当前扫描结果中，请重新扫描");return Read(q);}}
  internal void ApplyRemoved(IEnumerable<StorageSummaryRemoval> entries,CancellationToken token){
   var paths=entries.Select(x=>PathKey(x.Path,Metadata.IsLocal)).Distinct(StringComparer.Ordinal).OrderBy(x=>x,StringComparer.Ordinal).ToArray();string version=new JavaScriptSerializer().Serialize(paths);using(var q=db.Prepare("SELECT overlay FROM meta WHERE id=1"))if(q.Row()&&q.Text(0)==version)return;

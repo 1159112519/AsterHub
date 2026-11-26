@@ -1,0 +1,35 @@
+/* Paint from the original Marcel UI study; keep AsterHub navigation, typography and header geometry. */
+:root[data-theme=marcel-light]{--marcel-side:#eff0f1;--marcel-paper:#fff;--marcel-hover:#eceef0;--marcel-fg:#20252a;--marcel-text:#363d46;--marcel-muted:#626b76;--marcel-minor:#6a7480;--marcel-line:#e4e7ea;--marcel-accent:#1978bd;--marcel-shadow:0 1px 1px #202a3410,0 1px 2px #202a3408}
+:root[data-theme=graphite]{--marcel-side:#222529;--marcel-paper:#2a2e33;--marcel-hover:#363a40;--marcel-fg:#f5f6f7;--marcel-text:#d7dce0;--marcel-muted:#adb6c1;--marcel-minor:#a0aab5;--marcel-line:#373c43;--marcel-accent:#74bbff;--marcel-shadow:0 1px 2px #0003}
+.native-workbench > .sidebar::before{background:var(--marcel-side);box-shadow:inset -1px 0 var(--marcel-line)}
+.native-workbench > .sidebar > .sidebar-section-label{color:var(--marcel-minor)}
+.native-workbench > .sidebar > nav .nav-item,.native-workbench > .sidebar > .sidebar-bottom .nav-item{color:var(--marcel-text);background:transparent;border:1px solid transparent;border-radius:8px;transition:background-color 145ms,color 145ms}
+.native-workbench > .sidebar > nav .nav-item:hover,.native-workbench > .sidebar > .sidebar-bottom .nav-item:hover{background:var(--marcel-hover)}
+.native-workbench > .sidebar > nav .nav-item[aria-current=page]{background:var(--marcel-paper);color:var(--marcel-fg);border-color:var(--marcel-line);box-shadow:var(--marcel-shadow)}
+.native-workbench > .sidebar > nav .nav-item[aria-current=page] > svg{color:var(--marcel-accent)}
+.native-workbench > .sidebar > nav .nav-item[aria-current=page]::before{content:"";position:absolute;left:-10px;height:18px;width:3px;border-radius:0 3px 3px 0;background:var(--marcel-accent);top:50%;transform:translateY(-50%);pointer-events:none}
+.native-workbench > .sidebar > nav .nav-item:focus-visible,.native-workbench > .sidebar > .sidebar-bottom .nav-item:focus-visible{outline-offset:-2px}
+@media (prefers-reduced-motion:reduce){.native-workbench > .sidebar > nav .nav-item,.native-workbench > .sidebar > .sidebar-bottom .nav-item{transition:none}}
+:root[data-motion=reduced] .native-workbench > .sidebar > nav .nav-item,:root[data-motion=reduced] .native-workbench > .sidebar > .sidebar-bottom .nav-item{transition:none}
+
+/* Keep the existing footer inside the window when the collapsed rail is taller than the viewport. */
+.native-workbench.app-shell.sidebar-collapsed{grid-template-rows:minmax(0,1fr)}
+.native-workbench.sidebar-collapsed > .sidebar{min-height:0;overflow-y:auto;overflow-x:hidden}
+
+/* Appearance choice, in Preferences. */
+:root[data-theme=marcel-light]{--segment-track:#eef0f2;--segment-edge:#e0e4e8;--segment-selected:#fff;--segment-selected-edge:#e0e4e8;--success:#28754e;--icon-pink:#a04972;--icon-cyan:#317c80;--icon-amber:#8d6027;--icon-green:#28754e}
+.marcel-appearance-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:13px;margin-bottom:16px;border-bottom:1px solid var(--line);font:400 14px/20px var(--font-interface)}
+.marcel-appearance-toggle{display:grid;position:relative;isolation:isolate;grid-template-columns:repeat(3,34px);gap:2px;padding:3px;border:1px solid var(--segment-edge,var(--line));border-radius:10px;background:var(--segment-track,var(--surface2))}
+.marcel-appearance-toggle>button{position:relative;display:grid;place-items:center;width:34px;height:29px;border:0;background:transparent;color:var(--muted);border-radius:7px;cursor:pointer}
+.marcel-appearance-toggle>button:hover,.marcel-appearance-toggle>button[aria-pressed=true]{color:var(--text)}
+.marcel-appearance-toggle>button:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+.marcel-appearance-thumb{position:absolute;z-index:-1;inset:3px auto 3px 3px;width:34px;border:1px solid var(--segment-selected-edge,var(--line));border-radius:7px;background:var(--segment-selected,var(--hover));transition:transform var(--motion-layout,.24s) var(--ease)}
+.marcel-appearance-toggle[data-mode=dark] .marcel-appearance-thumb{transform:translateX(36px)}
+@media(prefers-reduced-motion:reduce){.marcel-appearance-thumb{transition:none}}
+[data-motion=reduced] .marcel-appearance-thumb{transition:none}
+
+.marcel-appearance-toggle[data-mode=system] .marcel-appearance-thumb{transform:translateX(72px)}
+.native-workbench .sidebar-bottom .native-about-entry{align-items:center}
+.native-workbench .sidebar-bottom .native-about-entry>svg{margin-top:0}
+.native-workbench .sidebar-bottom .native-about-entry>span{min-width:0}
+.modal-backdrop:has(>.native-preferences){backdrop-filter:none;background:rgb(13 17 22 / 56%)}
