@@ -1,7 +1,16 @@
+param([switch]$LocalOnly)
 $ErrorActionPreference='Stop'
 $previewRoot=$PSScriptRoot
 Push-Location (Join-Path $previewRoot 'web')
-try { & npm.cmd run build; if($LASTEXITCODE -ne 0){throw 'Frontend build failed'} } finally { Pop-Location }
+$previousLocalBuild=$env:ASTERHUB_LOCAL_BUILD
+try {
+ if($LocalOnly){$env:ASTERHUB_LOCAL_BUILD='1'}else{Remove-Item Env:ASTERHUB_LOCAL_BUILD -ErrorAction SilentlyContinue}
+ & npm.cmd run build
+ if($LASTEXITCODE -ne 0){throw 'Frontend build failed'}
+} finally {
+ $env:ASTERHUB_LOCAL_BUILD=$previousLocalBuild
+ Pop-Location
+}
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 $appRoot=Join-Path $previewRoot 'app'
 $fontOutput=Join-Path $appRoot 'resources/fonts'

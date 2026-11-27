@@ -29,85 +29,26 @@ public static class BrandIcons {
  public static BitmapFrame Window(string id){try{using(var input=File.OpenRead(WindowAsset(id))){var decoder=BitmapDecoder.Create(input,BitmapCreateOptions.None,BitmapCacheOption.OnLoad);BitmapFrame best=decoder.Frames[0];foreach(var frame in decoder.Frames)if(frame.PixelWidth>best.PixelWidth)best=frame;best.Freeze();return best;}}catch{return null;}}
  static readonly ConditionalWeakTable<Window,NativeWindowIcons> nativeIcons=new ConditionalWeakTable<Window,NativeWindowIcons>();
  // Own only HICONs loaded here; WPF retains ownership of its independent handles.
- public static void ApplyWindow(Window window,string id){BrandShortcuts.SetProcessIdentity();window.Icon=Window(id);nativeIcons.GetValue(window,w=>new NativeWindowIcons(w)).Apply(id);}
+ public static void ApplyWindow(Window window,string id){window.Icon=Window(id);nativeIcons.GetValue(window,w=>new NativeWindowIcons(w)).Apply(id);}
  sealed class NativeWindowIcons:IDisposable{
-  readonly Window owner;IntPtr hwnd,small,big;string selected,rebound;bool hooked,taskbarReady,refreshQueued,activationQueued,disposed;int refreshAttempts;System.Windows.Threading.DispatcherTimer retry;
-  static readonly uint TaskbarButtonCreated=RegisterWindowMessage("TaskbarButtonCreated");
-  [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern uint RegisterWindowMessage(string name);
-  [DllImport("user32.dll")]static extern IntPtr GetForegroundWindow();
-  [DllImport("user32.dll")]static extern IntPtr GetAncestor(IntPtr window,uint flags);
+  const uint WM_SETICON=0x0080;
+  readonly Window owner;IntPtr hwnd,small,big;string selected;bool hooked,disposed;
   [DllImport("user32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr LoadImage(IntPtr instance,string file,uint type,int width,int height,uint flags);
   [DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr hwnd,uint message,IntPtr wparam,IntPtr lparam);
   [DllImport("user32.dll")]static extern bool DestroyIcon(IntPtr icon);
   [DllImport("user32.dll")]static extern uint GetDpiForWindow(IntPtr hwnd);
-  public NativeWindowIcons(Window window){owner=window;owner.SourceInitialized+=delegate{Apply(selected);};owner.Closed+=delegate{Dispose();};owner.IsVisibleChanged+=delegate{if(owner.IsVisible)QueueTaskbarRefresh();};owner.Activated+=delegate{QueueActiveTabSync();};owner.ContentRendered+=delegate{QueueActiveTabSync();};}
-  public void Apply(string id){string next=Normalize(id);bool changed=next!=selected;selected=next;if(changed){rebound=null;refreshAttempts=0;if(retry!=null)retry.Stop();}hwnd=new WindowInteropHelper(owner).Handle;if(hwnd==IntPtr.Zero)return;if(!hooked){var source=HwndSource.FromHwnd(hwnd);if(source!=null){source.AddHook(Observe);hooked=true;}}
+  public NativeWindowIcons(Window window){owner=window;owner.SourceInitialized+=delegate{Apply(selected);};owner.Closed+=delegate{Dispose();};}
+  public void Apply(string id){
+   if(disposed)return;selected=Normalize(id);hwnd=new WindowInteropHelper(owner).Handle;if(hwnd==IntPtr.Zero)return;
+   if(!hooked){var source=HwndSource.FromHwnd(hwnd);if(source!=null){source.AddHook(Observe);hooked=true;}}
    uint dpi=96;try{dpi=GetDpiForWindow(hwnd);}catch{}int smallSize=16,bigSize=32;try{smallSize=GetSystemMetricsForDpi(49,dpi);bigSize=GetSystemMetricsForDpi(11,dpi);}catch{}
-   string file=WindowAsset(selected);IntPtr nextSmall=LoadImage(IntPtr.Zero,file,1,Math.Max(16,smallSize),Math.Max(16,smallSize),0x10),nextBig=LoadImage(IntPtr.Zero,file,1,Math.Max(32,bigSize),Math.Max(32,bigSize),0x10);if(nextSmall==IntPtr.Zero||nextBig==IntPtr.Zero){if(nextSmall!=IntPtr.Zero)DestroyIcon(nextSmall);if(nextBig!=IntPtr.Zero)DestroyIcon(nextBig);return;}
-   SendMessage(hwnd,0x80,IntPtr.Zero,nextSmall);SendMessage(hwnd,0x80,new IntPtr(1),nextBig);if(small!=IntPtr.Zero)DestroyIcon(small);if(big!=IntPtr.Zero)DestroyIcon(big);small=nextSmall;big=nextBig;BrandShortcuts.ApplyWindow(hwnd,selected);if(changed&&taskbarReady)QueueTaskbarRefresh();
+   string file=WindowAsset(selected);IntPtr nextSmall=LoadImage(IntPtr.Zero,file,1,Math.Max(16,smallSize),Math.Max(16,smallSize),0x10),nextBig=LoadImage(IntPtr.Zero,file,1,Math.Max(32,bigSize),Math.Max(32,bigSize),0x10);
+   if(nextSmall==IntPtr.Zero||nextBig==IntPtr.Zero){if(nextSmall!=IntPtr.Zero)DestroyIcon(nextSmall);if(nextBig!=IntPtr.Zero)DestroyIcon(nextBig);return;}
+   // Explorer owns the lifetime and activation of the native taskbar button.
+   SendMessage(hwnd,WM_SETICON,IntPtr.Zero,nextSmall);SendMessage(hwnd,WM_SETICON,new IntPtr(1),nextBig);
+   if(small!=IntPtr.Zero)DestroyIcon(small);if(big!=IntPtr.Zero)DestroyIcon(big);small=nextSmall;big=nextBig;BrandShortcuts.ApplyWindow(hwnd,selected);
   }
-  // Explorer may have created this button from an old pin/EXE cache during the first launch.
-  // Defer shell calls until the window message returns; AddTab can send this message again.
-  IntPtr Observe(IntPtr window,int message,IntPtr wparam,IntPtr lparam,ref bool handled){
-   if(message==0x2){BrandShortcuts.ClearWindow(window);taskbarReady=false;}
-   if(TaskbarButtonCreated!=0&&message==TaskbarButtonCreated){taskbarReady=true;QueueTaskbarRefresh();QueueActiveTabSync();}
-   // WebView2 can hold focus in a child HWND. Reconcile the owner's shell button
-   // after activation, not just once when a selected icon is rebound.
-   if(message==0x0006&&(wparam.ToInt64()&0xFFFF)!=0||message==0x001C&&wparam!=IntPtr.Zero)QueueActiveTabSync();
-   return IntPtr.Zero;
-  }
-  void QueueActiveTabSync(){
-   if(activationQueued||disposed)return;activationQueued=true;
-   owner.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,new Action(delegate{
-    object shell=null;
-    try{
-     if(disposed||!taskbarReady||!owner.IsVisible||!owner.ShowInTaskbar||owner.WindowState==WindowState.Minimized)return;
-     var foreground=GetForegroundWindow();
-     if(foreground!=hwnd&&GetAncestor(foreground,2)!=hwnd)return;
-     shell=new BrandTaskbarList();var taskbar=(IBrandTaskbarList)shell;
-     if(taskbar.HrInit()<0)return;
-     // Neither call raises/restores the HWND. They only repair Explorer's active
-     // button bookkeeping, so a second taskbar click may minimize normally.
-     taskbar.ActivateTab(hwnd);taskbar.SetActiveAlt(hwnd);
-    }catch(COMException){}catch(InvalidCastException){}
-    finally{if(shell!=null&&Marshal.IsComObject(shell))Marshal.FinalReleaseComObject(shell);activationQueued=false;}
-   }));
-  }
-  void QueueTaskbarRefresh(){
-   if(refreshQueued||disposed)return;refreshQueued=true;
-   owner.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,new Action(delegate{
-    bool success=false,deleted=false;object shell=null;IBrandTaskbarList taskbar=null;
-    try{
-     if(disposed||!taskbarReady||!owner.IsVisible||!owner.ShowInTaskbar||rebound==selected)return;
-     // Apply after WPF's own deferred update. Keep the selection unconfirmed until Explorer accepts it.
-     Apply(selected);shell=new BrandTaskbarList();taskbar=(IBrandTaskbarList)shell;
-     if(taskbar.HrInit()<0)return;
-     deleted=taskbar.DeleteTab(hwnd)>=0;
-     success=taskbar.AddTab(hwnd)>=0;
-     if(success){rebound=selected;refreshAttempts=0;QueueActiveTabSync();}
-    }catch(COMException){}catch(InvalidCastException){}
-    finally{
-     // A failed AddTab must never leave the taskbar button removed.
-     if(deleted&&!success&&taskbar!=null)try{success=taskbar.AddTab(hwnd)>=0;if(success)rebound=selected;}catch(COMException){}
-     if(shell!=null&&Marshal.IsComObject(shell))Marshal.FinalReleaseComObject(shell);
-     refreshQueued=false;
-     if(!disposed&&taskbarReady&&owner.IsVisible&&owner.ShowInTaskbar&&rebound!=selected&&refreshAttempts++<3){
-      if(retry==null){retry=new System.Windows.Threading.DispatcherTimer{Interval=TimeSpan.FromMilliseconds(220)};retry.Tick+=delegate{retry.Stop();QueueTaskbarRefresh();};}retry.Start();
-     }
-    }
-   }));
-  }
-  public void Dispose(){disposed=true;if(retry!=null)retry.Stop();if(small!=IntPtr.Zero){DestroyIcon(small);small=IntPtr.Zero;}if(big!=IntPtr.Zero){DestroyIcon(big);big=IntPtr.Zero;}}
+  IntPtr Observe(IntPtr window,int message,IntPtr wparam,IntPtr lparam,ref bool handled){if(message==0x0002)BrandShortcuts.ClearWindow(window);return IntPtr.Zero;}
+  public void Dispose(){disposed=true;if(small!=IntPtr.Zero){DestroyIcon(small);small=IntPtr.Zero;}if(big!=IntPtr.Zero){DestroyIcon(big);big=IntPtr.Zero;}}
  }
-}
-
-[ComImport,Guid("56FDF344-FD6D-11D0-958A-006097C9A090")]
-internal class BrandTaskbarList{}
-[ComImport,Guid("56FDF342-FD6D-11D0-958A-006097C9A090"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-internal interface IBrandTaskbarList{
- [PreserveSig]int HrInit();
- [PreserveSig]int AddTab(IntPtr hwnd);
- [PreserveSig]int DeleteTab(IntPtr hwnd);
- [PreserveSig]int ActivateTab(IntPtr hwnd);
- [PreserveSig]int SetActiveAlt(IntPtr hwnd);
 }

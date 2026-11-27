@@ -19,9 +19,11 @@
 
 /* Only the selected plate travels; text is laid out at its final coordinates. */
 .settings-navigation{position:relative;isolation:isolate}
-.settings-navigation-marker{position:absolute;z-index:0;left:10px;top:0;width:var(--settings-marker-w,0);height:var(--settings-marker-h,0);transform:translateY(var(--settings-marker-y,0));background:var(--hover);border-radius:10px;pointer-events:none;transition:transform var(--motion-layout,.28s) var(--ease),width var(--motion-layout,.28s) var(--ease),height var(--motion-layout,.28s) var(--ease)}
+.settings-navigation-marker{position:absolute;z-index:0;left:10px;top:0;width:var(--settings-marker-w,0);height:var(--settings-marker-h,0);transform:translateY(var(--settings-marker-y,0));background:var(--settings-selected,var(--hover));border-radius:10px;pointer-events:none;transition:transform var(--motion-layout,.28s) var(--ease),width var(--motion-layout,.28s) var(--ease),height var(--motion-layout,.28s) var(--ease)}
 .native-preferences-layout>.settings-navigation>button{position:relative;z-index:1}
 .native-preferences-layout>.settings-navigation>button.active{background:transparent}
+:root[data-theme=marcel-light] .settings-navigation{--settings-selected:color-mix(in srgb,var(--marcel-accent) 16%,var(--marcel-side))}
+:root[data-theme=marcel-light] .settings-navigation>button:not(.active):hover{background:color-mix(in srgb,var(--marcel-accent) 6%,var(--marcel-side))}
 .settings-category-content{min-width:0;animation:settings-category-in .18s var(--ease) both}
 @keyframes settings-category-in{from{opacity:.45}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.settings-navigation-marker{transition:none}.settings-category-content{animation:none}}

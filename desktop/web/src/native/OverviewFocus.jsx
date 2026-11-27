@@ -1,4 +1,4 @@
-import React,{useMemo,useRef,useLayoutEffect} from 'react';
+import React,{useMemo,useRef,useLayoutEffect,useSyncExternalStore} from 'react';
 import {Cpu,Microchip,MemoryStick,Network,HardDrive,ArrowDown,ArrowUp} from 'lucide-react';
 import {Chart,NumberValue,SectionTitle} from '../components';
 import {t,tr,useLocale} from '../i18n/index.js';
@@ -14,7 +14,11 @@ import {OverviewTrendSeries} from './OverviewTrendSeries';
 import './overview-focus.css';
 
 const metrics=[['cpu','CPU',Cpu,'var(--icon-blue)','CPU 使用率'],['gpu','GPU',Microchip,'var(--icon-purple)','GPU 使用率'],['memory','内存',MemoryStick,'var(--icon-pink)','内存使用率'],['network','网络',Network,'var(--icon-cyan)','网络速率'],['storage','存储',HardDrive,'var(--icon-amber)','磁盘读写速率']];
-const span=3, trendHeight=260, gi=(n)=>Number.isFinite(n)?n.toFixed(1)+' GiB':'—';
+const span=3;
+// Use extra vertical room in tall windows without crowding the inventory in shorter ones.
+const getTrendHeight=()=>260+Math.min(52,Math.max(0,Math.round((window.innerHeight-780)*.22)));
+const watchTrendHeight=notify=>{window.addEventListener('resize',notify);return()=>window.removeEventListener('resize',notify);};
+const gi=(n)=>Number.isFinite(n)?n.toFixed(1)+' GiB':'—';
 const rate=(s,up=false)=>s.network?.[up?'UploadBytesPerSecond':'DownloadBytesPerSecond'];
 const io=(s,write=false)=>storageRate(s,write?'WriteBytesPerSecond':'ReadBytesPerSecond');
 function resourceSeries(rows,id,s,color){
@@ -36,6 +40,7 @@ function context(s,id,visibleSeries){
  const cap=storageSummary(s);return [null,[['可用空间',bytes(cap.free)],['总容量',bytes(cap.total)],['存储卷',cap.count||'—']]];
 }
 export default function OverviewFocus({sample,samples,lightSamples,hasSample,deviceId}){useLocale();
+ const trendHeight=useSyncExternalStore(watchTrendHeight,getTrendHeight);
  const [selected,setSelected]=useWorkspaceState(deviceId,'overview-metric','cpu');const controls=useRef([]),strip=useRef(null),underline=useRef(null),underlineMotion=useRef(null),contextNode=useRef(null),lastContext=useRef(null);
  const idx=Math.max(0,metrics.findIndex(([id])=>id===selected));
  const [id,label,,color,title]=metrics[idx];

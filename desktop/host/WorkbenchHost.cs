@@ -30,6 +30,7 @@ public static class WorkbenchHost {
     if(!StartBackground&&SmokeRoot==null&&args.Length==0&&WorkbenchElevation.TryRelaunchForeground()){mutex.ReleaseMutex();return 0;}
     using(var restore=new EventWaitHandle(false,EventResetMode.AutoReset,@"Local\AsterHubPreviewRestore-"+instance))
     using(var toggle=new EventWaitHandle(false,EventResetMode.AutoReset,@"Local\AsterHubPreviewToggle-"+instance)){
+     BrandShortcuts.SetProcessIdentity();
      var app=new Application{ShutdownMode=ShutdownMode.OnMainWindowClose};var window=new WorkbenchWindow();app.MainWindow=window;app.DispatcherUnhandledException+=delegate(object sender,System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e){DiagnosticsLog.Write("dispatcher",e.Exception);};
      var watcher=ThreadPool.RegisterWaitForSingleObject(restore,delegate{window.Dispatcher.BeginInvoke(new Action(window.RestoreFromTray));},null,Timeout.Infinite,false);
      var toggleWatcher=ThreadPool.RegisterWaitForSingleObject(toggle,delegate{window.Dispatcher.BeginInvoke(new Action(window.ToggleFromTaskbar));},null,Timeout.Infinite,false);
@@ -58,7 +59,7 @@ public sealed partial class WorkbenchWindow:Window {
   var inventory=new DeviceInventory(WorkbenchHost.DataRoot);capture=new DeviceCapture(archive,Receive,inventory.Collect);capture.Configure(devices.All(),interval,preferences.localIntervalMs);StartLocalLightCapture();
   if(WorkbenchHost.SmokeRoot==null)BrandShortcuts.Apply(appliedIconId,true);
   SourceInitialized+=delegate{string theme=NativeWindowTheme.Read(WorkbenchHost.DataRoot);NativeWindowTheme.Apply(this,theme,false);SetWebBackground(theme);AttachMinimizeIntent();};
-  Loaded+=async delegate{desktop=new DesktopSettings(this,command=>Send(new{type="navigate",value=command}),RequestExit,appliedIconId);desktop.ApplyTheme(NativeWindowTheme.Read(WorkbenchHost.DataRoot));await Initialize();StartTaskbar();StartStorageIndexWarmup();if(!IsExiting&&(WorkbenchHost.StartBackground||preferences.startMinimized))Hide();};
+  Loaded+=async delegate{desktop=new DesktopSettings(this,command=>Send(new{type="navigate",value=command}),RequestExit,appliedIconId);await Initialize();StartTaskbar();StartStorageIndexWarmup();if(!IsExiting&&(WorkbenchHost.StartBackground||preferences.startMinimized))Hide();};
   StateChanged+=delegate{if(WindowState==WindowState.Minimized){if(minimizeIntent.Consume()&&preferences.minimizeToTray)Hide();}else minimizeIntent.Reset();PublishTelemetryVisibility();};IsVisibleChanged+=delegate{PublishTelemetryVisibility();};Closing+=ClosingWindow;
  }
  bool SetWebBackground(string theme){var appearance=NativeWindowTheme.Current(theme);var color=NativeWindowTheme.ColorValue(appearance.colors["background"]);bool glass=NativeWindowTheme.ApplyClientBackdrop(this,appearance);web.DefaultBackgroundColor=glass?System.Drawing.Color.FromArgb(0,0,0,0):System.Drawing.Color.FromArgb(255,color.R,color.G,color.B);return glass;}
@@ -133,8 +134,8 @@ public sealed partial class WorkbenchWindow:Window {
     case "history.cancel":result=CancelHistory(p);break;
     case "history.read":result=await ReadHistory(p);break;
     case "capture.interval":int seconds=Convert.ToInt32(p["seconds"]);if(seconds<2||seconds>60)throw new ArgumentOutOfRangeException("seconds");devices.SetInterval(seconds);interval=seconds;capture.Configure(devices.All(),interval,preferences.localIntervalMs);result=interval;break;
-    case "window.appearance":NativeWindowTheme.ApplyResolved(this,p);bool glass=SetWebBackground(Convert.ToString(p["theme"]));if(desktop!=null)desktop.ApplyTheme(Convert.ToString(p["theme"]));result=new{glass=glass};break;
-    case "window.theme":NativeWindowTheme.Apply(this,Convert.ToString(p["theme"]),true);SetWebBackground(Convert.ToString(p["theme"]));if(desktop!=null)desktop.ApplyTheme(Convert.ToString(p["theme"]));result=true;break;
+    case "window.appearance":NativeWindowTheme.ApplyResolved(this,p);bool glass=SetWebBackground(Convert.ToString(p["theme"]));result=new{glass=glass};break;
+    case "window.theme":NativeWindowTheme.Apply(this,Convert.ToString(p["theme"]),true);SetWebBackground(Convert.ToString(p["theme"]));result=true;break;
     case "window.telemetry":result=TelemetryWindowVisible;break;
     case "window.minimize":MinimizeLikeCaption();break;
     case "window.maximize":WindowState=WindowState==WindowState.Maximized?WindowState.Normal:WindowState.Maximized;break;

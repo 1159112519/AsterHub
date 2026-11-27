@@ -9,8 +9,10 @@ const read=n=>fs.readFileSync(path.join(host,n),'utf8');
 test('in-app minimize delegates to the shared caption action',()=>{
  assert.match(read('WorkbenchHost.cs'),/case "window\.minimize":MinimizeLikeCaption\(\);break;/);
 });
-test('native taskbar SC_MINIMIZE is handled by the same action, not restore',()=>{
- assert.match(read('MinimizeIntent.cs'),/WindowClickCommands\.IsMinimizeSystemCommand\(message,wParam\.ToInt64\(\)\)[\s\S]*?handled=true;MinimizeLikeCaption\(\);return IntPtr\.Zero;/);
+test('native system minimize remains owned by Windows',()=>{
+ const s=read('MinimizeIntent.cs');
+ assert.match(s,/if\(WindowClickCommands\.IsMinimizeSystemCommand\(message,wParam\.ToInt64\(\)\)\)return IntPtr\.Zero;/);
+ assert.doesNotMatch(s,/handled\s*=\s*true/);
 });
 test('shared minimize records explicit intent and uses normal WindowState',()=>{
  assert.match(read('MinimizeIntent.cs'),/void MinimizeLikeCaption\(\)[\s\S]*?minimizeIntent\.Explicit\(\);WindowState=WindowState\.Minimized;/);
@@ -27,10 +29,13 @@ test('taskbar/tray toggle invokes shared minimize while menu restore stays resto
  assert.match(s,/public void Toggle\(\)[\s\S]*?WindowClickCommands\.ForTaskbarClick\([\s\S]*?owner\.MinimizeLikeCaption\(\)/);
  assert.match(s,/public void Restore\(\)[\s\S]*?SystemCommands\.RestoreWindow\(owner\)/);
 });
-test('activation reconciliation never raises or restores the HWND',()=>{
- const s=read('BrandIcons.cs'),start=s.indexOf('void QueueActiveTabSync()'),end=s.indexOf('void QueueTaskbarRefresh()',start);
- assert.ok(start>=0&&end>start);
- const body=s.slice(start,end);
- assert.match(body,/taskbar\.ActivateTab\(hwnd\);taskbar\.SetActiveAlt\(hwnd\);/);
- assert.doesNotMatch(body,/ShowWindow\(|SetForegroundWindow\(|owner\.Activate\(|SystemCommands\.RestoreWindow\(/);
+test('branding keeps the native taskbar button and its activation state',()=>{
+ const s=read('BrandIcons.cs');
+ assert.doesNotMatch(s,/\b(?:DeleteTab|AddTab|ActivateTab|SetActiveAlt|TaskbarButtonCreated)\b/);
+ assert.match(s,/WM_SETICON|SendMessage\(hwnd,0x80/);
+ assert.match(s,/BrandShortcuts\.ApplyWindow\(hwnd,selected\)/);
+});
+test('the process shell identity is set before the application creates any window',()=>{
+ const s=read('WorkbenchHost.cs');
+ assert.match(s,/BrandShortcuts\.SetProcessIdentity\(\);[\s\S]*?var app=new Application[\s\S]*?new WorkbenchWindow\(\)/);
 });

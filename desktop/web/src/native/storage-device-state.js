@@ -1,6 +1,6 @@
 import {createPollingResource} from '../foundation/polling-resource.js';
 
-// Keep 280px for the map and 6px for its splitter; narrow containers hide the tree.
+// Keep 280px for the map and 6px for its splitter; narrow containers place the tree above the map.
 export function storageTreeBounds(available=1000){return {min:160,max:Math.max(160,Math.min(420,available-286))};}
 export function clampStorageTreeWidth(width,available=1000){const {min,max}=storageTreeBounds(available);return Math.max(min,Math.min(max,Number.isFinite(width)?width:220));}
 
