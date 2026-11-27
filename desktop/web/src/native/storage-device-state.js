@@ -25,7 +25,7 @@ export function createStorageDeviceState({request, limit = 8, workspace = null})
   read(deviceId) { return entry(deviceId).view; },
   save(deviceId, view) {
    // Keep the current branch and recent folder pages, rather than every visited branch.
-   const folders = view.folders || {}, keys = new Set(['0', ...(view.data?.crumbs || []).map(node => node.id)]);
+   const folders = view.folders || {}, scope = view.status?.snapshot?.id, keys = new Set(['0', ...(view.data?.crumbs || []).map(node => node.id)].map(id => scope ? `${scope}:${id}` : id));
    for (const key of Object.keys(folders).reverse()) { if (keys.size >= 32) break; keys.add(key); }
    workspace?.open(deviceId,'storage-tools',()=>null).setState(view);
    entry(deviceId).view = {...view, folders: Object.fromEntries([...keys].filter(key => folders[key]).map(key => [key, folders[key]]))};

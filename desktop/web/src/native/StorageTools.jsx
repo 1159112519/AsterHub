@@ -32,8 +32,11 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
  function beginTreeResize(event){if(event.button!==0)return;event.preventDefault();resetTransition();releaseTreePointer();const node=event.currentTarget;node.setPointerCapture(event.pointerId);node.dataset.resizing='true';treeDrag.current={id:event.pointerId,node,x:event.clientX,width:visibleTreeWidth};}
  function moveTreeResize(event){const drag=treeDrag.current;if(drag?.id===event.pointerId)setTreeWidth(clampStorageTreeWidth(drag.width+event.clientX-drag.x,treeAvailable));}
  function keyTreeResize(event){let next;const step=event.shiftKey?48:16;if(event.key==='ArrowLeft')next=visibleTreeWidth-step;else if(event.key==='ArrowRight')next=visibleTreeWidth+step;else if(event.key==='Home')next=treeBounds.min;else if(event.key==='End')next=treeBounds.max;else return;event.preventDefault();setTreeWidth(clampStorageTreeWidth(next,treeAvailable));}
- const [tool,setTool]=useState(restored.tool??null),[status,setStatus]=useState(restored.status??null),[path,setPath]=useState(restored.path??''),[data,setData]=useState(restored.data??null),[nodeId,setNodeId]=useState(restored.nodeId??'0'),[layout,setLayout]=useState(restored.layout??'map'),[query,setQuery]=useState(restored.query??''),[kind,setKind]=useState(restored.kind??''),[minimum,setMinimum]=useState(restored.minimum??104857600),[customSize,setCustomSize]=useState(restored.customSize??null),[age,setAge]=useState(restored.age??0),[folders,setFolders]=useState(restored.folders??{}),[expanded,setExpanded]=useState(restored.expanded??new Set(['0'])),[history,setHistory]=useState(restored.history??{entries:[{id:'0',directory:true}],cursor:0}),[offset,setOffset]=useState(restored.offset??0),[selected,setSelected]=useState(new Set()),[clipboard,setClipboard]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(restored.notice??''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[dialog,setDialog]=useState(null),[trash,setTrash]=useState([]),[hover,setHover]=useState(null),[menu,setMenu]=useState(null),[refresh,setRefresh]=useState(0),[transfer,setTransfer]=useState(restored.transfer??null),[size,setSize]=useState({w:800,h:440}),[mapTransition,setMapTransition]=useState(null),[navigating,setNavigating]=useState(false);
+ const [tool,setTool]=useState(restored.tool??null),[status,setStatus]=useState(restored.status??null),[path,setPath]=useState(restored.path??''),[data,setData]=useState(restored.data??null),[nodeId,setNodeId]=useState(restored.nodeId??'0'),[layout,setLayout]=useState(restored.layout??'map'),[query,setQuery]=useState(restored.query??''),[kind,setKind]=useState(restored.kind??''),[minimum,setMinimum]=useState(restored.minimum??104857600),[customSize,setCustomSize]=useState(restored.customSize??null),[age,setAge]=useState(restored.age??0),[folders,setFolders]=useState(restored.folders??{}),[expanded,setExpanded]=useState(restored.expanded??new Set()),[history,setHistory]=useState(restored.history??{entries:[{id:'0',directory:true}],cursor:0}),[offset,setOffset]=useState(restored.offset??0),[selected,setSelected]=useState(new Set()),[clipboard,setClipboard]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(restored.notice??''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[dialog,setDialog]=useState(null),[trash,setTrash]=useState([]),[hover,setHover]=useState(null),[menu,setMenu]=useState(null),[refresh,setRefresh]=useState(0),[transfer,setTransfer]=useState(restored.transfer??null),[size,setSize]=useState({w:800,h:440}),[mapTransition,setMapTransition]=useState(null),[navigating,setNavigating]=useState(false);
  const [aggregateView,setAggregateView]=useState(null);
+ const [switching,setSwitching]=useState(false),[folderLoading,setFolderLoading]=useState(new Set());
+ const busyRef=useRef(busy);busyRef.current=busy;
+ const scopeRevision=useRef(0),scopeActivation=useRef(false),pageEpoch=useRef(0),mapRequests=useRef(new Map());
  const resultPages=useRef(new Map()),mapPages=useRef(new Map()),navigationRevision=useRef(0),navigationResult=useRef(null),outPortal=useRef(),inPortal=useRef();
  const tilePalettes=useRef({}),tileLayouts=useRef(new WeakMap()),folderRequests=useRef(new Map()),folderCache=useRef(restored.folders||{}),generation=useRef(0),requestRevision=useRef(0),stage=useRef(),content=useRef(),transition=useRef(null),animation=useRef(null),hoverId=useRef(null),tooltipNode=useRef(null),contextRef=useRef(),statusRef=useRef(),toolRef=useRef();toolRef.current=tool;statusRef.current=status;
  const preference=useSyncExternalStore(subscribeReducedMotion,reducedMotion),statusResource=useMemo(()=>storageStatusResource(deviceId),[deviceId]);
@@ -58,9 +61,9 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
   if(!settled.length&&!own.length)return;
   settled.forEach(task=>seenCleanup.current.add(task.id));
   const completed=new Set(own.flatMap(task=>task.snapshot!==snapshotId?[]:task.status==='completed'?task.targets:task.status==='partial'&&!task.error?task.targets.filter(id=>!task.failures.some(item=>item.id===id)):[]));
-  if(completed.size){setData(old=>old?{...old,items:old.items.filter(item=>!completed.has(item.id))}:old);setFolders(old=>Object.fromEntries(Object.entries(old).map(([id,entry])=>[id,{...entry,items:entry.items.filter(item=>!completed.has(item.id))}])));}
+  if(completed.size){setData(old=>old?{...old,items:old.items.filter(item=>!completed.has(item.id))}:old);}
   if(own.length){setOptimistic(old=>old.filter(entry=>!own.some(task=>task.id===entry.job)));}
-  mapPages.current.clear();resultPages.current.clear();folderCache.current={};setRefresh(value=>value+1);
+  pageEpoch.current++;mapPages.current.clear();mapRequests.current.clear();resultPages.current.clear();folderCache.current={};folderRequests.current.clear();setFolderLoading(new Set());setFolders({});setRefresh(value=>value+1);
   if(dialog?.type==='recycle')refreshTrash().catch(e=>setError(e.message));
  },[deviceCleanup,optimistic,snapshotId,dialog?.type]);
 
@@ -76,11 +79,11 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
  const focusTicket=useSyncExternalStore(storageTaskFocus.subscribe,()=>storageTaskFocus.read(deviceId));
  useEffect(()=>{if(!active||!focusTicket)return;resetTransition();setTool('analysis');setNotice('');storageTaskFocus.consume(deviceId,focusTicket)},[active,deviceId,focusTicket]);
  useEffect(()=>{
-  generation.current++;navigationRevision.current++;setNavigating(false);resetTransition();if(!active)return;
+  generation.current++;scopeRevision.current++;navigationRevision.current++;folderRequests.current.clear();setFolderLoading(new Set());setNavigating(false);setSwitching(false);resetTransition();if(!active)return;
   let alive=true;const rev=generation.current;
   const update=()=>{const state=statusResource.getSnapshot();if(!alive||rev!==generation.current)return;
    if(state.error){setError(state.error.message);return}const next=state.data;if(!next)return;
-   setStatus(old=>{const sameRestoredSnapshot=next.snapshot?.id&&next.snapshot.id===restoredSnapshot.current;restoredSnapshot.current=null;if(next.snapshot?.id!==old?.snapshot?.id&&!sameRestoredSnapshot){navigationRevision.current++;setNavigating(false);resetTransition();setData(null);setNodeId('0');setOffset(0);setSelected(new Set());setFolders({});folderCache.current={};folderRequests.current.clear();setExpanded(new Set(['0']));setHistory({entries:[{id:'0',directory:true}],cursor:0})}return next});setPath(p=>p||next.snapshot?.root||next.job?.root||'');
+   setStatus(old=>{const sameRestoredSnapshot=next.snapshot?.id&&next.snapshot.id===restoredSnapshot.current;restoredSnapshot.current=null;if(next.snapshot?.id!==old?.snapshot?.id&&!sameRestoredSnapshot){navigationRevision.current++;setNavigating(false);resetTransition();const sid=next.snapshot?.id,ready=sid&&navigationResult.current?.snapshotId===sid?navigationResult.current:null;const node=ready?.result.node??{id:'0',directory:true};setData(ready?.result??(toolRef.current==='analysis'?mapPages.current.get(sid+':0'):null)??null);setNodeId(node.id);setOffset(0);setSelected(new Set());setAggregateView(null);if(ready){setQuery('');setKind('')}setExpanded(current=>sid?new Set([...current,sid+':0']):current);setHistory({entries:ready?.result.crumbs?.length?ready.result.crumbs:[node],cursor:Math.max(0,(ready?.result.crumbs?.length??1)-1)})}return next});setPath(p=>p||next.snapshot?.root||next.job?.root||'');
   };const off=statusResource.subscribe(update);update();
   return()=>{alive=false;off();resetTransition()};
  },[deviceId,statusResource,active]);
@@ -94,12 +97,12 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
   return()=>{alive=false;controller.abort();off();clearInterval(timer);native.request('storage.lease',{deviceId,active:false}).catch(()=>{})};
  },[active,tool,deviceId]);
  useEffect(()=>{if(preference)resetTransition()},[preference]);
- useEffect(()=>{setHover(null);setMenu(null);if(!active)resetTransition();document.documentElement.dataset.storageTool=active&&tool?'open':'closed';return()=>{document.documentElement.dataset.storageTool='closed'}},[active,tool]);
+ useEffect(()=>{scopeRevision.current++;setSwitching(false);setHover(null);setMenu(null);if(!active)resetTransition();document.documentElement.dataset.storageTool=active&&tool?'open':'closed';return()=>{document.documentElement.dataset.storageTool='closed'}},[active,tool]);
  useEffect(()=>{
   if(!active||!tool||!snapshotId)return;const revision=++requestRevision.current,rev=generation.current,key=JSON.stringify([snapshotId,tool,nodeId,query,kind,minimum,age,offset,refresh,aggregate?.ids]);let cancelled=false;
   const cached=navigationResult.current;if(cached&&cached.snapshotId===snapshotId&&cached.nodeId===nodeId&&tool==='analysis'&&!query&&!kind&&!aggregate&&offset===0){navigationResult.current=null;rememberPage(key,cached.result);setData(cached.result);setLoading(false);return;}
-  const known=resultPages.current.get(key);if(known){setData(known);setLoading(false);return;}
-  const timer=setTimeout(async()=>{setLoading(true);try{const result=await call('storage.query',{snapshotId,nodeId,mode:tool==='large'?'large':'tree',query,kind,minBytes:tool==='large'?storageQueryMinimum(minimum):0,olderThanDays:tool==='large'?age:0,offset,excludeIds:aggregate?.ids});if(cancelled||revision!==requestRevision.current||rev!==generation.current)return;rememberPage(key,result);setData(result);if(tool==='analysis'&&!query&&!kind&&!aggregate&&offset===0)cacheMapPage(result);setError('');setSelected(new Set())}catch(e){if(!cancelled&&rev===generation.current){setError(e.message);resetTransition()}}finally{if(!cancelled&&revision===requestRevision.current)setLoading(false)}},query?150:0);
+  const plain=tool==='analysis'&&!query&&!kind&&!aggregate&&offset===0;const known=resultPages.current.get(key)||(plain&&mapPages.current.get(snapshotId+':'+nodeId));if(known){setData(known);setLoading(false);return;}
+  const timer=setTimeout(async()=>{setLoading(true);try{const result=plain?await mapPage(nodeId):await call('storage.query',{snapshotId,nodeId,mode:tool==='large'?'large':'tree',query,kind,minBytes:tool==='large'?storageQueryMinimum(minimum):0,olderThanDays:tool==='large'?age:0,offset,excludeIds:aggregate?.ids});if(cancelled||revision!==requestRevision.current||rev!==generation.current)return;rememberPage(key,result);setData(result);if(tool==='analysis'&&!query&&!kind&&!aggregate&&offset===0)cacheMapPage(result);setError('');setSelected(new Set())}catch(e){if(!cancelled&&rev===generation.current){setError(e.message);resetTransition()}}finally{if(!cancelled&&revision===requestRevision.current)setLoading(false)}},query?150:0);
   return()=>{cancelled=true;clearTimeout(timer);if(revision===requestRevision.current)setLoading(false)};
  },[deviceId,active,tool,snapshotId,nodeId,query,kind,minimum,age,offset,refresh,aggregate]);
  const {jobs:fileJobs}=useFileTransfers(Boolean(transfer&&isActiveTransfer(transfer.status)));
@@ -114,11 +117,46 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
  useEffect(()=>{if(!menu)return;const dismiss=()=>setMenu(null);window.addEventListener('resize',dismiss);return()=>window.removeEventListener('resize',dismiss)},[menu]);
  async function action(work){setBusy(true);setError('');const rev=generation.current;try{await work()}catch(e){if(rev===generation.current)setError(e.message)}finally{if(rev===generation.current)setBusy(false)}}
  async function scan(chosenPath){await action(async()=>{const result=await call('storage.scan',typeof chosenPath==='string'?{path:chosenPath}:chosenPath);setPath(typeof chosenPath==='string'?chosenPath:result.root);setStatus(s=>({...s,job:result}));storageJobs.refresh();setNotice('');setDialog(null)})}
- async function selectRecord(id){if(id===snapshotId)return;await action(async()=>{const result=await call('storage.select',{id});setPath(result.snapshot?.root||'');setMenu(null);setHover(null);statusResource.refresh()})}
+ async function selectRecord(id,node={id:'0',directory:true}){
+  if(scopeActivation.current||busy)return false;
+  const ticket=++scopeRevision.current,rev=generation.current,epoch=pageEpoch.current;
+  if(id===snapshotId){setSwitching(false);return tool==='analysis'?navigate(node,true,null,'tree'):true;}
+  const inAnalysis=tool==='analysis';setError('');setMenu(null);setHover(null);
+  const timer=setTimeout(()=>{if(ticket===scopeRevision.current&&rev===generation.current)setSwitching(true)},160);
+  try{
+   const page=inAnalysis?(mapPages.current.get(id+':'+node.id)??await mapPage(node.id,id)):null;
+   if(ticket!==scopeRevision.current||rev!==generation.current||toolRef.current!==tool||busyRef.current||pageEpoch.current!==epoch||scopeActivation.current)return false;
+   scopeActivation.current=true;
+   try{
+    const result=await call('storage.select',{id});
+    if(rev===generation.current&&toolRef.current===tool&&page&&result.snapshot?.id===id)navigationResult.current={snapshotId:id,nodeId:node.id,result:page};
+    statusResource.publish(result);
+    if(rev===generation.current)setPath(result.snapshot?.root||'');
+    return result.snapshot?.id===id;
+   }finally{scopeActivation.current=false;}
+  }catch(e){if(ticket===scopeRevision.current&&rev===generation.current)setError(e.message);return false;}
+  finally{clearTimeout(timer);if(ticket===scopeRevision.current&&rev===generation.current)setSwitching(false);}
+ }
  async function control(actionName){await action(async()=>{const result=await call('storage.control',{id:job.id,action:actionName});setStatus(s=>({...s,job:result}))})}
  function rememberPage(key,result){const pages=resultPages.current;pages.delete(key);pages.set(key,result);while(pages.size>12)pages.delete(pages.keys().next().value);}
  function cacheMapPage(result){if(!result?.node)return;const key=result.snapshotId+':'+result.node.id;mapPages.current.delete(key);mapPages.current.set(key,result);while(mapPages.current.size>24)mapPages.current.delete(mapPages.current.keys().next().value);}
- async function mapPage(id){const key=snapshotId+':'+id;if(mapPages.current.has(key))return mapPages.current.get(key);const result=await call('storage.query',{snapshotId,nodeId:id,mode:'tree',offset:0});cacheMapPage(result);return result;}
+ function mapPage(id,sid=snapshotId){
+  const key=sid+':'+id,cached=mapPages.current.get(key);if(cached)return Promise.resolve(cached);
+  const existing=mapRequests.current.get(key);if(existing)return existing;
+  const epoch=pageEpoch.current;
+  const pending=call('storage.query',{snapshotId:sid,nodeId:id,mode:'tree',offset:0}).then(result=>{
+   if(result.snapshotId!==sid||result.node.id!==id)throw new Error(tr('扫描结果已更新，请重新选择项目'));
+   if(pageEpoch.current===epoch)cacheMapPage(result);return result;
+  }).finally(()=>{if(mapRequests.current.get(key)===pending)mapRequests.current.delete(key)});
+  mapRequests.current.set(key,pending);return pending;
+ }
+ const warmScopes=JSON.stringify(records.map(record=>record.id).filter(id=>id!==snapshotId));
+ useEffect(()=>{
+  if(!active||tool!=='analysis'||!snapshotId)return;
+  let stopped=false;const ids=JSON.parse(warmScopes).slice(0,12);
+  const timer=setTimeout(async()=>{for(const sid of ids){if(stopped)return;try{await mapPage('0',sid)}catch{} }},200);
+  return()=>{stopped=true;clearTimeout(timer)};
+ },[active,tool,snapshotId,warmScopes,refresh]);
  async function navigate(node,record=true,travelIndex=null,sourceKind='tile'){
   if(!node?.directory||navigating)return false;if(node.id===nodeId)return true;setMenu(null);setHover(null);resetTransition();requestRevision.current++;
   const rev=generation.current,nav=++navigationRevision.current,from=data,sid=snapshotId;
@@ -143,26 +181,32 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
  }
  const displayData=useMemo(()=>data&&hiddenIds.size?{...data,items:data.items.filter(item=>!hiddenIds.has(item.id)),total:Math.max(0,data.total-data.items.filter(item=>hiddenIds.has(item.id)).length),bytes:Math.max(0,data.bytes-data.items.reduce((bytes,item)=>bytes+(hiddenIds.has(item.id)?item.bytes:0),0))}:data,[data,hiddenIds]);
  const currentItems=displayData?.items||[],selection=currentItems.filter(n=>selected.has(n.id));
- async function loadFolders(id,append=false){
-  if(!snapshotId||folderRequests.current.has(id)||folderCache.current[id]&&!append)return;
-  const ticket={};folderRequests.current.set(id,ticket);const rev=generation.current,sid=snapshotId;
-  try{const old=folderCache.current[id],result=await call('storage.query',{snapshotId:sid,nodeId:id,offset:append?(old?.items.length||0):0});
-   if(rev!==generation.current||statusRef.current?.snapshot?.id!==sid)return;
-   const next={...result,items:append?[...(old?.items||[]),...result.items]:result.items};folderCache.current={...folderCache.current,[id]:next};setFolders(folderCache.current);
-  }catch(e){if(rev===generation.current)setError(e.message)}finally{if(folderRequests.current.get(id)===ticket)folderRequests.current.delete(id)}
+ async function loadFolders(sid,id,append=false){
+  const key=sid+':'+id;if(!sid||folderRequests.current.has(key)||folderCache.current[key]&&!append)return;
+  const ticket={};folderRequests.current.set(key,ticket);const rev=generation.current,epoch=pageEpoch.current;
+  setFolderLoading(old=>new Set([...old,key]));
+  try{const old=folderCache.current[key],result=append?await call('storage.query',{snapshotId:sid,nodeId:id,offset:old?.items.length||0}):await mapPage(id,sid);
+   if(rev!==generation.current||epoch!==pageEpoch.current)return;
+   const next={...result,items:append?[...(old?.items||[]),...result.items]:result.items};
+   const entries=new Map(Object.entries(folderCache.current));entries.delete(key);entries.set(key,next);while(entries.size>32)entries.delete(entries.keys().next().value);
+   folderCache.current=Object.fromEntries(entries);setFolders(folderCache.current);
+  }catch(e){if(rev===generation.current&&epoch===pageEpoch.current)setError(e.message)}finally{if(folderRequests.current.get(key)===ticket){folderRequests.current.delete(key);if(rev===generation.current)setFolderLoading(old=>{const next=new Set(old);next.delete(key);return next})}}
  }
- useEffect(()=>{if(!active||tool!=='analysis'||!snapshotId)return;loadFolders('0');const ids=(data?.snapshotId===snapshotId?data.crumbs:[]).map(n=>n.id);setExpanded(old=>new Set([...old,...ids]));ids.forEach(id=>loadFolders(id));},[active,tool,snapshotId,data?.node.id,refresh]);
+ useEffect(()=>{if(!active||tool!=='analysis'||!snapshotId)return;const ids=['0',...(data?.snapshotId===snapshotId?data.crumbs.map(n=>n.id):[])];setExpanded(old=>new Set([...old,...ids.map(id=>snapshotId+':'+id)]));new Set(ids).forEach(id=>loadFolders(snapshotId,id));},[active,tool,snapshotId,data?.node.id,refresh]);
  function travel(delta){const i=history.cursor+delta;if(i>=0&&i<history.entries.length)navigate(history.entries[i],false,i)}
- function folderRow(n,depth=0,record=null){
-  const currentScope=!record||record.id===snapshotId,branch=currentScope?folders[n.id]:null,isExpanded=currentScope&&n.directory&&expanded.has(n.id);
-  const Icon=record?(isDiskRoot(record.root)?HardDrive:FolderOpen):n.directory?FolderOpen:File;
-  return <React.Fragment key={record?.id??n.id}>
+ function folderRow(n,depth,scope){
+  const root=depth===0,currentScope=scope.id===snapshotId,key=scope.id+':'+n.id,branch=folders[key];
+  const expandable=n.directory&&(!branch||branch.total>0),isExpanded=expandable&&expanded.has(key);
+  const Icon=root?(isDiskRoot(scope.root)?HardDrive:FolderOpen):n.directory?FolderOpen:File;
+  const open=async()=>{if(root||n.directory)return selectRecord(scope.id,n);if(currentScope)setDialog({type:'detail',item:n});else if(await selectRecord(scope.id))setDialog({type:'detail',item:n});};
+  return <React.Fragment key={key}>
   <div className={'storage-tree-row'+(currentScope&&nodeId===n.id?' active':'')} data-tree-node={currentScope?n.id:undefined} style={{paddingLeft:Math.min(depth,6)*10}}>
-   {tr(n.directory&&currentScope?<button className="storage-tree-toggle" aria-label={tr((isExpanded?'收起 ':'展开 ')+n.name)} aria-expanded={isExpanded} onClick={()=>{setExpanded(old=>{const next=new Set(old);next.has(n.id)?next.delete(n.id):next.add(n.id);return next});loadFolders(n.id)}}>{tr(isExpanded?<ChevronDown size={13}/>:<ChevronRight size={13}/>)}</button>:<span className="storage-tree-toggle-spacer" aria-hidden="true"/>)}
-   <button type="button" className="storage-tree-folder" disabled={Boolean(record)&&busy} aria-current={record&&currentScope?'true':undefined} onClick={()=>!currentScope?selectRecord(record.id):n.directory?navigate(n,true,null,'tree'):setDialog({type:'detail',item:n})} title={n.path} aria-label={tr(record?scanRecordLabel(record.root):(n.directory?'文件夹 ':'文件 ')+n.name)}><Icon size={17} aria-hidden="true"/><span className="control-label">{n.name}</span>{Number.isFinite(n.bytes)&&<small className="control-label">{tr(bytesText(n.bytes))}</small>}</button>
+   {tr(expandable?<button className="storage-tree-toggle" aria-label={tr((isExpanded?'收起 ':'展开 ')+n.name)} aria-expanded={isExpanded} onClick={()=>{setExpanded(old=>{const next=new Set(old);isExpanded?next.delete(key):next.add(key);return next});if(!isExpanded)loadFolders(scope.id,n.id)}}>{tr(isExpanded?<ChevronDown size={13}/>:<ChevronRight size={13}/>)}</button>:<span className="storage-tree-toggle-spacer" aria-hidden="true"/>)}
+   <button type="button" className="storage-tree-folder" aria-current={currentScope&&nodeId===n.id?'true':undefined} onClick={open} title={n.path} aria-label={tr(root?scanRecordLabel(scope.root):(n.directory?'文件夹 ':'文件 ')+n.name)}><Icon size={17} aria-hidden="true"/><span className="control-label">{n.name}</span>{Number.isFinite(n.bytes)&&<small className="control-label">{tr(bytesText(n.bytes))}</small>}</button>
   </div>
-  {tr(isExpanded&&branch?.items.filter(child=>!hiddenIds.has(child.id)).map(child=>folderRow(child,depth+1)))}
-  {tr(isExpanded&&branch&&branch.total>branch.items.length&&<button className="storage-tree-more" onClick={()=>loadFolders(n.id,true)}><span className="control-label">{t("显示更多…")}</span></button>)}
+  {tr(isExpanded&&!branch&&folderLoading.has(key)&&<div className="storage-tree-loading" role="status">{t("正在读取…")}</div>)}
+  {tr(isExpanded&&branch?.items.filter(child=>!currentScope||!hiddenIds.has(child.id)).map(child=>folderRow(child,depth+1,scope)))}
+  {tr(isExpanded&&branch&&branch.total>branch.items.length&&<button className="storage-tree-more" onClick={()=>loadFolders(scope.id,n.id,true)}><span className="control-label">{t("显示更多…")}</span></button>)}
  </React.Fragment>}
 
  function tilesFor(result){
@@ -259,7 +303,7 @@ function StorageWorkspace({deviceId,device,sample,samples,settings,active=true,o
   </div>
   <div className="storage-explorer-actions">
    <Toolbar label={t("文件操作")} className="storage-file-actions"><Button disabled={busy||!selection.length} onClick={()=>copy()} icon={Copy}>{t("复制")}</Button><Button disabled={busy||!clipboard||tool==='large'} onClick={paste} icon={ClipboardPaste}>{t("粘贴")}</Button><span className="storage-action-divider"/><Button disabled={busy||!selection.length} onClick={()=>askTrash()} icon={Trash2}>{t("移入回收区")}</Button></Toolbar>
-   <div className="storage-view-controls"><span role="status">{tr(isActiveTask(preparation)?preparation.current:loading||navigating?'正在读取…':selection.length?`已选择 ${selection.length} 项`:'')}</span>{tr(tool==='analysis'&&<div className="storage-layout-switch"><button aria-label={t("面积图")} aria-pressed={layout==='map'} onClick={showMap}><LayoutGrid size={18}/></button><button aria-label={t("文件列表")} aria-pressed={layout==='list'} onClick={()=>{resetTransition();setLayout('list')}}><List size={18}/></button></div>)}</div>
+   <div className="storage-view-controls"><span role="status">{tr(isActiveTask(preparation)?preparation.current:loading||navigating||switching?'正在读取…':selection.length?`已选择 ${selection.length} 项`:'')}</span>{tr(tool==='analysis'&&<div className="storage-layout-switch"><button aria-label={t("面积图")} aria-pressed={layout==='map'} onClick={showMap}><LayoutGrid size={18}/></button><button aria-label={t("文件列表")} aria-pressed={layout==='list'} onClick={()=>{resetTransition();setLayout('list')}}><List size={18}/></button></div>)}</div>
   </div>
   {tr(tool==='analysis'?<div ref={treeLayout} className={"storage-analysis-layout"+(treeAvailable<446?" storage-tree-narrow":"")} style={{'--storage-tree-width':visibleTreeWidth+'px'}}>
    <aside id={treeId} className="storage-folder-list" aria-label={t("文件夹目录树")}><div className="storage-folder-title">{t("文件与文件夹")}</div>{records.map(record=>folderRow({id:'0',directory:true,name:record.name,path:record.root,bytes:record.bytes},0,record))}</aside>

@@ -33,6 +33,11 @@ export function createPollingResource({load, interval = 1500, nextInterval}) {
       return () => { if (listeners.delete(entry) && !listeners.size) stop(); };
     },
     refresh,
+    publish(data) {
+      if (disposed) return;
+      stop(); emit({data, error: null, loading: false});
+      if (listeners.size && !current) timer = setTimeout(refresh, nextInterval?.(data) ?? interval);
+    },
     dispose() { disposed = true; listeners.clear(); stop(); state = {data: null, error: null, loading: false}; },
     diagnostics: () => ({subscribers: listeners.size, pending: Boolean(current), scheduled: timer !== null, disposed})
   };

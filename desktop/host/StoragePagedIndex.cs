@@ -18,10 +18,13 @@ internal sealed class StoragePagedIndex:IDisposable {
  string FilePathSql{get{return "rtrim(p.path,'"+(Metadata.IsLocal?"/\\":"/")+"') || '"+(Metadata.IsLocal?"\\":"/")+"' || n.name";}}
  string Columns{get{return "n.id,n.parent,n.name,CASE WHEN n.directory=1 THEN n.path ELSE "+FilePathSql+" END,n.directory,n.bytes,n.stamp,n.incomplete,n.count";}}
  const string FromNodes=" FROM nodes n LEFT JOIN nodes p ON n.parent=p.id ";
- StoragePagedIndex(string file,CancellationToken token){db=new PageSql(file,token);try{using(var q=db.Prepare("SELECT header FROM meta WHERE id=1")){if(!q.Row())throw new IOException("分页索引缺少元数据");Metadata=StorageSnapshot.ReadHeader(new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(q.Text(0)));}}catch{db.Dispose();throw;}}
+ readonly string indexPath;
+ StoragePagedIndex(string file,CancellationToken token){indexPath=file;db=new PageSql(file,token);try{using(var q=db.Prepare("SELECT header FROM meta WHERE id=1")){if(!q.Row())throw new IOException("分页索引缺少元数据");Metadata=StorageSnapshot.ReadHeader(new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(q.Text(0)));}}catch{db.Dispose();throw;}}
  internal static bool Supported(string file){if(!File.Exists(file))return false;using(var input=File.OpenRead(file))using(var zip=new GZipStream(input,CompressionMode.Decompress))return zip.ReadByte()=='{'&&zip.ReadByte()=='\n';}
- internal static bool HasCurrentHeader(string source,CancellationToken token){
+ internal static bool HasValidatedHeader(string source,CancellationToken token){
   string index=source+".pages.sqlite";if(!File.Exists(source)||!File.Exists(index))return false;
+  var indexInfo=new FileInfo(index);string revision=indexInfo.Length+":"+indexInfo.LastWriteTimeUtc.Ticks, previous;
+  lock(verifyGate)if(!verified.TryGetValue(index,out previous)||previous!=revision)return false;
   var info=new FileInfo(source);try{using(var sql=new PageSql(index,token))using(var q=sql.Prepare("SELECT version,source_length,source_stamp FROM meta WHERE id=1"))return q.Row()&&q.Int64(0)==3&&q.Int64(1)==info.Length&&q.Int64(2)==info.LastWriteTimeUtc.Ticks;}catch(PageSqlException e){if(e.Code==1||e.Code==11||e.Code==17||e.Code==26)return false;throw;}
  }
  internal static bool IsCurrent(string source,CancellationToken token){
@@ -34,18 +37,22 @@ internal sealed class StoragePagedIndex:IDisposable {
    using(var q=old.Prepare("SELECT version,source_length,source_stamp FROM meta WHERE id=1"))valid=q.Row()&&q.Int64(0)==3&&q.Int64(1)==length&&q.Int64(2)==stamp;
    if(valid)valid=ValidateDerived(old,index,token);
   }}catch(PageSqlException error){if(error.Code!=1&&error.Code!=11&&error.Code!=17&&error.Code!=26)throw;valid=false;}
-  if(!valid){string temp=index+"."+Guid.NewGuid().ToString("N")+".tmp";try{Build(source,temp,length,stamp,token,progress);var latest=new FileInfo(source);if(latest.Length!=length||latest.LastWriteTimeUtc.Ticks!=stamp)throw new IOException("扫描结果已更新，请重试");token.ThrowIfCancellationRequested();if(File.Exists(index))File.Replace(temp,index,null);else File.Move(temp,index);}finally{if(File.Exists(temp))File.Delete(temp);}}
+  if(!valid){string temp=index+"."+Guid.NewGuid().ToString("N")+".tmp";try{Build(source,temp,length,stamp,token,progress);var latest=new FileInfo(source);if(latest.Length!=length||latest.LastWriteTimeUtc.Ticks!=stamp)throw new IOException("扫描结果已更新，请重试");token.ThrowIfCancellationRequested();if(File.Exists(index))File.Replace(temp,index,null);else File.Move(temp,index);RememberValidated(index);}finally{if(File.Exists(temp))File.Delete(temp);}}
   return new StoragePagedIndex(index,token);
  }
  static bool ValidateDerived(PageSql sql,string path,CancellationToken token){
   // Validate each on-disk revision once, including partial corruption with readable meta.
   // Cancellation, access errors and disk exhaustion propagate instead of triggering rebuilds.
-  var f=new FileInfo(path);string revision=f.Length+":"+f.LastWriteTimeUtc.Ticks;string previous;
+  string revision=IndexRevision(path);string previous;
   lock(verifyGate)if(verified.TryGetValue(path,out previous)&&previous==revision)return true;
   using(var schema=sql.Prepare("SELECT id,parent,name,path,path_key,directory,bytes,base_bytes,stamp,ticks,incomplete,count,base_count,removed,kind FROM nodes LIMIT 0"))schema.Row();
   using(var indexes=sql.Prepare("SELECT count(*) FROM sqlite_master WHERE type='index' AND name IN ('children','paths','largest')")){indexes.Row();if(indexes.Int64(0)!=3)return false;}
   using(var check=sql.Prepare("PRAGMA quick_check(1)")){if(!check.Row()||check.Text(0)!="ok")return false;}
-  token.ThrowIfCancellationRequested();lock(verifyGate){if(verified.Count>=64&&!verified.ContainsKey(path))verified.Remove(verified.Keys.First());verified[path]=revision;}return true;
+  token.ThrowIfCancellationRequested();RememberValidated(path,revision);return true;
+ }
+ static string IndexRevision(string path){var file=new FileInfo(path);return file.Length+":"+file.LastWriteTimeUtc.Ticks;}
+ static void RememberValidated(string path,string revision=null){
+  revision=revision??IndexRevision(path);lock(verifyGate){if(verified.Count>=64&&!verified.ContainsKey(path))verified.Remove(verified.Keys.First());verified[path]=revision;}
  }
  sealed class DirectoryCount {internal long Parent;internal int Count;internal bool Defined;}
  static void Build(string source,string target,long length,long stamp,CancellationToken token,Action<long,string> progress){
@@ -88,6 +95,7 @@ internal sealed class StoragePagedIndex:IDisposable {
    }
    using(var q=db.Prepare("UPDATE meta SET overlay=? WHERE id=1")){q.Bind(1,version);q.Done();}db.Exec("COMMIT;");
   }catch{db.Exec("ROLLBACK;");throw;}
+  RememberValidated(indexPath);
  }
  internal object Query(Dictionary<string,object> p,CancellationToken token){
   Func<string,string,string> text=(key,fallback)=>p.ContainsKey(key)?Convert.ToString(p[key]):fallback;
