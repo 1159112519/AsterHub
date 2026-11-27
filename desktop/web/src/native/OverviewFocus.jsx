@@ -1,4 +1,4 @@
-import React,{useMemo,useRef,useLayoutEffect,useSyncExternalStore} from 'react';
+import React,{useMemo,useRef,useLayoutEffect,useState} from 'react';
 import {Cpu,Microchip,MemoryStick,Network,HardDrive,ArrowDown,ArrowUp} from 'lucide-react';
 import {Chart,NumberValue,SectionTitle} from '../components';
 import {t,tr,useLocale} from '../i18n/index.js';
@@ -15,9 +15,6 @@ import './overview-focus.css';
 
 const metrics=[['cpu','CPU',Cpu,'var(--icon-blue)','CPU 使用率'],['gpu','GPU',Microchip,'var(--icon-purple)','GPU 使用率'],['memory','内存',MemoryStick,'var(--icon-pink)','内存使用率'],['network','网络',Network,'var(--icon-cyan)','网络速率'],['storage','存储',HardDrive,'var(--icon-amber)','磁盘读写速率']];
 const span=3;
-// Use extra vertical room in tall windows without crowding the inventory in shorter ones.
-const getTrendHeight=()=>260+Math.min(52,Math.max(0,Math.round((window.innerHeight-780)*.22)));
-const watchTrendHeight=notify=>{window.addEventListener('resize',notify);return()=>window.removeEventListener('resize',notify);};
 const gi=(n)=>Number.isFinite(n)?n.toFixed(1)+' GiB':'—';
 const rate=(s,up=false)=>s.network?.[up?'UploadBytesPerSecond':'DownloadBytesPerSecond'];
 const io=(s,write=false)=>storageRate(s,write?'WriteBytesPerSecond':'ReadBytesPerSecond');
@@ -40,7 +37,13 @@ function context(s,id,visibleSeries){
  const cap=storageSummary(s);return [null,[['可用空间',bytes(cap.free)],['总容量',bytes(cap.total)],['存储卷',cap.count||'—']]];
 }
 export default function OverviewFocus({sample,samples,lightSamples,hasSample,deviceId}){useLocale();
- const trendHeight=useSyncExternalStore(watchTrendHeight,getTrendHeight);
+ const plot=useRef(null),[trendHeight,setTrendHeight]=useState(0);
+ useLayoutEffect(()=>{
+  const slot=plot.current;
+  const measure=()=>setTrendHeight(Math.floor(slot.clientHeight));
+  measure();const observer=new ResizeObserver(measure);observer.observe(slot);
+  return()=>observer.disconnect();
+ },[]);
  const [selected,setSelected]=useWorkspaceState(deviceId,'overview-metric','cpu');const controls=useRef([]),strip=useRef(null),underline=useRef(null),underlineMotion=useRef(null),contextNode=useRef(null),lastContext=useRef(null);
  const idx=Math.max(0,metrics.findIndex(([id])=>id===selected));
  const [id,label,,color,title]=metrics[idx];
@@ -83,7 +86,7 @@ export default function OverviewFocus({sample,samples,lightSamples,hasSample,dev
    <div className="overview-focus-panel" role="tabpanel" id="overview-trend-panel" aria-labelledby={'overview-tab-'+id}>
     <section className="overview-focus-trend" aria-label={tr(title)}>
      <SectionTitle meta={t('最近 3 分钟')}>{tr(title)}</SectionTitle>
-     {haveLine?<Chart series={series} renderSeries={geometry=><OverviewTrendSeries metric={id} geometry={geometry}/>} timestamps={rows.map(r=>r.time)} height={trendHeight} timeAxisSeconds live rangeMinutes={span} maxValue={isRate?top:100} unit={isRate?units:'%'} showScaleControl={false} expectedInterval={rows.at(-1)?.interval||2} {...timelineSampleProps(rows)}/>:<div className="overview-focus-empty" style={{minHeight:trendHeight}} role="status">{t(hasSample?'暂无趋势数据':'等待采样')}</div>}
+     <div className="overview-focus-plot" ref={plot}>{haveLine?(trendHeight>60&&<Chart series={series} renderSeries={geometry=><OverviewTrendSeries metric={id} geometry={geometry}/>} timestamps={rows.map(r=>r.time)} height={trendHeight} timeAxisSeconds live rangeMinutes={span} maxValue={isRate?top:100} unit={isRate?units:'%'} showScaleControl={false} expectedInterval={rows.at(-1)?.interval||2} {...timelineSampleProps(rows)}/>):<div className="overview-focus-empty" role="status">{t(hasSample?'暂无趋势数据':'等待采样')}</div>}</div>
      <div className="overview-focus-legend" aria-label={t('图例')}>{haveLine&&(series.length>1?series:[{name:isRate?units:t('使用率'),color:series[0].color}]).map(s=><span key={s.name}><i style={{background:s.color}}/>{s.name}</span>)}</div>
     </section>
     <section className="overview-focus-context" ref={contextNode} aria-label={contextTitle}>

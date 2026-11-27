@@ -38,7 +38,7 @@
 .storage-tools .storage-layout-switch{display:flex;background:var(--bg);padding:3px;border:1px solid var(--line-soft);border-radius:8px;gap:3px}
 .storage-tools .storage-layout-switch button{display:grid;place-items:center;padding:6px 8px;border-radius:5px;color:var(--muted)}
 .storage-tools .storage-layout-switch button[aria-pressed=true]{background:var(--surface2);color:var(--text)}
-.storage-tools .storage-analysis-layout{display:flex;height:clamp(400px,calc(100dvh - 340px),840px);min-height:400px}
+.storage-tools .storage-analysis-layout{display:flex;flex:1 0 auto;min-height:280px;contain:size}
 .storage-tools .storage-folder-list{width:220px;flex:none;border-right:1px solid var(--line-soft);padding:16px 10px;overflow-y:auto}
 .storage-tools .storage-folder-title{font-size:14px;color:var(--dim);margin:0 12px 12px}
 .storage-tools .storage-folder-list button{display:flex;align-items:center;gap:9px;width:100%;min-height:39px;padding:9px 10px;border-radius:7px;text-align:left;white-space:nowrap;color:var(--muted);font-size:14px}
@@ -47,7 +47,7 @@
 .storage-tools .storage-folder-name{overflow:hidden;text-overflow:ellipsis;min-width:0}
 .storage-tools .storage-folder-list .child-folder{padding-left:32px}
 .storage-tools .storage-map-column{flex:1;min-width:0;display:flex;flex-direction:column;padding:14px 14px 0;overflow:hidden}
-.storage-tools .storage-map-stage{flex:1;min-height:250px;position:relative;overflow:hidden;isolation:isolate;border-radius:8px;background:var(--bg)}
+.storage-tools .storage-map-stage{flex:1;min-height:0;position:relative;overflow:hidden;isolation:isolate;border-radius:8px;background:var(--bg)}
 .storage-tools .storage-map-content{position:absolute;inset:0}
 .storage-tools .storage-map-old{pointer-events:none;z-index:2}
 .storage-tools .storage-tile{position:absolute;box-sizing:border-box;min-width:0;min-height:0;border-radius:7px;background:color-mix(in srgb,var(--tile) 74%,var(--surface));border:1px solid color-mix(in srgb,var(--tile-edge) 32%,transparent);color:#ecf2fb;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;user-select:none;contain:layout paint}
@@ -106,10 +106,9 @@
 .storage-file-name>span{display:block;min-width:0;line-height:22px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .storage-file-row>span,.storage-file-row time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .storage-tools .empty{min-height:220px}.storage-map-content>.empty{position:absolute;inset:0}
-[data-storage-tool=open] .resource-footer{display:none}
 @keyframes storage-breathe{0%,100%{opacity:.45}50%{opacity:1}}
 @media(max-width:1150px){.storage-tools .storage-folder-list{width:190px}.storage-tools .storage-tree-folder small{display:none}.storage-tools .storage-search{width:180px}.storage-large-filters{gap:8px}.storage-large-filters .themed-select{min-width:110px}}
-@media(max-width:900px){.storage-tools .storage-folder-list{width:160px}.storage-tools .storage-explorer-toolbar{flex-wrap:wrap}.storage-tools .storage-search{margin-left:auto}.storage-tools .storage-analysis-layout{height:clamp(360px,calc(100dvh - 360px),700px);min-height:360px}.storage-tools .storage-file-actions{gap:8px}.storage-tools .storage-file-actions .btn{padding:7px 4px}.storage-tools .storage-view-controls{gap:8px}.storage-launch-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.storage-tools .storage-folder-list{width:160px}.storage-tools .storage-explorer-toolbar{flex-wrap:wrap}.storage-tools .storage-search{margin-left:auto}.storage-tools .storage-file-actions{gap:8px}.storage-tools .storage-file-actions .btn{padding:7px 4px}.storage-tools .storage-view-controls{gap:8px}.storage-launch-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.storage-tools .storage-folder-list{display:none}.storage-tools .storage-heading-actions{width:100%;justify-content:flex-end}.storage-tools .storage-search{width:100%}.storage-table-head,.storage-file-row{grid-template-columns:24px minmax(100px,1fr) 85px}.storage-table-head{grid-template-columns:minmax(100px,1fr) 85px}.storage-file-row time,.storage-table-head>span:last-child{display:none}.storage-tools .storage-explorer-actions{flex-wrap:wrap}.storage-tools .storage-view-controls{margin-left:auto}}
 @media(prefers-reduced-motion:reduce){.storage-tools *{animation:none!important;transition:none!important}}[data-motion=reduced] .storage-tools *{animation:none!important;transition:none!important}
 
@@ -159,7 +158,6 @@
 .storage-tools{gap:22px}
 .storage-tools .storage-explorer{border-radius:24px;overflow:hidden}
 .storage-tools .storage-explorer-toolbar{min-height:64px;padding:12px 18px}
-.storage-tools .storage-analysis-layout{height:clamp(420px,calc(100dvh - 370px),820px);min-height:420px}
 .storage-tools .storage-map-stage{border-radius:18px;background:var(--surface)}
 .storage-tools .storage-map-content{border-radius:18px;background:var(--surface)}
 .storage-tools .storage-map-column{padding:8px 14px 0 9px}
@@ -192,7 +190,6 @@
 .storage-tools .storage-tree-folder>small{flex:none;font-size:13px!important;margin-left:auto}
 .storage-tools .storage-tree-toggle:focus-visible,.storage-tools .storage-tree-folder:focus-visible{outline-offset:-2px}
 @media(max-width:1150px){.storage-tools .storage-tree-folder small{display:none}}
-@media(max-width:900px){.storage-tools .storage-analysis-layout{height:clamp(360px,calc(100dvh - 360px),700px);min-height:360px}}
 
 /* Stable geometry for both scan tools and both path-selection modes. */
 .storage-scan-dialog{width:min(700px,calc(100vw - 48px));height:min(630px,calc(100dvh - 48px));display:flex;flex-direction:column}.storage-scan-dialog>.foundation-dialog-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}.storage-scan-content{display:flex;flex-direction:column;flex:1;min-height:0;padding:0 24px 0}.scan-scope-tabs{display:flex;position:relative;flex:none;padding:4px;background:var(--input);border:1px solid var(--line);border-radius:13px;margin-bottom:18px;isolation:isolate}.scan-scope-tabs>i{position:absolute;inset:4px auto 4px 4px;width:calc((100% - 8px)/2);background:var(--surface2);box-shadow:0 2px 6px #0002;border-radius:9px;transition:transform .28s var(--ease);z-index:-1}.scan-scope-tabs>button{display:flex;align-items:center;justify-content:center;gap:8px;flex:1 1 0;min-width:0;padding:11px 8px;font:inherit;font-size:15px;background:none;border:0;color:var(--muted);cursor:pointer;border-radius:9px}.scan-scope-tabs>button[aria-selected=true]{color:var(--text)}.scan-scope-body{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}.scan-scope-caption{font-size:14px;color:var(--muted);margin:0 0 14px}.scan-drive-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:1px 2px 10px}.scan-drive{position:relative;min-width:0;display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:10px;padding:18px;border:1px solid var(--line);background:var(--surface);border-radius:16px;text-align:left;color:var(--text);font:inherit;cursor:pointer;transition:background .24s var(--ease),border-color .24s var(--ease)}.scan-drive:hover:not(:disabled){background:var(--hover)}.scan-drive.selected{border-color:var(--green);background:color-mix(in srgb,var(--green) 9%,var(--surface))}.scan-drive:disabled{opacity:.48;cursor:default}.scan-drive-heading{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;min-width:0;padding-right:14px}.scan-drive-heading strong{font-size:20px;font-weight:550}.scan-drive-heading>span{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.scan-drive-path,.scan-drive-meta,.scan-drive-track{grid-column:1/-1}.scan-drive-path{color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.scan-drive-meta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.scan-drive-check{position:absolute;right:12px;top:12px;color:var(--green)}.scan-drive-track{height:5px;background:var(--line-soft);border-radius:5px;overflow:hidden;margin-top:3px}.scan-drive-track i{display:block;height:100%;background:color-mix(in srgb,var(--green) 65%,transparent);border-radius:inherit}.scan-scope-empty{padding:30px 12px;text-align:center;font-size:15px;color:var(--muted)}.scan-scope-empty p{word-break:break-word}.scan-scope-status{display:flex;align-items:center;gap:10px;flex:none;min-height:52px;font-size:13px;color:var(--muted);overflow:hidden}.scan-scope-status>span{flex:none}.scan-scope-status>bdi{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.scan-scope-status>[role=alert]{white-space:normal;flex:1}.scan-folder-label{display:block;font-size:14px;margin-bottom:8px}.scan-folder-input{display:flex;gap:10px;margin-bottom:12px}.scan-folder-input input{flex:1;min-width:0;font-family:inherit;font-size:15px}.scan-folder-mode .storage-path-picker{border:0;padding:0;margin:0}.scan-folder-mode .storage-path-picker nav{display:flex;gap:7px;flex-wrap:wrap}.scan-folder-mode .storage-path-picker header{gap:8px;display:flex;align-items:center;margin-top:12px}.scan-folder-mode .storage-path-picker header>span{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.scan-folder-mode .storage-path-folders{max-height:210px}.storage-scan-dialog>.dialog-actions{flex:none;padding:16px 24px;border-top:1px solid var(--line-soft);margin:0;min-height:76px;box-sizing:border-box}
@@ -274,15 +271,25 @@ html[data-motion=reduced] .storage-tools .storage-tile{transition:none}
 .storage-tools .storage-tree-folder[aria-current=true]{color:var(--text)}
 
 /* Keep real scan limitations inside the result surface. Only the result body scrolls. */
-.storage-pagination,.storage-tools .storage-map-caption{align-items:center;column-gap:clamp(8px,1.3vw,18px);row-gap:7px;min-height:45px;flex:none;font-size:14px;line-height:22px;color:var(--muted)}
-.storage-tools .storage-map-caption{display:flex;flex-wrap:wrap}
+.storage-pagination{align-items:center;column-gap:clamp(8px,1.3vw,18px);row-gap:7px;min-height:45px;flex:none;font-size:14px;line-height:22px;color:var(--muted)}
 .storage-pagination{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;padding:9px 16px;border-top:1px solid var(--line)}
 .storage-pagination>.storage-page-buttons{grid-column:3}
-.storage-pagination>.storage-result-count,.storage-map-caption>.storage-result-count{flex:none;white-space:nowrap}
-.storage-pagination>.storage-partial-note,.storage-map-caption>.storage-partial-note{flex:1 1 220px;min-width:0}
+.storage-pagination>.storage-result-count{flex:none;white-space:nowrap}
+.storage-pagination>.storage-partial-note{flex:1 1 220px;min-width:0}
 .storage-page-buttons{margin-inline-start:auto;display:flex;align-items:center;gap:10px;flex:none;color:var(--text)}
 .storage-tools[data-tool=large] .storage-explorer{margin-block-end:12px;border-end-start-radius:12px;border-end-end-radius:12px}
 @media(max-width:720px){
  .storage-tools .storage-analysis-layout>.storage-folder-list{display:block}
  .storage-pagination{padding-inline:10px}
 }
+
+/* The explorer takes the space below the page controls. Scrolling belongs to its panes. */
+.native-workbench .main-content[data-page=storage]:has(>.storage-tools[data-tool=analysis]:not([hidden])){display:flex;flex-direction:column;overflow:auto;scrollbar-gutter:auto}
+.storage-tools[data-tool=analysis]:not([hidden]),.storage-tools[data-tool=analysis] :is(.foundation-tool-panel:not([hidden]),.foundation-tool-view,.storage-explorer){display:flex;flex:1 0 auto;flex-direction:column;min-height:0}
+.storage-tools[data-tool=analysis] :is(.storage-explorer-toolbar,.storage-explorer-actions){flex:none}
+.storage-tools .storage-analysis-layout>.storage-folder-list{min-height:0}
+.storage-tools .storage-tree-narrow>.storage-folder-list{max-height:min(174px,42%);box-sizing:border-box}
+.storage-tools .storage-analysis-layout .storage-map-column{min-height:0}
+.storage-tools .storage-analysis-layout .storage-map-column:has(>.storage-map-stage){padding-block-end:8px}
+.storage-tools .storage-map-column>.storage-file-table{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.storage-tools .storage-map-column .storage-table-scroll{flex:1;min-height:0;overflow:auto;scrollbar-gutter:stable}

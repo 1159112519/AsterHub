@@ -40,3 +40,13 @@
 
 .overview-focus-indicator{position:absolute;pointer-events:none;height:2px;z-index:1;transform-origin:0 0}
 .overview-focus-trend[data-switching] .chart-tooltip,.overview-focus-trend[data-switching] .chart-custom-series-hover{visibility:hidden}
+
+.native-workbench .main-content[data-page=overview]{display:flex;flex-direction:column;overflow:auto;scrollbar-gutter:auto}
+.overview-workspace,.overview-workspace>.overview-focus,.overview-workspace .overview-focus-surface,.overview-workspace .overview-focus-panel{flex:1 0 auto}
+.overview-workspace,.overview-workspace>.overview-focus,.overview-workspace .overview-focus-surface{display:flex;flex-direction:column}
+.overview-workspace>.page-heading,.overview-workspace>.overview-inventory,.overview-workspace .overview-focus-caption,.overview-workspace .overview-focus-select{flex:none}
+.overview-workspace .overview-focus-trend{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0}
+.overview-focus-plot{min-width:0;min-height:200px;contain:size}
+.overview-focus-plot>.overview-focus-empty{height:100%}
+.overview-workspace .overview-inventory{margin:0;padding-block:16px 0}
+.overview-workspace .overview-inventory dl{row-gap:12px}

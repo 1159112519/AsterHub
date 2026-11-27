@@ -38,7 +38,7 @@ export function HostSummary({sample,name}) {useLocale();
 export function HardwareInventory({sample}) {useLocale();
  const h=sample.hardware||{},v=storageSummary(sample),gpuNames=[...new Set(sample.gpus.map(g=>g.name).filter(Boolean))];
  const fields=[['CPU',h.CpuModel||'正在读取',(h.PhysicalCores??'—')+' 核 / '+(h.SystemThreads??(sample.cores.length||'—'))+' 线程'],['内存',sample.memTotal==null?'正在读取':sample.memTotal.toFixed(1)+' GiB',memorySpec(h.MemoryModules)],['GPU',gpuNames.join(' / ')||'尚无显卡信息',sample.gpus.length?sample.gpus.length+' 张 · '+(gpuSummary(sample).total?.toFixed(1)??'—')+' GiB 显存':''],['存储',bytes(v.total),(v.count||'—')+' 个存储卷'],['系统',h.OperatingSystem||'正在读取','']];
- return <section className="overview-inventory" aria-label={t("设备配置")}><h2>{t("设备配置")}</h2><dl>{tr(fields.map(([label,value,note])=><div key={label}><dt>{tr(label)}</dt><dd title={tr(value)}>{tr(value)}<small>{tr(note)}</small></dd></div>))}</dl></section>;
+ return <section className="overview-inventory" aria-label={t("设备配置")}><h2>{t("设备配置")}</h2><dl>{tr(fields.map(([label,value,note])=><div key={label}><dt>{tr(label)}</dt><dd title={tr(value)}>{tr(value)}{note&&<small>{tr(note)}</small>}</dd></div>))}</dl></section>;
 }
 export function MemoryDetails({sample}) {useLocale();
  const validText=v=>typeof v==='string'&&v.trim()&&!/WMI|原值|未校验|未提供|unknown|not specified|not available|^[-—]+$/i.test(v.trim());
